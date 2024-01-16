@@ -1,1 +1,2 @@
--R _build/default/theories/iSL ISL
+-R theories/iSL ISL
+theories/iSL
