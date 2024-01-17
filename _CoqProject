@@ -1,2 +1,6 @@
 -R theories/iSL ISL
-theories/iSL
+-R theories/general General
+-R theories/Syntax Syntax
+-R theories/GL GL
+-R theories/K K
+theories

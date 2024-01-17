@@ -5,12 +5,16 @@ COQDOCFLAGS:= \
   --index indexpage --no-lib-name --parse-comments \
   --with-header $(EXTRA_DIR)/header.html --with-footer $(EXTRA_DIR)/footer.html
 export COQDOCFLAGS
-PUBLIC_URL="..."
+PUBLIC_URL="https://hferee.github.io/UIML/"
+SUBDIR_ROOTS := theories
+DIRS := . $(shell find $(SUBDIR_ROOTS) -type d)
+BUILD_PATTERNS := *.vok *.vos *.glob *.vo
+BUILD_FILES := $(foreach DIR,$(DIRS),$(addprefix $(DIR)/,$(BUILD_PATTERNS)))
 
 _: makefile.coq
 
 makefile.coq:
-	coq_makefile -f _CoqProject -o $@
+	coq_makefile -f _CoqProject -docroot docs -o $@
 
 doc: makefile.coq
 	rm -fr html docs/*
@@ -22,6 +26,7 @@ doc: makefile.coq
 
 clean::
 	rm makefile.coq makefile.coq.conf
-	rm -f theories/*/.*.aux theories/*/*.glob theories/*/*.vo theories/*/*.glob
+	rm -f $(BUILD_FILES)
+
 
 .PHONY: _
