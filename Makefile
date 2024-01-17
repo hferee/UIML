@@ -1,6 +1,7 @@
 EXTRA_DIR:= doc-config
 COQDOCFLAGS:= \
   --toc --toc-depth 2 --html --interpolate \
+	-d docs \
   --index indexpage --no-lib-name --parse-comments \
   --with-header $(EXTRA_DIR)/header.html --with-footer $(EXTRA_DIR)/footer.html
 export COQDOCFLAGS
@@ -12,10 +13,10 @@ makefile.coq:
 	coq_makefile -f _CoqProject -o $@
 
 doc: makefile.coq
-	rm -fr html
+	rm -fr html docs/*
 	COQDOCEXTRAFLAGS='--external $(PUBLIC_URL)'
 	@$(MAKE) -f makefile.coq html
-	cp $(EXTRA_DIR)/resources/* html
+	cp $(EXTRA_DIR)/resources/* html/* docs
 
 -include makefile.coq
 
