@@ -4,6 +4,7 @@ COQDOCFLAGS:= \
   --index indexpage --no-lib-name --parse-comments \
   --with-header $(EXTRA_DIR)/header.html --with-footer $(EXTRA_DIR)/footer.html
 export COQDOCFLAGS
+PUBLIC_URL="..."
 
 _: makefile.coq
 
@@ -12,7 +13,7 @@ makefile.coq:
 
 doc: makefile.coq
 	rm -fr html
-	COQDOCEXTRAFLAGS='--external "https://ipq.gitlab.io/doc/"'
+	COQDOCEXTRAFLAGS='--external $(PUBLIC_URL)'
 	@$(MAKE) -f makefile.coq html
 	cp $(EXTRA_DIR)/resources/* html
 
