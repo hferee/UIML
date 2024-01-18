@@ -203,6 +203,8 @@ Arguments imap {X} {Y} _ {D} _ {l}.
       see below for better ones *)
 
   Inductive GUI : Seq -> MPropF -> Prop :=
+    | GUI_empty_seq {s} : s = ([],[]) ->                                             (* If s is the empty set, output Bot. *)
+                                      GUI s Bot
     | GUI_critic_init {s} : critical_Seq s ->                                             (* If critical and initial, output Top. *)
                                       is_init s ->
                                       GUI s Top
@@ -211,28 +213,23 @@ Arguments imap {X} {Y} _ {D} _ {l}.
                                       GUI s (list_conj l)
     | GUI_critic_not_init {s l0 l1} : critical_Seq s ->                               (* If critical but not initial, store the propositional variables, recursively call on
                                                                                                                the GLR premises of the sequent, and use GN. *)
-                                           (fst s <> []) ->
+                                           (s <> ([],[])) ->
                                            (is_init s -> False) ->
                                            (Gimap GUI (GLR_prems (nodupseq s)) l0) ->
                                            (Gimap (GN p GUI s) (Canopy (nodupseq (XBoxed_list (top_boxes (fst s)), []))) l1) ->
                                            GUI s (Or (list_disj (restr_list_prop p (snd s)))
                                                      (Or (list_disj (map Neg (restr_list_prop p (fst s))))
                                                      (Or (list_disj (map Box l0))
-                                                     (Diam (list_conj l1)))))
-    | GUI_critic_not_init_emptyLHS {s l} : critical_Seq s ->
-                                           (is_init s -> False) ->
-                                           (fst s = []) ->
-                                           (Gimap GUI (GLR_prems (nodupseq s)) l) ->
-                                           GUI s (Or (list_disj (restr_list_prop p (snd s)))
-                                                     (list_disj (map Box l))).
+                                                     (Diam (list_conj l1))))).
 
  Set Elimination Schemes.
 
   Lemma GUI_fun : forall x l m, GUI x l -> GUI x m -> l = m.
   Proof.
-  apply (LexSeq_ind (fun x =>  forall l m, GUI x l -> GUI x m -> l = m)).
-  intros s IH l m H H0. inversion H ; inversion H0 ; subst ; auto. 1-3: exfalso ; auto. exfalso ; auto.
-  2: exfalso ; auto. 2,3,4,6,7,8,9: exfalso ; auto.
+  apply (LexSeq_ind (fun x => forall l m, GUI x l -> GUI x m -> l = m)).
+  intros s IH l m H H0. inversion H ; inversion H0 ; subst ; auto ; simpl in *. 1-8: exfalso ; auto.
+  6-9: exfalso ; auto. 1,3: apply not_init_empty_seq ; auto. apply H4 ; apply critical_empty_seq.
+  apply H1 ; apply critical_empty_seq.
   - assert (J0: (forall x : Seq, InT x (Canopy (nodupseq s)) -> forall y0 y1 : MPropF, GUI x y0 -> GUI x y1 -> y0 = y1)).
     intros. apply IH with (s1:=x) ; auto. apply LexSeq_nodupseq. destruct (Canopy_LexSeq (nodupseq s) x H3) ; auto.
     exfalso. apply H1. apply critical_nodupseq. apply Canopy_critical with (s:=nodupseq s) ; subst ; auto.
@@ -254,28 +251,22 @@ Arguments imap {X} {Y} _ {D} _ {l}.
     pose (Gimap_fun_rest _ _ GUI (GLR_prems (nodupseq x)) l l4 J100). rewrite e ; auto.
     pose (Gimap_fun_rest _ _ _ _ l1 l3 J10). rewrite e ; auto.
     rewrite J0. rewrite J1. auto.
-  - assert (J0: l0 = l1).
-    assert (J00: (forall x : Seq, InT x (GLR_prems (nodupseq s)) -> forall y0 y1 : MPropF, GUI x y0 -> GUI x y1 -> y0 = y1)).
-    intros. apply IH with (s1:=x) ; auto. apply LexSeq_nodupseq. apply GLR_prems_LexSeq ; auto.
-    intro. pose (is_init_nodupseq s). apply H8. apply p0. unfold is_init ; auto.
-    pose (Gimap_fun_rest _ _ GUI (GLR_prems (nodupseq s)) l0 l1 J00). rewrite e ; auto.
-    rewrite J0 ; auto.
   Qed.
 
   Lemma GUI_tot : forall s : Seq, {A : MPropF | GUI s A}.
   Proof.
   apply (LexSeq_ind (fun x => existsT A : MPropF, GUI x A)).
-  intros s IH. destruct (critical_Seq_dec s).
-  - destruct (dec_init_rules s).
-    * assert (is_init s) ; auto. exists Top. apply GUI_critic_init ; auto.
-    * assert (is_init s -> False) ; auto.
-      assert ((forall x : Seq, In x (GLR_prems (nodupseq s)) -> {x0 : MPropF | GUI x x0})).
-      intros. apply IH with (s1:=x) ; auto. apply LexSeq_nodupseq. apply GLR_prems_LexSeq ; auto.
-      intro. pose (is_init_nodupseq s). apply f. apply p0. unfold is_init ; auto. Search InT Seq In. apply InT_In_Seq ; auto.
-      epose (@imap _ _ GUI (fun (x : Seq) => In x (GLR_prems (nodupseq s))) H0 (GLR_prems (nodupseq s))). simpl in s0. destruct s0 ; auto.
-      destruct (eq_dec_listsF (fst s) []).
-      + exists (Or (list_disj (restr_list_prop p (snd s))) (list_disj (map Box x))). apply GUI_critic_not_init_emptyLHS ; auto.
-      + assert (J10: (forall z : Seq, In z (Canopy (nodupseq (XBoxed_list (top_boxes (fst s)), []%list))) -> existsT A : MPropF, (GN p GUI s) z A)).
+  intros s IH. destruct (empty_seq_dec s).
+  - subst. exists Bot. apply GUI_empty_seq ; auto.
+  - destruct (critical_Seq_dec s).
+    -- destruct (dec_init_rules s).
+      * assert (is_init s) ; auto. exists Top. apply GUI_critic_init ; auto.
+      * assert (is_init s -> False) ; auto.
+        assert ((forall x : Seq, In x (GLR_prems (nodupseq s)) -> {x0 : MPropF | GUI x x0})).
+        intros. apply IH with (s1:=x) ; auto. apply LexSeq_nodupseq. apply GLR_prems_LexSeq ; auto.
+        intro. pose (is_init_nodupseq s). apply f. apply p0. unfold is_init ; auto. Search InT Seq In. apply InT_In_Seq ; auto.
+        epose (@imap _ _ GUI (fun (x : Seq) => In x (GLR_prems (nodupseq s))) H0 (GLR_prems (nodupseq s))). simpl in s0. destruct s0 ; auto.
+        assert (J10: (forall z : Seq, In z (Canopy (nodupseq (XBoxed_list (top_boxes (fst s)), []%list))) -> existsT A : MPropF, (GN p GUI s) z A)).
          { intros. destruct (dec_init_rules z).
          -- exists Top. apply GN_init_seq ; auto.
          -- destruct (lt_decT (length (usable_boxes z)) (length (usable_boxes s))).
@@ -291,13 +282,17 @@ Arguments imap {X} {Y} _ {D} _ {l}.
          (Canopy (nodupseq (XBoxed_list (top_boxes (fst s)), []%list)))). simpl in s0. destruct s0 ; auto.
          exists (Or (list_disj (restr_list_prop p (snd s))) (Or (list_disj (map Neg (restr_list_prop p (fst s))))
          (Or (list_disj (map Box x)) (Diam (list_conj x0))))). apply GUI_critic_not_init ; auto.
-  - assert ((forall x : Seq, In x (Canopy (nodupseq s)) -> {x0 : MPropF | GUI x x0})).
-    intros. apply IH with (s1:=x) ; auto. destruct (Canopy_LexSeq (nodupseq s) x) ; auto.
-    apply InT_In_Seq ; auto. subst. exfalso. apply f. apply critical_nodupseq. apply InT_In_Seq in H ; apply Canopy_critical in H ; auto.
-    apply LexSeq_nodupseq ; auto.
-    epose (@imap _ _ GUI (fun (x : Seq) => In x (Canopy (nodupseq s))) H (Canopy (nodupseq s))). simpl in s0. destruct s0 ; auto.
-    exists (list_conj x). apply GUI_not_critic ; auto.
-  Qed.
+    -- assert ((forall x : Seq, In x (Canopy (nodupseq s)) -> {x0 : MPropF | GUI x x0})).
+        intros. apply IH with (s1:=x) ; auto. destruct (Canopy_LexSeq (nodupseq s) x) ; auto.
+        apply InT_In_Seq ; auto. subst. exfalso. apply f. apply critical_nodupseq. apply InT_In_Seq in H ; apply Canopy_critical in H ; auto.
+        apply LexSeq_nodupseq ; auto.
+        epose (@imap _ _ GUI (fun (x : Seq) => In x (Canopy (nodupseq s))) H (Canopy (nodupseq s))). simpl in s0. destruct s0 ; auto.
+        exists (list_conj x). apply GUI_not_critic ; auto.
+Qed.
+
+  Fact GUI_inv_empty_seq {s A} : GUI s A -> s = ([],[]) -> Bot = A.
+  Proof. intros. pose (GUI_empty_seq H0). apply (GUI_fun _ _ _ g H). Qed.
+
 
   Fact GUI_inv_critic_init {s A} : GUI s A -> critical_Seq s -> is_init s -> Top = A.
   Proof. intros. pose (GUI_critic_init H0 X). apply (GUI_fun _ _ _ g H). Qed.
@@ -309,8 +304,8 @@ Arguments imap {X} {Y} _ {D} _ {l}.
   intros. pose (GUI_not_critic H0 H1). apply (GUI_fun _ _ _ g H).
   Qed.
 
-  Fact GUI_inv_critic_not_init_not_emptyLHS {s A l0 l1} : GUI s A -> critical_Seq s ->
-                           (fst s <> []) ->
+  Fact GUI_inv_critic_not_init {s A l0 l1} : GUI s A -> critical_Seq s ->
+                           (s <> ([],[])) ->
                            (is_init s -> False) ->
                            (Gimap GUI (GLR_prems (nodupseq s)) l0) ->
                            (Gimap (GN p GUI s) (Canopy (nodupseq (XBoxed_list (top_boxes (fst s)), []))) l1) ->
@@ -322,27 +317,8 @@ Arguments imap {X} {Y} _ {D} _ {l}.
   intros. pose (GUI_critic_not_init H0 H1 H2 H3 H4). apply (GUI_fun _ _ _ g H).
   Qed.
 
-  Fact GUI_inv_critic_not_init_emptyLHS {s A l} : GUI s A -> critical_Seq s ->
-                           (fst s = []) ->
-                           (is_init s -> False) ->
-                           (Gimap GUI (GLR_prems (nodupseq s)) l) ->
-                           ((Or (list_disj (restr_list_prop p (snd s))) (list_disj (map Box l))) = A).
-  Proof.
-  intros. pose (GUI_critic_not_init_emptyLHS H0 H2 H1 H3). apply (GUI_fun _ _ _ g H).
-  Qed.
-
   Let UI_pwc : forall x, sig (GUI x).
   Proof.
-  (* If I want this function to compute, I need to define it as a function. 
-     Look at the proof for irred_pwc from Dominique:
-
-    refine (Fix_F _ (λ x irred_pwc,
-      match list_is_nil (f x) with
-      | left Hxf  => exist _ [x] _
-      | right Hxf => let (m,hm) := flatmap Girred irred_pwc (λ _ h, h) in
-                     exist _ m _
-      end)); auto.
-*)
   apply GUI_tot.
   Qed.
 

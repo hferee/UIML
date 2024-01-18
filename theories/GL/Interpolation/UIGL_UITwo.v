@@ -26,7 +26,12 @@ Require Import UIGL_UI_inter.
   Proof.
   pose (LexSeq_ind (fun s => forall (p : nat), GLS_prv (UI p s :: fst s, snd s))).
   apply g. clear g. intros.
-  destruct (critical_Seq_dec s0).
+  destruct (empty_seq_dec s0).
+  (* s is the empty sequent. *)
+  { subst ; simpl in *. assert (GUI p ([],[]) Bot). apply GUI_empty_seq ; auto. apply UI_GUI in H.
+    rewrite H in *. apply derI with []. apply BotL ; apply (BotLRule_I [] []). apply dlNil. }
+  (* s is not the empty sequent. *)
+  { destruct (critical_Seq_dec s0).
   (* s0 is a critical sequent *)
   - destruct (dec_init_rules s0).
     (* s0 is an initial sequent *)
@@ -170,19 +175,14 @@ Require Import UIGL_UI_inter.
       assert (Interp :: XBoxed_list BΓ ++ [Box A] = [Interp] ++ XBoxed_list BΓ ++ [Box A]) ; auto. rewrite H0.
       assert (Interp :: Box Interp :: XBoxed_list BΓ ++ [Box A] = [Interp] ++ Box Interp :: XBoxed_list BΓ ++ [Box A]) ; auto. rewrite H1.
       apply wkn_LI. pose (GLS_wkn_L g0 J4 J5). destruct s. auto. inversion H1.
-      remember (fst s0) as LHS. destruct LHS.
-      (* LHS s is empty *)
-       * assert (GUI p s0 (Or (list_disj (restr_list_prop p (snd s0))) (list_disj (map Box (map (UI p) (GLR_prems (nodupseq s0))))))).
-         apply GUI_critic_not_init_emptyLHS ; auto. apply Gimap_map ; intros. apply UI_GUI ; auto.
-         apply (UI_GUI p s0) in H. rewrite H. rewrite HeqLHS in *. repeat apply OrL ; auto.
-      (* LHS s is not empty *)
-       * assert (GUI p s0
-         (Or (list_disj (restr_list_prop p (snd s0)))
-         (Or (list_disj (map Neg (restr_list_prop p (fst s0))))
-         (Or (list_disj (map Box (map (UI p) (GLR_prems (nodupseq s0)))))
-         (Diam (list_conj (map (N p s0) (Canopy (nodupseq (XBoxed_list (top_boxes (fst s0)), []%list)))))))))).
-         apply GUI_critic_not_init ; auto. intro H ; rewrite <- HeqLHS in H ; inversion H. 1-2: apply Gimap_map ; intros. apply UI_GUI ; auto.
-         apply (@N_spec p s0 x). apply (UI_GUI p s0) in H. rewrite H. rewrite HeqLHS in *. repeat apply OrL ; auto.
+      remember (fst s0) as LHS.
+      assert (GUI p s0
+      (Or (list_disj (restr_list_prop p (snd s0)))
+      (Or (list_disj (map Neg (restr_list_prop p (fst s0))))
+      (Or (list_disj (map Box (map (UI p) (GLR_prems (nodupseq s0)))))
+      (Diam (list_conj (map (N p s0) (Canopy (nodupseq (XBoxed_list (top_boxes (fst s0)), []%list)))))))))).
+      apply GUI_critic_not_init ; auto. 1-2: apply Gimap_map ; intros. apply UI_GUI ; auto.
+      apply (@N_spec p s0 x). apply (UI_GUI p s0) in H. rewrite H. rewrite HeqLHS in *. repeat apply OrL ; auto.
   (* s0 is not a critical sequent *)
   - assert (J0: GUI p s0 (UI p s0)). apply UI_GUI ; auto.
     assert (J1: Gimap (GUI p) (Canopy (nodupseq s0)) (map (UI p) (Canopy (nodupseq s0)))). apply Gimap_map. intros.
@@ -201,7 +201,7 @@ Require Import UIGL_UI_inter.
        rewrite e0 in *. apply DLW_wf_lex.lex_cons ; auto. inversion H1 ; subst ; auto. inversion H2. apply DLW_wf_lex.lex_cons ; auto. lia.
        assert (J3 : forall s1 : Seq, InT s1 (Canopy (nodupseq s0)) -> GLS_prv (list_conj (map (UI p) (Canopy (nodupseq s0))) :: fst s1, snd s1)).
        intros. apply list_conj_wkn_L with (A:=UI p s1) ; auto. apply InT_mapI. exists s1 ; auto.
-       apply Canopy_nodupseq_equiprv_genL ; auto.
+       apply Canopy_nodupseq_equiprv_genL ; auto. }
   Qed.
 
   End UIPTwo.

@@ -50,7 +50,11 @@ Require Import UIGL_UIDiam_N.
   (* D0 is a leaf *)
   - inversion f.
   (* D0 ends with an application of rule *)
-  - intros X0 Y0 hei idseq propvar. inversion g ; subst.
+  - intros X0 Y0 hei idseq propvar. destruct (empty_seq_dec k) as [ EE | NE].
+    { subst ; simpl in *.
+       assert (J1: GLS_prv (X0, Y0)). apply derI with ps ; auto. apply GLS_prv_wkn_R with (X0, Y0) (UI p ([], [])) ; auto.
+       apply (wkn_RI _ _ []). }
+    { inversion g ; subst.
     (* IdP *)
     * inversion H ; subst.
       assert (InT (# P) (fst k ++ X0)). rewrite <- H2. apply InT_or_app ; right ; apply InT_eq.
@@ -72,7 +76,7 @@ Require Import UIGL_UIDiam_N.
                 (map (N p k) (Canopy (nodupseq (XBoxed_list (top_boxes (fst k)), [])))))). apply Gimap_map. intros.
                 apply (N_spec p k x).
                 assert (J40: fst k <> []). intro. rewrite H1 in i ; inversion i.
-                pose (@GUI_inv_critic_not_init_not_emptyLHS p k _ _ _ J0 c J40 H0 J1 J2). rewrite <- e.
+                pose (@GUI_inv_critic_not_init p k _ _ _ J0 c NE H0 J1 J2). rewrite <- e.
                 pose (OrR (X0,Y0)). simpl in g0. apply g0.
                 apply (@GLS_adm_list_exch_R (X0,
                 Or (list_disj (map Neg (restr_list_prop p (fst k))))
@@ -126,28 +130,17 @@ Require Import UIGL_UIDiam_N.
                 assert (J2: (Gimap (GN p (GUI p) k) (Canopy (nodupseq (XBoxed_list (top_boxes (fst k)), [])))
                 (map (N p k) (Canopy (nodupseq (XBoxed_list (top_boxes (fst k)), [])))))). apply Gimap_map. intros.
                 apply (N_spec p k x).
-                remember (fst k) as LHS. destruct LHS.
-                ++ assert (J40: fst k = []). rewrite <- HeqLHS ; auto.
-                    pose (@GUI_inv_critic_not_init_emptyLHS p k _ _ J0 c J40 H0 J1). rewrite <- e.
-                    pose (OrR (X0,Y0)). simpl in g0. apply g0.
-                    epose (list_disj_wkn_R (restr_list_prop p (snd k)) (X0, _) (# P)). simpl in g1. apply g1.
-                    unfold restr_list_prop. apply In_InT. apply in_not_touched_remove. apply In_list_In_list_prop_LF ; apply InT_In ; auto.
-                    intro. apply propvar. rewrite <- H1. rewrite propvar_subform_list_app. apply in_or_app ; left.
-                    apply In_list_In_propvar_subform_list ; apply InT_In ; auto.
-                    apply InT_split in i. destruct i. destruct s. rewrite e0. apply derI with (ps:=[]). apply IdP. 2: apply dlNil.
-                    epose (IdPRule_I _ _ _ []). apply i.
-                ++ assert (J40: fst k <> []). intro. rewrite <- HeqLHS in H1 ; auto. inversion H1. rewrite HeqLHS in *.
-                    pose (@GUI_inv_critic_not_init_not_emptyLHS p k _ _ _ J0 c J40 H0 J1 J2). rewrite <- e.
-                    pose (OrR (X0,Y0)). simpl in g0. apply g0.
-                    assert (J3: InT (# P)  (restr_list_prop p (snd k))). unfold restr_list_prop. apply In_InT.
-                    apply in_not_touched_remove. apply In_list_In_list_prop_LF ; apply InT_In ; auto.
-                    intro. apply propvar. rewrite <- H1. rewrite propvar_subform_list_app. apply in_or_app ; left.
-                    apply In_list_In_propvar_subform_list ; apply InT_In ; auto.
-                    remember (Or (list_disj (map Neg (restr_list_prop p (fst k)))) (Or (list_disj (map Box (map (UI p) (GLR_prems (nodupseq k))))) (Diam
-                    (list_conj  (map (N p k) (Canopy (nodupseq (XBoxed_list (top_boxes (fst k)), []%list))))))) :: Y0) as Y.
-                    pose (list_disj_wkn_R (restr_list_prop p (snd k)) (X0, Y) (# P) J3). apply g1. simpl.
-                    apply InT_split in i. destruct i. destruct s. rewrite e0. apply derI with (ps:=[]). apply IdP. 2: apply dlNil.
-                    assert ((x ++ # P :: x0, # P :: Y) = (x ++ # P :: x0, [] ++ # P :: Y)). auto. rewrite H1 ; apply IdPRule_I.
+                pose (@GUI_inv_critic_not_init p k _ _ _ J0 c NE H0 J1 J2). rewrite <- e.
+                pose (OrR (X0,Y0)). simpl in g0. apply g0.
+                assert (J3: InT (# P)  (restr_list_prop p (snd k))). unfold restr_list_prop. apply In_InT.
+                apply in_not_touched_remove. apply In_list_In_list_prop_LF ; apply InT_In ; auto.
+                intro. apply propvar. rewrite <- H1. rewrite propvar_subform_list_app. apply in_or_app ; left.
+                apply In_list_In_propvar_subform_list ; apply InT_In ; auto.
+                remember (Or (list_disj (map Neg (restr_list_prop p (fst k)))) (Or (list_disj (map Box (map (UI p) (GLR_prems (nodupseq k))))) (Diam
+                (list_conj  (map (N p k) (Canopy (nodupseq (XBoxed_list (top_boxes (fst k)), []%list))))))) :: Y0) as Y.
+                pose (list_disj_wkn_R (restr_list_prop p (snd k)) (X0, Y) (# P) J3). apply g1. simpl.
+                apply InT_split in i. destruct i. destruct s. rewrite e0. apply derI with (ps:=[]). apply IdP. 2: apply dlNil.
+                assert ((x ++ # P :: x0, # P :: Y) = (x ++ # P :: x0, [] ++ # P :: Y)). auto. rewrite H1 ; apply IdPRule_I.
          -- assert (J0: GUI p k (UI p k)). apply UI_GUI ; auto.
             assert (J1: Gimap (GUI p) (Canopy (nodupseq k)) (map (UI p) (Canopy (nodupseq k)))). apply Gimap_map. intros.
             apply UI_GUI ; auto.
@@ -482,285 +475,227 @@ Require Import UIGL_UIDiam_N.
          assert (J0: GUI p k (UI p k)). apply UI_GUI ; auto.
          assert (J1: Gimap (GUI p) (GLR_prems (nodupseq k)) (map (UI p) (GLR_prems (nodupseq k)))). apply Gimap_map. intros.
          apply UI_GUI ; auto.
-         remember (fst k) as LHS. destruct LHS.
-         (* If LHS is empty. *)
-            ++  assert (J40: fst k = []). rewrite <- HeqLHS ; auto.
-                  pose (@GUI_inv_critic_not_init_emptyLHS p k _ _ J0 c J40 H J1). rewrite <- e1. clear e1.
-                  inversion u ; subst. simpl in H1. repeat destruct s ; destruct p0 ; subst.
-                 (* If Box A is in Y0. *)
-                 -- apply derI with (ps:=[(XBoxed_list ([] ++ x1) ++ [Box A], [A])]). apply GLR. simpl.
-                    epose (@GLRRule_I _ _ _ [_]). simpl in g0. apply g0 ; clear g0 ; auto.
-                    apply dlCons ; auto. apply dlNil.
-                -- destruct x2 ; simpl in e1 ; subst.
-                    (* If Box A is in Y0 (bis). *)
-                    +++ rewrite <- app_nil_end in e0 ; subst.
-                           apply derI with (ps:=[(XBoxed_list ([] ++ x1) ++ [Box A], [A])]). apply GLR. simpl.
-                           epose (@GLRRule_I _ _ _ [_]). simpl in g0. apply g0 ; clear g0 ; auto.
-                           apply dlCons ; auto. apply dlNil.
-                   (* If Box A is in (snd k). *)
-                   +++ inversion e1 ; subst.
-                        assert (J10:derrec_height x = derrec_height x) ; auto.
-                        assert (J11: list_exch_L (XBoxed_list ([] ++ x1) ++ [Box A], [A]) ([Box A] ++ XBoxed_list x1, [A])).
-                        epose (list_exch_LI [] [] (XBoxed_list ([] ++ x1)) [Box A] []). simpl in l ; rewrite <- app_nil_end in l ; simpl ;  apply l.
-                        pose (GLS_hpadm_list_exch_L _ J10 J11). destruct s.
-                        assert (J5: derrec_height x0 < S (dersrec_height d)). lia.
-                        assert (J6: derrec_height x0 = derrec_height x0). auto.
-                        assert (J7: ([Box A] ++ XBoxed_list x1, [A]) = (fst ([Box A], [A]) ++ XBoxed_list x1, snd ([Box A], [A]) ++ [])).
-                        simpl. repeat rewrite <- app_assoc ; auto.
-                        assert (J8: (In # p (propvar_subform_list ((XBoxed_list x1 ++ [])))) -> False).
-                        intro. apply propvar. repeat rewrite propvar_subform_list_app.
-                        repeat rewrite propvar_subform_list_app in H0. simpl in H0. repeat rewrite <- app_nil_end in H0. simpl.
-                        repeat rewrite <- app_assoc in H0. apply in_or_app ; left. apply propvar_subform_list_XBoxed_list in H0.
-                        apply propvar_subform_list_nobox_gen_ext with (l0:=x1); auto.
-                        pose (PIH _ J5 _ _ _ _ _ J6 J7 J8).
-                        apply GLS_prv_wkn_L with (A:=Box (UI p ([Box A], [A])))
-                        (sw:=(XBoxed_list x1 ++ [Box (UI p ( [Box A], [A]))] , [UI p ( [Box A], [A])])) in g0.
-                        2: epose (wkn_LI (Box (UI p ([Box A], [A]))) _ [] _) ; rewrite app_nil_r in w ; simpl in w ; apply w.
-                        assert (J20: GLS_rules [(XBoxed_list x1 ++ [Box (UI p ([Box A], [A]))], [UI p ([Box A], [A])])] (X0, Box (UI p ([Box A], [A])) :: Y0)).
-                        apply GLR. assert (Box (UI p ([Box A], [A])) :: Y0 = [] ++ Box (UI p ([Box A], [A])) :: Y0).
-                        auto. rewrite H0. apply GLRRule_I ;auto.
-                        pose (dlNil GLS_rules (fun _ : Seq => False)).
-                        pose (dlCons g0 d0). pose (derI _ J20 d1).
-                        pose (OrR (X0,Y0)). simpl in g1. apply g1. clear g1.
-                        apply GLS_prv_wkn_R with (A:=list_disj (restr_list_prop p (snd k))) (s:=(X0,(list_disj (map Box (map (UI p) (GLR_prems (nodupseq k))))) :: Y0)).
-                        2: epose (wkn_RI (list_disj (restr_list_prop p (snd k))) _ [] _) ; simpl in w ; apply w.
-                        pose (list_disj_wkn_R (map Box (map (UI p) (GLR_prems (nodupseq k)))) (X0, Y0)).
-                        apply g1 with (A:=Box (UI p ([Box A], [A]))) ; clear g1 ; simpl ; auto.
-                        apply InT_map_iff. exists (UI p ([Box A], [A])) ; split ; auto. apply InT_map_iff.
-                        exists ([Box A], [A]) ; split ; auto. unfold GLR_prems.
-                        apply InT_trans_flatten_list with (bs:=[([Box A], [A])]) ; auto. apply InT_eq.
-                        destruct (finite_GLR_premises_of_S (nodupseq k)) ; subst. simpl. apply p0. assert (k = (fst k,Δ0 ++ Box A :: x2)).
-                        rewrite <- e0. destruct k ; auto. rewrite H0. epose (@GLRRule_I _ []). simpl in g1. unfold nodupseq ; simpl. 
-                        rewrite J40 ; simpl. assert (InT (Box A) (nodup eq_dec_form (Δ0 ++ Box A :: x2))).
-                        apply In_InT ; apply nodup_In ; apply in_or_app ; right ; simpl ; auto. apply InT_split in H2.
-                        destruct H2. destruct s. rewrite e2. apply g1 ; auto. intros B HB ; inversion HB.
-                 (* If Box A is in Y0 (ter). *)
-                 --  apply derI with (ps:=[(XBoxed_list ([] ++ x1) ++ [Box A], [A])]). apply GLR. simpl.
-                     epose (@GLRRule_I _ _ _ (_ :: _)). simpl in g0. apply g0 ; clear g0 ; auto.
-                     apply dlCons ; auto. apply dlNil.
-         (* If LHS is empty. *)
-            ++   rewrite HeqLHS in *. assert (J40: fst k <> []). rewrite <- HeqLHS ; intro Hn ; inversion Hn.
-                   assert (J2: (Gimap (GN p (GUI p) k) (Canopy (nodupseq (XBoxed_list (top_boxes (fst k)), [])))
-                   (map (N p k) (Canopy (nodupseq (XBoxed_list (top_boxes (fst k)), [])))))). apply Gimap_map. intros.
-                   apply (N_spec p k x3).
-                   pose (@GUI_inv_critic_not_init_not_emptyLHS p k _ _ _ J0 c J40 H J1 J2). rewrite <- e1. clear e1.
-                   repeat destruct s ; destruct p0 ; subst.
-                   (* If Box A is in Y0. *)
-                   -- pose (OrR (X0,Box A :: Δ1)). simpl in g0. apply g0. clear g0.
-                      apply GLS_prv_wkn_R with (A:=list_disj (restr_list_prop p (snd k))) (s:=(X0,
-                      Or (list_disj (map Neg (restr_list_prop p (fst k))))(Or (list_disj (map Box (map (UI p) (GLR_prems (nodupseq k))))) (Diam
-                      (list_conj (map (N p k) (Canopy (nodupseq (XBoxed_list (top_boxes (fst k)), []%list)))))))
-                      :: Box A :: Δ1)).
-                      2: epose (wkn_RI (list_disj (restr_list_prop p (snd k))) _ [] _) ; simpl in w ; apply w.
-                      pose (OrR (X0,Box A :: Δ1)). simpl in g0. apply g0. clear g0.
-                      apply GLS_prv_wkn_R with (A:=list_disj (map Neg (restr_list_prop p (fst k)))) (s:=(X0,
-                      Or (list_disj (map Box (map (UI p) (GLR_prems (nodupseq k))))) (Diam
-                      (list_conj (map (N p k) (Canopy (nodupseq (XBoxed_list (top_boxes (fst k)), []%list))))))
-                      :: Box A :: Δ1)).
-                      2: epose (wkn_RI (list_disj (map Neg (restr_list_prop p (fst k)))) _ [] _) ; simpl in w ; apply w.
-                      pose (OrR (X0,Box A :: Δ1)). simpl in g0. apply g0. clear g0.
-                      apply GLS_prv_wkn_R with (A:=list_disj (map Box (map (UI p) (GLR_prems (nodupseq k))))) (s:=(X0,
-                      (Diam (list_conj (map (N p k) (Canopy (nodupseq (XBoxed_list (top_boxes (fst k)), []%list))))))
-                      :: Box A :: Δ1)).
-                      2: epose (wkn_RI (list_disj (map Box (map (UI p) (GLR_prems (nodupseq k))))) _ [] _) ; simpl in w ; apply w.
-                      apply Diam_rec_UI ; auto.
-                      assert (J5: derrec_height x < S (dersrec_height d)). lia.
-                      assert (J6: derrec_height x = derrec_height x). auto.
-                      assert (J7: (XBoxed_list (x0 ++ x1) ++ [Box A], [A]) = (fst (XBoxed_list x0, @nil MPropF) ++ XBoxed_list x1 ++ [Box A], snd (XBoxed_list x0, []) ++ [A])).
-                      simpl ; rewrite XBox_app_distrib. repeat rewrite <- app_assoc ; auto.
-                      assert (J8: (In # p (propvar_subform_list ((XBoxed_list x1 ++ [Box A]) ++ [A])) -> False)).
-                      intro. apply propvar. repeat rewrite propvar_subform_list_app.
-                      repeat rewrite propvar_subform_list_app in H0. simpl in H0. repeat rewrite <- app_nil_end in H0. simpl.
-                      repeat rewrite <- app_assoc in H0. apply in_app_or in H0 ; destruct H0.
-                      apply in_or_app ; left. apply propvar_subform_list_XBoxed_list in H0.
-                      apply propvar_subform_list_nobox_gen_ext with (l0:=x1); auto.
-                      apply in_or_app ; right ; apply in_or_app ; left. apply in_app_or in H0 ; destruct H0 ; auto.
-                      pose (PIH _ J5 _ _ _ _ _ J6 J7 J8).
-                      apply derI with (ps:=[(X0 ++ Box (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list))) :: [], [] ++ Bot :: Box A :: Δ1)]).
-                      apply ImpR. assert ((X0, Diam (UI p (XBoxed_list (top_boxes (fst k)), []%list)) :: Box A :: Δ1) =
-                      (X0 ++ [], [] ++ Diam (UI p (XBoxed_list (top_boxes (fst k)), []%list)) :: Box A :: Δ1)). rewrite <- app_nil_end. auto. rewrite H0.
-                      apply ImpRRule_I. apply dlCons. 2: apply dlNil.
-                      apply derI with (ps:=[(XBoxed_list (x1 ++ [Box (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list)))]) ++ [Box A], [A])]).
-                      apply GLR. assert (([] ++ ⊥ :: Box A :: Δ1) = [⊥] ++ Box A :: Δ1). auto. rewrite H0. apply GLRRule_I ; auto.
-                      intro. intros. apply in_app_or in H2 ; destruct H2. apply H1 ; apply in_or_app ; auto. exists (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list))).
-                      inversion H2 ; subst ; auto. inversion H3. apply univ_gen_ext_combine ; auto. apply univ_gen_ext_cons. apply univ_gen_ext_nil.
-                      apply dlCons. 2: apply dlNil. rewrite XBox_app_distrib. simpl. repeat rewrite <- app_assoc. simpl.
-                      apply GLS_prv_wkn_L with (A:=Box (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list)))) (s:=(XBoxed_list x1 ++
-                      [Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list)); Box A], [A])).
-                      2: epose (wkn_LI (Box (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list)))) (XBoxed_list x1 ++ [Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list))]) [Box A] _) ; 
-                      simpl in w ; repeat rewrite <- app_assoc in w ; simpl in w ; apply w.
-                      apply derI with (ps:=[(XBoxed_list x1 ++ [Box A], [] ++ (UI p (XBoxed_list (top_boxes (fst k)), []%list)) :: [A]);
-                      (XBoxed_list x1 ++ Bot :: [Box A], [] ++ [A])]). apply ImpL. apply ImpLRule_I. apply dlCons. 2: apply dlCons.
-                      3: apply dlNil. 2: apply derI with (ps:=[]) ; [apply BotL ; apply BotLRule_I | apply dlNil].
-                      simpl. assert ((top_boxes (fst k)) = x0). symmetry. apply nobox_gen_ext_top_boxes_identity ; auto.
-                      intro. intros. apply H1 ; apply in_or_app ; auto. rewrite H0. auto.
-                  -- destruct x2 ; simpl in e2 ; subst.
-                      (* If Box A is in Y0 (bis). *)
-                      +++ rewrite <- app_nil_end in e1 ; subst.
-                          pose (OrR (X0,Box A :: Δ1)). simpl in g0. apply g0. clear g0.
-                          apply GLS_prv_wkn_R with (A:=list_disj (restr_list_prop p (snd k))) (s:=(X0,
-                          Or (list_disj (map Neg (restr_list_prop p (fst k))))(Or (list_disj (map Box (map (UI p) (GLR_prems (nodupseq k))))) (Diam
-                          (list_conj (map (N p k) (Canopy (nodupseq (XBoxed_list (top_boxes (fst k)), []%list)))))))
-                          :: Box A :: Δ1)).
-                          2: epose (wkn_RI (list_disj (restr_list_prop p (snd k))) _ [] _) ; simpl in w ; apply w.
-                          pose (OrR (X0,Box A :: Δ1)). simpl in g0. apply g0. clear g0.
-                          apply GLS_prv_wkn_R with (A:=list_disj (map Neg (restr_list_prop p (fst k)))) (s:=(X0,
-                          Or (list_disj (map Box (map (UI p) (GLR_prems (nodupseq k))))) (Diam
-                          (list_conj (map (N p k) (Canopy (nodupseq (XBoxed_list (top_boxes (fst k)), []%list))))))
-                          :: Box A :: Δ1)).
-                          2: epose (wkn_RI (list_disj (map Neg (restr_list_prop p (fst k)))) _ [] _) ; simpl in w ; apply w.
-                          pose (OrR (X0,Box A :: Δ1)). simpl in g0. apply g0. clear g0.
-                          apply GLS_prv_wkn_R with (A:=list_disj (map Box (map (UI p) (GLR_prems (nodupseq k))))) (s:=(X0,
-                          (Diam (list_conj (map (N p k) (Canopy (nodupseq (XBoxed_list (top_boxes (fst k)), []%list))))))
-                          :: Box A :: Δ1)).
-                          2: epose (wkn_RI (list_disj (map Box (map (UI p) (GLR_prems (nodupseq k))))) _ [] _) ; simpl in w ; apply w.
-                          apply Diam_rec_UI ; auto.
-                          assert (J5: derrec_height x < S (dersrec_height d)). lia.
-                          assert (J6: derrec_height x = derrec_height x). auto.
-                          assert (J7: (XBoxed_list (x0 ++ x1) ++ [Box A], [A]) = (fst (XBoxed_list x0, @nil MPropF) ++ XBoxed_list x1 ++ [Box A], snd (XBoxed_list x0, []) ++ [A])).
-                          simpl ; rewrite XBox_app_distrib. repeat rewrite <- app_assoc ; auto.
-                          assert (J8: (In # p (propvar_subform_list ((XBoxed_list x1 ++ [Box A]) ++ [A])) -> False)).
-                          intro. apply propvar. repeat rewrite propvar_subform_list_app.
-                          repeat rewrite propvar_subform_list_app in H0. simpl in H0. repeat rewrite <- app_nil_end in H0. simpl.
-                          repeat rewrite <- app_assoc in H0. apply in_app_or in H0 ; destruct H0.
-                          apply in_or_app ; left. apply propvar_subform_list_XBoxed_list in H0.
-                          apply propvar_subform_list_nobox_gen_ext with (l0:=x1); auto.
-                          apply in_or_app ; right ; apply in_or_app ; left. apply in_app_or in H0 ; destruct H0 ; auto.
-                          pose (PIH _ J5 _ _ _ _ _ J6 J7 J8).
-                          apply derI with (ps:=[(X0 ++ Box (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list))) :: [], [] ++ Bot :: Box A :: Δ1)]).
-                          apply ImpR. assert ((X0, Diam (UI p (XBoxed_list (top_boxes (fst k)), []%list)) :: Box A :: Δ1) =
-                          (X0 ++ [], [] ++ Diam (UI p (XBoxed_list (top_boxes (fst k)), []%list)) :: Box A :: Δ1)). rewrite <- app_nil_end. auto. rewrite H0.
-                          apply ImpRRule_I. apply dlCons. 2: apply dlNil.
-                          apply derI with (ps:=[(XBoxed_list (x1 ++ [Box (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list)))]) ++ [Box A], [A])]).
-                          apply GLR. assert (([] ++ ⊥ :: Box A :: Δ1) = [⊥] ++ Box A :: Δ1). auto. rewrite H0. apply GLRRule_I ; auto.
-                          intro. intros. apply in_app_or in H2 ; destruct H2. apply H1 ; apply in_or_app ; auto. exists (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list))).
-                          inversion H2 ; subst ; auto. inversion H3. apply univ_gen_ext_combine ; auto. apply univ_gen_ext_cons. apply univ_gen_ext_nil.
-                          apply dlCons. 2: apply dlNil. rewrite XBox_app_distrib. simpl. repeat rewrite <- app_assoc. simpl.
-                          apply GLS_prv_wkn_L with (A:=Box (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list)))) (s:=(XBoxed_list x1 ++
-                          [Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list)); Box A], [A])).
-                          2: epose (wkn_LI (Box (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list)))) (XBoxed_list x1 ++ [Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list))]) [Box A] _) ; 
-                          simpl in w ; repeat rewrite <- app_assoc in w ; simpl in w ; apply w.
-                          apply derI with (ps:=[(XBoxed_list x1 ++ [Box A], [] ++ (UI p (XBoxed_list (top_boxes (fst k)), []%list)) :: [A]);
-                          (XBoxed_list x1 ++ Bot :: [Box A], [] ++ [A])]). apply ImpL. apply ImpLRule_I. apply dlCons. 2: apply dlCons.
-                          3: apply dlNil. 2: apply derI with (ps:=[]) ; [apply BotL ; apply BotLRule_I | apply dlNil].
-                          simpl. assert ((top_boxes (fst k)) = x0). symmetry. apply nobox_gen_ext_top_boxes_identity ; auto.
-                          intro. intros. apply H1 ; apply in_or_app ; auto. rewrite H0. auto.
-                     (* If Box A is in (snd k). *)
-                     +++ inversion e2 ; subst.
-                          assert (J10:derrec_height x = derrec_height x) ; auto.
-                          assert (J11: list_exch_L (XBoxed_list (x0 ++ x1) ++ [Box A], [A]) ((XBoxed_list x0 ++ [Box A]) ++ XBoxed_list x1, [A])).
-                          assert (XBoxed_list (x0 ++ x1) ++ [Box A] = XBoxed_list x0 ++ [] ++ XBoxed_list x1 ++ [Box A] ++ []). rewrite XBox_app_distrib.
-                          repeat rewrite <- app_assoc. auto. rewrite H0.
-                          assert ((XBoxed_list x0 ++ [Box A]) ++ XBoxed_list x1 = XBoxed_list x0 ++ [Box A] ++ XBoxed_list x1 ++ [] ++ []).
-                          repeat rewrite <- app_assoc. auto. repeat rewrite <- app_nil_end. auto. rewrite H2. apply list_exch_LI.
-                          pose (GLS_hpadm_list_exch_L _ J10 J11). destruct s.
-                          pose (incl_hpadm_prv _ ((XBoxed_list (top_boxes (fst (nodupseq k))) ++ [Box A]) ++ XBoxed_list x1, [A]) x3). simpl in s. destruct s.
-                          intros B HB. apply in_app_or in HB ; destruct HB. apply in_app_or in H0 ; destruct H0.
-                          apply in_or_app ; left. apply in_or_app ; left. destruct (In_XBoxed_list_gen _ _ H0).
-                          apply list_preserv_XBoxed_list. apply is_box_in_top_boxes. apply nodup_In.
-                          apply (univ_gen_ext_In _ u) ; auto. apply H1. apply in_or_app ; auto. destruct H2. destruct H2 ; subst.
-                          apply XBoxed_list_In. apply is_box_in_top_boxes. apply nodup_In. apply (univ_gen_ext_In _ u) ; auto.
-                          apply H1. apply in_or_app ; auto. inversion H0 ; subst. apply in_or_app ; left ; apply in_or_app ; auto. inversion H2.
-                          apply in_or_app ; auto. intros B HB ; auto.
-                          assert (J5: derrec_height x4 < S (dersrec_height d)). lia.
-                          assert (J6: derrec_height x4 = derrec_height x4). auto.
-                          assert (J7: ((XBoxed_list (top_boxes (nodup eq_dec_form (fst k))) ++ [Box A]) ++ XBoxed_list x1, [A]) = (fst (XBoxed_list (top_boxes (nodup eq_dec_form (fst k))) ++[Box A], [A]) ++ XBoxed_list x1, snd (XBoxed_list x0 ++[Box A], [A]) ++ [])).
-                          simpl. repeat rewrite <- app_assoc ; auto.
-                          assert (J8: (In # p (propvar_subform_list ((XBoxed_list x1 ++ [])))) -> False).
-                          intro. apply propvar. repeat rewrite propvar_subform_list_app.
-                          repeat rewrite propvar_subform_list_app in H0. simpl in H0. repeat rewrite <- app_nil_end in H0. simpl.
-                          repeat rewrite <- app_assoc in H0. apply in_or_app ; left. apply propvar_subform_list_XBoxed_list in H0.
-                          apply propvar_subform_list_nobox_gen_ext with (l0:=x1); auto.
-                          pose (PIH _ J5 _ _ _ _ _ J6 J7 J8).
-                          apply GLS_prv_wkn_L with (A:=Box (UI p (XBoxed_list (top_boxes (nodup eq_dec_form (fst k))) ++ [Box A], [A])))
-                          (sw:=(XBoxed_list x1 ++ [Box (UI p (XBoxed_list (top_boxes (nodup eq_dec_form (fst k))) ++ [Box A], [A]))] , [UI p (XBoxed_list (top_boxes (nodup eq_dec_form (fst k))) ++ [Box A], [A])])) in g0.
-                          2: epose (wkn_LI (Box (UI p (XBoxed_list (top_boxes (nodup eq_dec_form (fst k))) ++ [Box A], [A]))) _ [] _) ; rewrite app_nil_r in w ; simpl in w ; apply w.
-                          assert (J20: GLS_rules [(XBoxed_list x1 ++ [Box (UI p (XBoxed_list (top_boxes (nodup eq_dec_form (fst k))) ++ [Box A], [A]))], [UI p (XBoxed_list (top_boxes (nodup eq_dec_form (fst k))) ++ [Box A], [A])])]
-                          (X0, Box (UI p (XBoxed_list (top_boxes (nodup eq_dec_form (fst k))) ++ [Box A], [A])) :: Y0)). apply GLR.
-                          assert (Box (UI p (XBoxed_list (top_boxes (nodup eq_dec_form (fst k))) ++ [Box A], [A])) :: Y0 = [] ++ Box (UI p (XBoxed_list (top_boxes (nodup eq_dec_form (fst k))) ++ [Box A], [A])) :: Y0).
-                          auto. rewrite H0. apply GLRRule_I ;auto. intro. intros. apply H1. apply in_or_app ;auto.
-                          pose (dlNil GLS_rules (fun _ : Seq => False)).
-                          pose (dlCons g0 d0). pose (derI _ J20 d1).
-                          pose (OrR (X0,Y0)). simpl in g1. apply g1. clear g1.
-                          apply GLS_prv_wkn_R with (A:=list_disj (restr_list_prop p (snd k))) (s:=(X0,
-                          Or (list_disj (map Neg (restr_list_prop p (fst k))))(Or (list_disj (map Box (map (UI p) (GLR_prems (nodupseq k))))) (Diam
-                          (list_conj (map (N p k) (Canopy (nodupseq (XBoxed_list (top_boxes (fst k)), []%list)))))))
-                          :: Y0)).
-                          2: epose (wkn_RI (list_disj (restr_list_prop p (snd k))) _ [] _) ; simpl in w ; apply w.
-                          pose (OrR (X0,Y0)). simpl in g1. apply g1. clear g1.
-                          apply GLS_prv_wkn_R with (A:=list_disj (map Neg (restr_list_prop p (fst k)))) (s:=(X0,
-                          Or (list_disj (map Box (map (UI p) (GLR_prems (nodupseq k))))) (Diam
-                          (list_conj (map (N p k) (Canopy (nodupseq (XBoxed_list (top_boxes (fst k)), []%list))))))
-                          :: Y0)).
-                          2: epose (wkn_RI (list_disj (map Neg (restr_list_prop p (fst k)))) _ [] _) ; simpl in w ; apply w.
-                          pose (OrR (X0,Y0)). simpl in g1. apply g1. clear g1.
-                          pose (list_disj_wkn_R (map Box (map (UI p) (GLR_prems (nodupseq k)))) (X0, Diam
-                           (list_conj (map (N p k) (Canopy (nodupseq (XBoxed_list (top_boxes (fst k)), []%list))))) :: Y0)).
-                          (* The next UI does not have the correct LHS, which we expect to use x0, to link up with d1. *)
-                          apply g1 with (A:=Box (UI p (XBoxed_list (top_boxes (fst (nodupseq k))) ++ [Box A], [A]))) ; clear g1 ; simpl ; auto.
-                          apply InT_map_iff.
-                          exists (UI p (XBoxed_list (top_boxes (fst (nodupseq k))) ++ [Box A], [A])) ; split ; auto. apply InT_map_iff.
-                          exists (XBoxed_list (top_boxes (fst (nodupseq k))) ++ [Box A], [A]) ; split ; auto. unfold GLR_prems.
-                          apply InT_trans_flatten_list with (bs:=[(XBoxed_list (top_boxes (fst (nodupseq k))) ++ [Box A], [A])]) ; auto. apply InT_eq.
-                          destruct (finite_GLR_premises_of_S (nodupseq k)) ; subst. simpl. apply p0. assert (k = (fst k,Δ0 ++ Box A :: x2)).
-                          rewrite <- e1. destruct k ; auto. rewrite H0. unfold nodupseq ; simpl.
-                          assert (InT (Box A) (nodup eq_dec_form (Δ0 ++ Box A :: x2))). apply In_InT ; apply nodup_In ; apply in_or_app ; right ; simpl ; auto.
-                          apply InT_split in H2 ; destruct H2. destruct s. rewrite e0.
-                          apply GLRRule_I ; auto. intro. intros. apply in_top_boxes in H2 ; destruct H2. destruct s ; destruct s. destruct p1.
-                          eexists ; subst ; auto. apply nobox_top_boxes.
-                          apply GLS_prv_wkn_R with (A:=Diam (list_conj (map (N p k) (Canopy (nodupseq (XBoxed_list (top_boxes (fst k)), []%list))))))
-                          (s:=(X0, Box (UI p (XBoxed_list (top_boxes (nodup eq_dec_form (fst k))) ++ [Box A], [A])) :: Y0)) ; auto.
-                          assert ((X0, Box (UI p (XBoxed_list (top_boxes (nodup eq_dec_form (fst k))) ++ [Box A], [A])) :: Y0) = (X0, [Box (UI p (XBoxed_list (top_boxes (nodup eq_dec_form (fst k))) ++ [Box A], [A]))] ++ Y0)).
-                          repeat rewrite <- app_assoc ; auto. rewrite H0. apply wkn_RI.
-                   (* If Box A is in Y0 (ter). *)
-                   -- pose (OrR (X0,x2 ++ Box A :: Δ1)). simpl in g0. apply g0. clear g0.
-                      apply GLS_prv_wkn_R with (A:=list_disj (restr_list_prop p (snd k))) (s:=(X0,
-                      Or (list_disj (map Neg (restr_list_prop p (fst k))))(Or (list_disj (map Box (map (UI p) (GLR_prems (nodupseq k))))) (Diam
-                      (list_conj (map (N p k) (Canopy (nodupseq (XBoxed_list (top_boxes (fst k)), []%list)))))))
-                      :: x2 ++ Box A :: Δ1)).
-                      2: epose (wkn_RI (list_disj (restr_list_prop p (snd k))) _ [] _) ; simpl in w ; apply w.
-                      pose (OrR (X0,x2 ++ Box A :: Δ1)). simpl in g0. apply g0. clear g0.
-                      apply GLS_prv_wkn_R with (A:=list_disj (map Neg (restr_list_prop p (fst k)))) (s:=(X0,
-                      Or (list_disj (map Box (map (UI p) (GLR_prems (nodupseq k))))) (Diam
-                      (list_conj (map (N p k) (Canopy (nodupseq (XBoxed_list (top_boxes (fst k)), []%list))))))
-                      :: x2 ++ Box A :: Δ1)).
-                      2: epose (wkn_RI (list_disj (map Neg (restr_list_prop p (fst k)))) _ [] _) ; simpl in w ; apply w.
-                      pose (OrR (X0,x2 ++ Box A :: Δ1)). simpl in g0. apply g0. clear g0.
-                      apply GLS_prv_wkn_R with (A:=list_disj (map Box (map (UI p) (GLR_prems (nodupseq k))))) (s:=(X0,
-                      (Diam (list_conj (map (N p k) (Canopy (nodupseq (XBoxed_list (top_boxes (fst k)), []%list))))))
-                      :: x2 ++ Box A :: Δ1)).
-                      2: epose (wkn_RI (list_disj (map Box (map (UI p) (GLR_prems (nodupseq k))))) _ [] _) ; simpl in w ; apply w.
-                      apply Diam_rec_UI ; auto.
-                      assert (J5: derrec_height x < S (dersrec_height d)). lia.
-                      assert (J6: derrec_height x = derrec_height x). auto.
-                      assert (J7: (XBoxed_list (x0 ++ x1) ++ [Box A], [A]) = (fst (XBoxed_list x0, @nil MPropF) ++ XBoxed_list x1 ++ [Box A], snd (XBoxed_list x0, []) ++ [A])).
-                      simpl ; rewrite XBox_app_distrib. repeat rewrite <- app_assoc ; auto.
-                      assert (J8: (In # p (propvar_subform_list ((XBoxed_list x1 ++ [Box A]) ++ [A])) -> False)).
-                      intro. apply propvar. repeat rewrite propvar_subform_list_app.
-                      repeat rewrite propvar_subform_list_app in H0. simpl in H0. repeat rewrite <- app_nil_end in H0. simpl.
-                      repeat rewrite <- app_assoc in H0. apply in_app_or in H0 ; destruct H0.
-                      apply in_or_app ; left. apply propvar_subform_list_XBoxed_list in H0.
-                      apply propvar_subform_list_nobox_gen_ext with (l0:=x1); auto.
-                      apply in_or_app ; right ; apply in_or_app ; right ; apply in_or_app ; left. apply in_app_or in H0 ; destruct H0 ; auto.
-                      pose (PIH _ J5 _ _ _ _ _ J6 J7 J8).
-                      apply derI with (ps:=[(X0 ++ Box (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list))) :: [], [] ++ Bot :: x2 ++ Box A :: Δ1)]).
-                      apply ImpR. assert ((X0, Diam (UI p (XBoxed_list (top_boxes (fst k)), []%list)) :: x2 ++ Box A :: Δ1) =
-                      (X0 ++ [], [] ++ Diam (UI p (XBoxed_list (top_boxes (fst k)), []%list)) :: x2 ++ Box A :: Δ1)). rewrite <- app_nil_end. auto. rewrite H0.
-                      apply ImpRRule_I. apply dlCons. 2: apply dlNil.
-                      apply derI with (ps:=[(XBoxed_list (x1 ++ [Box (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list)))]) ++ [Box A], [A])]).
-                      apply GLR. assert (([] ++ ⊥ :: x2 ++ Box A :: Δ1) = (⊥ :: x2) ++ Box A :: Δ1). auto. rewrite H0. apply GLRRule_I ; auto.
-                      intro. intros. apply in_app_or in H2 ; destruct H2. apply H1 ; apply in_or_app ; auto. exists (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list))).
-                      inversion H2 ; subst ; auto. inversion H3. apply univ_gen_ext_combine ; auto. apply univ_gen_ext_cons. apply univ_gen_ext_nil.
-                      apply dlCons. 2: apply dlNil. rewrite XBox_app_distrib. simpl. repeat rewrite <- app_assoc. simpl.
-                      apply GLS_prv_wkn_L with (A:=Box (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list)))) (s:=(XBoxed_list x1 ++
-                      [Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list)); Box A], [A])).
-                      2: epose (wkn_LI (Box (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list)))) (XBoxed_list x1 ++ [Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list))]) [Box A] _) ; 
-                      simpl in w ; repeat rewrite <- app_assoc in w ; simpl in w ; apply w.
-                      apply derI with (ps:=[(XBoxed_list x1 ++ [Box A], [] ++ (UI p (XBoxed_list (top_boxes (fst k)), []%list)) :: [A]);
-                      (XBoxed_list x1 ++ Bot :: [Box A], [] ++ [A])]). apply ImpL. apply ImpLRule_I. apply dlCons. 2: apply dlCons.
-                      3: apply dlNil. 2: apply derI with (ps:=[]) ; [apply BotL ; apply BotLRule_I | apply dlNil].
-                      simpl. assert ((top_boxes (fst k)) = x0). symmetry. apply nobox_gen_ext_top_boxes_identity ; auto.
-                      intro. intros. apply H1 ; apply in_or_app ; auto. rewrite H0. auto.
+         assert (J2: (Gimap (GN p (GUI p) k) (Canopy (nodupseq (XBoxed_list (top_boxes (fst k)), [])))
+         (map (N p k) (Canopy (nodupseq (XBoxed_list (top_boxes (fst k)), [])))))). apply Gimap_map. intros.
+         apply (N_spec p k x3).
+         pose (@GUI_inv_critic_not_init p k _ _ _ J0 c NE H J1 J2). rewrite <- e1. clear e1.
+         repeat destruct s ; destruct p0 ; subst.
+         (* If Box A is in Y0. *)
+         -- pose (OrR (X0,Box A :: Δ1)). simpl in g0. apply g0. clear g0.
+            apply GLS_prv_wkn_R with (A:=list_disj (restr_list_prop p (snd k))) (s:=(X0,
+            Or (list_disj (map Neg (restr_list_prop p (fst k))))(Or (list_disj (map Box (map (UI p) (GLR_prems (nodupseq k))))) (Diam
+            (list_conj (map (N p k) (Canopy (nodupseq (XBoxed_list (top_boxes (fst k)), []%list)))))))
+            :: Box A :: Δ1)).
+            2: epose (wkn_RI (list_disj (restr_list_prop p (snd k))) _ [] _) ; simpl in w ; apply w.
+            pose (OrR (X0,Box A :: Δ1)). simpl in g0. apply g0. clear g0.
+            apply GLS_prv_wkn_R with (A:=list_disj (map Neg (restr_list_prop p (fst k)))) (s:=(X0,
+            Or (list_disj (map Box (map (UI p) (GLR_prems (nodupseq k))))) (Diam
+            (list_conj (map (N p k) (Canopy (nodupseq (XBoxed_list (top_boxes (fst k)), []%list))))))
+            :: Box A :: Δ1)).
+            2: epose (wkn_RI (list_disj (map Neg (restr_list_prop p (fst k)))) _ [] _) ; simpl in w ; apply w.
+            pose (OrR (X0,Box A :: Δ1)). simpl in g0. apply g0. clear g0.
+            apply GLS_prv_wkn_R with (A:=list_disj (map Box (map (UI p) (GLR_prems (nodupseq k))))) (s:=(X0,
+            (Diam (list_conj (map (N p k) (Canopy (nodupseq (XBoxed_list (top_boxes (fst k)), []%list))))))
+            :: Box A :: Δ1)).
+            2: epose (wkn_RI (list_disj (map Box (map (UI p) (GLR_prems (nodupseq k))))) _ [] _) ; simpl in w ; apply w.
+            apply Diam_rec_UI ; auto.
+            assert (J5: derrec_height x < S (dersrec_height d)). lia.
+            assert (J6: derrec_height x = derrec_height x). auto.
+            assert (J7: (XBoxed_list (x0 ++ x1) ++ [Box A], [A]) = (fst (XBoxed_list x0, @nil MPropF) ++ XBoxed_list x1 ++ [Box A], snd (XBoxed_list x0, []) ++ [A])).
+            simpl ; rewrite XBox_app_distrib. repeat rewrite <- app_assoc ; auto.
+            assert (J8: (In # p (propvar_subform_list ((XBoxed_list x1 ++ [Box A]) ++ [A])) -> False)).
+            intro. apply propvar. repeat rewrite propvar_subform_list_app.
+            repeat rewrite propvar_subform_list_app in H0. simpl in H0. repeat rewrite <- app_nil_end in H0. simpl.
+            repeat rewrite <- app_assoc in H0. apply in_app_or in H0 ; destruct H0.
+            apply in_or_app ; left. apply propvar_subform_list_XBoxed_list in H0.
+            apply propvar_subform_list_nobox_gen_ext with (l0:=x1); auto.
+            apply in_or_app ; right ; apply in_or_app ; left. apply in_app_or in H0 ; destruct H0 ; auto.
+            pose (PIH _ J5 _ _ _ _ _ J6 J7 J8).
+            apply derI with (ps:=[(X0 ++ Box (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list))) :: [], [] ++ Bot :: Box A :: Δ1)]).
+            apply ImpR. assert ((X0, Diam (UI p (XBoxed_list (top_boxes (fst k)), []%list)) :: Box A :: Δ1) =
+            (X0 ++ [], [] ++ Diam (UI p (XBoxed_list (top_boxes (fst k)), []%list)) :: Box A :: Δ1)). rewrite <- app_nil_end. auto. rewrite H0.
+            apply ImpRRule_I. apply dlCons. 2: apply dlNil.
+            apply derI with (ps:=[(XBoxed_list (x1 ++ [Box (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list)))]) ++ [Box A], [A])]).
+            apply GLR. assert (([] ++ ⊥ :: Box A :: Δ1) = [⊥] ++ Box A :: Δ1). auto. rewrite H0. apply GLRRule_I ; auto.
+            intro. intros. apply in_app_or in H2 ; destruct H2. apply H1 ; apply in_or_app ; auto. exists (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list))).
+            inversion H2 ; subst ; auto. inversion H3. apply univ_gen_ext_combine ; auto. apply univ_gen_ext_cons. apply univ_gen_ext_nil.
+            apply dlCons. 2: apply dlNil. rewrite XBox_app_distrib. simpl. repeat rewrite <- app_assoc. simpl.
+            apply GLS_prv_wkn_L with (A:=Box (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list)))) (s:=(XBoxed_list x1 ++
+            [Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list)); Box A], [A])).
+            2: epose (wkn_LI (Box (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list)))) (XBoxed_list x1 ++ [Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list))]) [Box A] _) ; 
+            simpl in w ; repeat rewrite <- app_assoc in w ; simpl in w ; apply w.
+            apply derI with (ps:=[(XBoxed_list x1 ++ [Box A], [] ++ (UI p (XBoxed_list (top_boxes (fst k)), []%list)) :: [A]);
+            (XBoxed_list x1 ++ Bot :: [Box A], [] ++ [A])]). apply ImpL. apply ImpLRule_I. apply dlCons. 2: apply dlCons.
+            3: apply dlNil. 2: apply derI with (ps:=[]) ; [apply BotL ; apply BotLRule_I | apply dlNil].
+            simpl. assert ((top_boxes (fst k)) = x0). symmetry. apply nobox_gen_ext_top_boxes_identity ; auto.
+            intro. intros. apply H1 ; apply in_or_app ; auto. rewrite H0. auto.
+        -- destruct x2 ; simpl in e2 ; subst.
+            (* If Box A is in Y0 (bis). *)
+            +++ rewrite <- app_nil_end in e1 ; subst.
+                pose (OrR (X0,Box A :: Δ1)). simpl in g0. apply g0. clear g0.
+                apply GLS_prv_wkn_R with (A:=list_disj (restr_list_prop p (snd k))) (s:=(X0,
+                Or (list_disj (map Neg (restr_list_prop p (fst k))))(Or (list_disj (map Box (map (UI p) (GLR_prems (nodupseq k))))) (Diam
+                (list_conj (map (N p k) (Canopy (nodupseq (XBoxed_list (top_boxes (fst k)), []%list)))))))
+                :: Box A :: Δ1)).
+                2: epose (wkn_RI (list_disj (restr_list_prop p (snd k))) _ [] _) ; simpl in w ; apply w.
+                pose (OrR (X0,Box A :: Δ1)). simpl in g0. apply g0. clear g0.
+                apply GLS_prv_wkn_R with (A:=list_disj (map Neg (restr_list_prop p (fst k)))) (s:=(X0,
+                Or (list_disj (map Box (map (UI p) (GLR_prems (nodupseq k))))) (Diam
+                (list_conj (map (N p k) (Canopy (nodupseq (XBoxed_list (top_boxes (fst k)), []%list))))))
+                :: Box A :: Δ1)).
+                2: epose (wkn_RI (list_disj (map Neg (restr_list_prop p (fst k)))) _ [] _) ; simpl in w ; apply w.
+                pose (OrR (X0,Box A :: Δ1)). simpl in g0. apply g0. clear g0.
+                apply GLS_prv_wkn_R with (A:=list_disj (map Box (map (UI p) (GLR_prems (nodupseq k))))) (s:=(X0,
+                (Diam (list_conj (map (N p k) (Canopy (nodupseq (XBoxed_list (top_boxes (fst k)), []%list))))))
+                :: Box A :: Δ1)).
+                2: epose (wkn_RI (list_disj (map Box (map (UI p) (GLR_prems (nodupseq k))))) _ [] _) ; simpl in w ; apply w.
+                apply Diam_rec_UI ; auto.
+                assert (J5: derrec_height x < S (dersrec_height d)). lia.
+                assert (J6: derrec_height x = derrec_height x). auto.
+                assert (J7: (XBoxed_list (x0 ++ x1) ++ [Box A], [A]) = (fst (XBoxed_list x0, @nil MPropF) ++ XBoxed_list x1 ++ [Box A], snd (XBoxed_list x0, []) ++ [A])).
+                simpl ; rewrite XBox_app_distrib. repeat rewrite <- app_assoc ; auto.
+                assert (J8: (In # p (propvar_subform_list ((XBoxed_list x1 ++ [Box A]) ++ [A])) -> False)).
+                intro. apply propvar. repeat rewrite propvar_subform_list_app.
+                repeat rewrite propvar_subform_list_app in H0. simpl in H0. repeat rewrite <- app_nil_end in H0. simpl.
+                repeat rewrite <- app_assoc in H0. apply in_app_or in H0 ; destruct H0.
+                apply in_or_app ; left. apply propvar_subform_list_XBoxed_list in H0.
+                apply propvar_subform_list_nobox_gen_ext with (l0:=x1); auto.
+                apply in_or_app ; right ; apply in_or_app ; left. apply in_app_or in H0 ; destruct H0 ; auto.
+                pose (PIH _ J5 _ _ _ _ _ J6 J7 J8).
+                apply derI with (ps:=[(X0 ++ Box (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list))) :: [], [] ++ Bot :: Box A :: Δ1)]).
+                apply ImpR. assert ((X0, Diam (UI p (XBoxed_list (top_boxes (fst k)), []%list)) :: Box A :: Δ1) =
+                (X0 ++ [], [] ++ Diam (UI p (XBoxed_list (top_boxes (fst k)), []%list)) :: Box A :: Δ1)). rewrite <- app_nil_end. auto. rewrite H0.
+                apply ImpRRule_I. apply dlCons. 2: apply dlNil.
+                apply derI with (ps:=[(XBoxed_list (x1 ++ [Box (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list)))]) ++ [Box A], [A])]).
+                apply GLR. assert (([] ++ ⊥ :: Box A :: Δ1) = [⊥] ++ Box A :: Δ1). auto. rewrite H0. apply GLRRule_I ; auto.
+                intro. intros. apply in_app_or in H2 ; destruct H2. apply H1 ; apply in_or_app ; auto. exists (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list))).
+                inversion H2 ; subst ; auto. inversion H3. apply univ_gen_ext_combine ; auto. apply univ_gen_ext_cons. apply univ_gen_ext_nil.
+                apply dlCons. 2: apply dlNil. rewrite XBox_app_distrib. simpl. repeat rewrite <- app_assoc. simpl.
+                apply GLS_prv_wkn_L with (A:=Box (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list)))) (s:=(XBoxed_list x1 ++
+                [Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list)); Box A], [A])).
+                2: epose (wkn_LI (Box (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list)))) (XBoxed_list x1 ++ [Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list))]) [Box A] _) ; 
+                simpl in w ; repeat rewrite <- app_assoc in w ; simpl in w ; apply w.
+                apply derI with (ps:=[(XBoxed_list x1 ++ [Box A], [] ++ (UI p (XBoxed_list (top_boxes (fst k)), []%list)) :: [A]);
+                (XBoxed_list x1 ++ Bot :: [Box A], [] ++ [A])]). apply ImpL. apply ImpLRule_I. apply dlCons. 2: apply dlCons.
+                3: apply dlNil. 2: apply derI with (ps:=[]) ; [apply BotL ; apply BotLRule_I | apply dlNil].
+                simpl. assert ((top_boxes (fst k)) = x0). symmetry. apply nobox_gen_ext_top_boxes_identity ; auto.
+                intro. intros. apply H1 ; apply in_or_app ; auto. rewrite H0. auto.
+           (* If Box A is in (snd k). *)
+           +++ inversion e2 ; subst.
+                assert (J10:derrec_height x = derrec_height x) ; auto.
+                assert (J11: list_exch_L (XBoxed_list (x0 ++ x1) ++ [Box A], [A]) ((XBoxed_list x0 ++ [Box A]) ++ XBoxed_list x1, [A])).
+                assert (XBoxed_list (x0 ++ x1) ++ [Box A] = XBoxed_list x0 ++ [] ++ XBoxed_list x1 ++ [Box A] ++ []). rewrite XBox_app_distrib.
+                repeat rewrite <- app_assoc. auto. rewrite H0.
+                assert ((XBoxed_list x0 ++ [Box A]) ++ XBoxed_list x1 = XBoxed_list x0 ++ [Box A] ++ XBoxed_list x1 ++ [] ++ []).
+                repeat rewrite <- app_assoc. auto. repeat rewrite <- app_nil_end. auto. rewrite H2. apply list_exch_LI.
+                pose (GLS_hpadm_list_exch_L _ J10 J11). destruct s.
+                pose (incl_hpadm_prv _ ((XBoxed_list (top_boxes (fst (nodupseq k))) ++ [Box A]) ++ XBoxed_list x1, [A]) x3). simpl in s. destruct s.
+                intros B HB. apply in_app_or in HB ; destruct HB. apply in_app_or in H0 ; destruct H0.
+                apply in_or_app ; left. apply in_or_app ; left. destruct (In_XBoxed_list_gen _ _ H0).
+                apply list_preserv_XBoxed_list. apply is_box_in_top_boxes. apply nodup_In.
+                apply (univ_gen_ext_In _ u) ; auto. apply H1. apply in_or_app ; auto. destruct H2. destruct H2 ; subst.
+                apply XBoxed_list_In. apply is_box_in_top_boxes. apply nodup_In. apply (univ_gen_ext_In _ u) ; auto.
+                apply H1. apply in_or_app ; auto. inversion H0 ; subst. apply in_or_app ; left ; apply in_or_app ; auto. inversion H2.
+                apply in_or_app ; auto. intros B HB ; auto.
+                assert (J5: derrec_height x4 < S (dersrec_height d)). lia.
+                assert (J6: derrec_height x4 = derrec_height x4). auto.
+                assert (J7: ((XBoxed_list (top_boxes (nodup eq_dec_form (fst k))) ++ [Box A]) ++ XBoxed_list x1, [A]) = (fst (XBoxed_list (top_boxes (nodup eq_dec_form (fst k))) ++[Box A], [A]) ++ XBoxed_list x1, snd (XBoxed_list x0 ++[Box A], [A]) ++ [])).
+                simpl. repeat rewrite <- app_assoc ; auto.
+                assert (J8: (In # p (propvar_subform_list ((XBoxed_list x1 ++ [])))) -> False).
+                intro. apply propvar. repeat rewrite propvar_subform_list_app.
+                repeat rewrite propvar_subform_list_app in H0. simpl in H0. repeat rewrite <- app_nil_end in H0. simpl.
+                repeat rewrite <- app_assoc in H0. apply in_or_app ; left. apply propvar_subform_list_XBoxed_list in H0.
+                apply propvar_subform_list_nobox_gen_ext with (l0:=x1); auto.
+                pose (PIH _ J5 _ _ _ _ _ J6 J7 J8).
+                apply GLS_prv_wkn_L with (A:=Box (UI p (XBoxed_list (top_boxes (nodup eq_dec_form (fst k))) ++ [Box A], [A])))
+                (sw:=(XBoxed_list x1 ++ [Box (UI p (XBoxed_list (top_boxes (nodup eq_dec_form (fst k))) ++ [Box A], [A]))] , [UI p (XBoxed_list (top_boxes (nodup eq_dec_form (fst k))) ++ [Box A], [A])])) in g0.
+                2: epose (wkn_LI (Box (UI p (XBoxed_list (top_boxes (nodup eq_dec_form (fst k))) ++ [Box A], [A]))) _ [] _) ; rewrite app_nil_r in w ; simpl in w ; apply w.
+                assert (J20: GLS_rules [(XBoxed_list x1 ++ [Box (UI p (XBoxed_list (top_boxes (nodup eq_dec_form (fst k))) ++ [Box A], [A]))], [UI p (XBoxed_list (top_boxes (nodup eq_dec_form (fst k))) ++ [Box A], [A])])]
+                (X0, Box (UI p (XBoxed_list (top_boxes (nodup eq_dec_form (fst k))) ++ [Box A], [A])) :: Y0)). apply GLR.
+                assert (Box (UI p (XBoxed_list (top_boxes (nodup eq_dec_form (fst k))) ++ [Box A], [A])) :: Y0 = [] ++ Box (UI p (XBoxed_list (top_boxes (nodup eq_dec_form (fst k))) ++ [Box A], [A])) :: Y0).
+                auto. rewrite H0. apply GLRRule_I ;auto. intro. intros. apply H1. apply in_or_app ;auto.
+                pose (dlNil GLS_rules (fun _ : Seq => False)).
+                pose (dlCons g0 d0). pose (derI _ J20 d1).
+                pose (OrR (X0,Y0)). simpl in g1. apply g1. clear g1.
+                apply GLS_prv_wkn_R with (A:=list_disj (restr_list_prop p (snd k))) (s:=(X0,
+                Or (list_disj (map Neg (restr_list_prop p (fst k))))(Or (list_disj (map Box (map (UI p) (GLR_prems (nodupseq k))))) (Diam
+                (list_conj (map (N p k) (Canopy (nodupseq (XBoxed_list (top_boxes (fst k)), []%list)))))))
+                :: Y0)).
+                2: epose (wkn_RI (list_disj (restr_list_prop p (snd k))) _ [] _) ; simpl in w ; apply w.
+                pose (OrR (X0,Y0)). simpl in g1. apply g1. clear g1.
+                apply GLS_prv_wkn_R with (A:=list_disj (map Neg (restr_list_prop p (fst k)))) (s:=(X0,
+                Or (list_disj (map Box (map (UI p) (GLR_prems (nodupseq k))))) (Diam
+                (list_conj (map (N p k) (Canopy (nodupseq (XBoxed_list (top_boxes (fst k)), []%list))))))
+                :: Y0)).
+                2: epose (wkn_RI (list_disj (map Neg (restr_list_prop p (fst k)))) _ [] _) ; simpl in w ; apply w.
+                pose (OrR (X0,Y0)). simpl in g1. apply g1. clear g1.
+                pose (list_disj_wkn_R (map Box (map (UI p) (GLR_prems (nodupseq k)))) (X0, Diam
+                 (list_conj (map (N p k) (Canopy (nodupseq (XBoxed_list (top_boxes (fst k)), []%list))))) :: Y0)).
+                (* The next UI does not have the correct LHS, which we expect to use x0, to link up with d1. *)
+                apply g1 with (A:=Box (UI p (XBoxed_list (top_boxes (fst (nodupseq k))) ++ [Box A], [A]))) ; clear g1 ; simpl ; auto.
+                apply InT_map_iff.
+                exists (UI p (XBoxed_list (top_boxes (fst (nodupseq k))) ++ [Box A], [A])) ; split ; auto. apply InT_map_iff.
+                exists (XBoxed_list (top_boxes (fst (nodupseq k))) ++ [Box A], [A]) ; split ; auto. unfold GLR_prems.
+                apply InT_trans_flatten_list with (bs:=[(XBoxed_list (top_boxes (fst (nodupseq k))) ++ [Box A], [A])]) ; auto. apply InT_eq.
+                destruct (finite_GLR_premises_of_S (nodupseq k)) ; subst. simpl. apply p0. assert (k = (fst k,Δ0 ++ Box A :: x2)).
+                rewrite <- e1. destruct k ; auto. rewrite H0. unfold nodupseq ; simpl.
+                assert (InT (Box A) (nodup eq_dec_form (Δ0 ++ Box A :: x2))). apply In_InT ; apply nodup_In ; apply in_or_app ; right ; simpl ; auto.
+                apply InT_split in H2 ; destruct H2. destruct s. rewrite e0.
+                apply GLRRule_I ; auto. intro. intros. apply in_top_boxes in H2 ; destruct H2. destruct s ; destruct s. destruct p1.
+                eexists ; subst ; auto. apply nobox_top_boxes.
+                apply GLS_prv_wkn_R with (A:=Diam (list_conj (map (N p k) (Canopy (nodupseq (XBoxed_list (top_boxes (fst k)), []%list))))))
+                (s:=(X0, Box (UI p (XBoxed_list (top_boxes (nodup eq_dec_form (fst k))) ++ [Box A], [A])) :: Y0)) ; auto.
+                assert ((X0, Box (UI p (XBoxed_list (top_boxes (nodup eq_dec_form (fst k))) ++ [Box A], [A])) :: Y0) = (X0, [Box (UI p (XBoxed_list (top_boxes (nodup eq_dec_form (fst k))) ++ [Box A], [A]))] ++ Y0)).
+                repeat rewrite <- app_assoc ; auto. rewrite H0. apply wkn_RI.
+         (* If Box A is in Y0 (ter). *)
+         -- pose (OrR (X0,x2 ++ Box A :: Δ1)). simpl in g0. apply g0. clear g0.
+            apply GLS_prv_wkn_R with (A:=list_disj (restr_list_prop p (snd k))) (s:=(X0,
+            Or (list_disj (map Neg (restr_list_prop p (fst k))))(Or (list_disj (map Box (map (UI p) (GLR_prems (nodupseq k))))) (Diam
+            (list_conj (map (N p k) (Canopy (nodupseq (XBoxed_list (top_boxes (fst k)), []%list)))))))
+            :: x2 ++ Box A :: Δ1)).
+            2: epose (wkn_RI (list_disj (restr_list_prop p (snd k))) _ [] _) ; simpl in w ; apply w.
+            pose (OrR (X0,x2 ++ Box A :: Δ1)). simpl in g0. apply g0. clear g0.
+            apply GLS_prv_wkn_R with (A:=list_disj (map Neg (restr_list_prop p (fst k)))) (s:=(X0,
+            Or (list_disj (map Box (map (UI p) (GLR_prems (nodupseq k))))) (Diam
+            (list_conj (map (N p k) (Canopy (nodupseq (XBoxed_list (top_boxes (fst k)), []%list))))))
+            :: x2 ++ Box A :: Δ1)).
+            2: epose (wkn_RI (list_disj (map Neg (restr_list_prop p (fst k)))) _ [] _) ; simpl in w ; apply w.
+            pose (OrR (X0,x2 ++ Box A :: Δ1)). simpl in g0. apply g0. clear g0.
+            apply GLS_prv_wkn_R with (A:=list_disj (map Box (map (UI p) (GLR_prems (nodupseq k))))) (s:=(X0,
+            (Diam (list_conj (map (N p k) (Canopy (nodupseq (XBoxed_list (top_boxes (fst k)), []%list))))))
+            :: x2 ++ Box A :: Δ1)).
+            2: epose (wkn_RI (list_disj (map Box (map (UI p) (GLR_prems (nodupseq k))))) _ [] _) ; simpl in w ; apply w.
+            apply Diam_rec_UI ; auto.
+            assert (J5: derrec_height x < S (dersrec_height d)). lia.
+            assert (J6: derrec_height x = derrec_height x). auto.
+            assert (J7: (XBoxed_list (x0 ++ x1) ++ [Box A], [A]) = (fst (XBoxed_list x0, @nil MPropF) ++ XBoxed_list x1 ++ [Box A], snd (XBoxed_list x0, []) ++ [A])).
+            simpl ; rewrite XBox_app_distrib. repeat rewrite <- app_assoc ; auto.
+            assert (J8: (In # p (propvar_subform_list ((XBoxed_list x1 ++ [Box A]) ++ [A])) -> False)).
+            intro. apply propvar. repeat rewrite propvar_subform_list_app.
+            repeat rewrite propvar_subform_list_app in H0. simpl in H0. repeat rewrite <- app_nil_end in H0. simpl.
+            repeat rewrite <- app_assoc in H0. apply in_app_or in H0 ; destruct H0.
+            apply in_or_app ; left. apply propvar_subform_list_XBoxed_list in H0.
+            apply propvar_subform_list_nobox_gen_ext with (l0:=x1); auto.
+            apply in_or_app ; right ; apply in_or_app ; right ; apply in_or_app ; left. apply in_app_or in H0 ; destruct H0 ; auto.
+            pose (PIH _ J5 _ _ _ _ _ J6 J7 J8).
+            apply derI with (ps:=[(X0 ++ Box (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list))) :: [], [] ++ Bot :: x2 ++ Box A :: Δ1)]).
+            apply ImpR. assert ((X0, Diam (UI p (XBoxed_list (top_boxes (fst k)), []%list)) :: x2 ++ Box A :: Δ1) =
+            (X0 ++ [], [] ++ Diam (UI p (XBoxed_list (top_boxes (fst k)), []%list)) :: x2 ++ Box A :: Δ1)). rewrite <- app_nil_end. auto. rewrite H0.
+            apply ImpRRule_I. apply dlCons. 2: apply dlNil.
+            apply derI with (ps:=[(XBoxed_list (x1 ++ [Box (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list)))]) ++ [Box A], [A])]).
+            apply GLR. assert (([] ++ ⊥ :: x2 ++ Box A :: Δ1) = (⊥ :: x2) ++ Box A :: Δ1). auto. rewrite H0. apply GLRRule_I ; auto.
+            intro. intros. apply in_app_or in H2 ; destruct H2. apply H1 ; apply in_or_app ; auto. exists (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list))).
+            inversion H2 ; subst ; auto. inversion H3. apply univ_gen_ext_combine ; auto. apply univ_gen_ext_cons. apply univ_gen_ext_nil.
+            apply dlCons. 2: apply dlNil. rewrite XBox_app_distrib. simpl. repeat rewrite <- app_assoc. simpl.
+            apply GLS_prv_wkn_L with (A:=Box (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list)))) (s:=(XBoxed_list x1 ++
+            [Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list)); Box A], [A])).
+            2: epose (wkn_LI (Box (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list)))) (XBoxed_list x1 ++ [Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list))]) [Box A] _) ; 
+            simpl in w ; repeat rewrite <- app_assoc in w ; simpl in w ; apply w.
+            apply derI with (ps:=[(XBoxed_list x1 ++ [Box A], [] ++ (UI p (XBoxed_list (top_boxes (fst k)), []%list)) :: [A]);
+            (XBoxed_list x1 ++ Bot :: [Box A], [] ++ [A])]). apply ImpL. apply ImpLRule_I. apply dlCons. 2: apply dlCons.
+            3: apply dlNil. 2: apply derI with (ps:=[]) ; [apply BotL ; apply BotLRule_I | apply dlNil].
+            simpl. assert ((top_boxes (fst k)) = x0). symmetry. apply nobox_gen_ext_top_boxes_identity ; auto.
+            intro. intros. apply H1 ; apply in_or_app ; auto. rewrite H0. auto.
       (*  If not critical, consider the conjunction that UI p k is. *)
       + assert (J0: GUI p k (UI p k)). apply UI_GUI ; auto.
          assert (J1: Gimap (GUI p) (Canopy (nodupseq k)) (map (UI p) (Canopy (nodupseq k)))). apply Gimap_map. intros.
@@ -811,7 +746,7 @@ Require Import UIGL_UIDiam_N.
 
          assert (J3: (forall A : MPropF, InT A (map (UI p) (Canopy (nodupseq k))) -> GLS_prv (fst (X0, Y0), A :: snd (X0, Y0)))).
          intros. simpl. apply InT_map_iff in H. destruct H. destruct p0 ; subst. apply J2 in i ; auto.
-         pose (list_conj_R _ _ J3). simpl in g0. auto.
+         pose (list_conj_R _ _ J3). simpl in g0. auto. }
   Qed.
 
   End UIPThree.

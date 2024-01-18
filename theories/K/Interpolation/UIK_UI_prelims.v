@@ -17,9 +17,6 @@ Require Import UIK_braga.
 
 
 
-
-
-
   Section Prop_Subform.
 
   (* This is copied from the Craig interpolation file. Make a syntax file for interpolations. *)

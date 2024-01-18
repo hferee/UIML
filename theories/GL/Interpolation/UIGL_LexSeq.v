@@ -165,3 +165,24 @@ Require Import UIGL_irred_short.
   Qed.
 
   End LexSeq_properties.
+
+  Section empty_seq.
+
+  Lemma empty_seq_dec : forall (s: Seq), (s = ([],[])) + (s <> ([],[])).
+  Proof.
+  intros. destruct s. destruct l ; destruct l0 ; auto.
+  all: right ; intro H ; inversion H.
+  Qed.
+
+  Lemma not_init_empty_seq : is_init ([],[]) -> False.
+  Proof.
+  intro. destruct X. destruct s. 1-2: inversion i ; destruct Γ0 ; inversion H.
+  inversion b ; subst. destruct Γ0 ; inversion H.
+  Qed.
+
+  Lemma critical_empty_seq : critical_Seq ([],[]).
+  Proof.
+  intros A HA ; simpl in *. inversion HA.
+  Qed.
+
+  End empty_seq.

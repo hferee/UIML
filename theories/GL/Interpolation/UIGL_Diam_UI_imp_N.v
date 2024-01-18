@@ -32,7 +32,15 @@
         Diam (list_conj (map (N p s) (Canopy (nodupseq (XBoxed_list (top_boxes (fst s)), []%list))))) :: Y))).
   apply d. clear d. intros s IH.
   intros.
-  destruct (critical_Seq_dec (XBoxed_list (top_boxes (fst s)), []%list)).
+  destruct (empty_seq_dec (XBoxed_list (top_boxes (fst s)), []%list)) as [EE | DE].
+  (* (XBoxed_list (top_boxes (fst s)), []%list) is the empty sequent. *)
+  { inversion EE ; subst ; simpl in *. rewrite H2 in *. assert (GUI p ([],[]) Bot). apply GUI_empty_seq ; auto. apply UI_GUI in H1.
+    rewrite H1 in *. eapply derI with [(Diam ⊥ :: X , _ :: Y)]. apply ImpR. apply (ImpRRule_I _ _ [] _ []).
+    apply dlCons. 2: apply dlNil. apply DiamL_lim with (top_boxes X).
+    apply is_Boxed_list_top_boxes. apply nobox_gen_ext_top_boxes.
+    apply derI with []. apply BotL ; apply (BotLRule_I []). apply dlNil. }
+  (* (XBoxed_list (top_boxes (fst s)), []%list) is not the empty sequent. *)
+  { destruct (critical_Seq_dec (XBoxed_list (top_boxes (fst s)), []%list)).
   (* The sequent (XBoxed_list (top_boxes (fst s)), []%list) is critical. *)
   - assert ((Canopy (nodupseq (XBoxed_list (top_boxes (fst s)), []%list))) = [nodupseq (XBoxed_list (top_boxes (fst s)), []%list)]).
     apply critical_nodupseq in c. apply critical_Seq_InT_Canopy in c. apply Id_InT_Canopy in c ; auto.
@@ -85,45 +93,8 @@
       (Canopy (nodupseq (XBoxed_list (top_boxes (fst (XBoxed_list (top_boxes (fst s)), @nil MPropF))), []%list)))
       (map (N p (XBoxed_list (top_boxes (fst s)), []%list)) (Canopy (nodupseq (XBoxed_list (top_boxes (fst (XBoxed_list (top_boxes (fst s)), @nil MPropF))), []%list))))).
       simpl. apply Gimap_map. intros. apply (N_spec p (XBoxed_list (top_boxes (fst s)), []%list) x).
-      remember (XBoxed_list (top_boxes (fst s))) as LHS. destruct LHS.
-      (* LHS s is empty *)
-      ++ assert ((nodupseq ([]%list, []%list)) = ([],[])). unfold nodupseq ; simpl ; auto. rewrite H2 in *. clear H2.
-      assert (J41: fst ([]%list, @nil MPropF) = @nil MPropF) ; simpl ; auto.
-      pose (@GUI_inv_critic_not_init_emptyLHS p ([], []%list) _ _ J0 c J41 J40 J1). rewrite <- e. clear e. simpl.
-      assert ((GLR_prems ([], []%list)) = nil).
-      unfold GLR_prems. destruct (finite_GLR_premises_of_S ([], []%list)). simpl.
-      destruct x ; auto. assert (InT l (l::x)). apply InT_eq. apply p0 in H2.
-      inversion H2 ; subst. destruct Δ0 ; inversion H6. rewrite H2. simpl.
 
-      (* Naming formulas for brevity. *)
-      remember (And (N p s ([], []%list)) Top) as conj.
-      remember (Or ⊥ ⊥) as disj.
-
-       (* Proof-theoretic work. *)
-       apply derI with (ps:=[([] ++ Diam disj :: X, [] ++ Diam conj :: Y)]). apply ImpR. apply ImpRRule_I.
-       apply dlCons. 2: apply dlNil. unfold Diam.
-       apply derI with (ps:=[([] ++ Box (Neg conj) :: Neg (Box (Neg disj)) :: X, [] ++ Bot :: Y)]).
-       apply ImpR. apply ImpRRule_I. apply dlCons. 2: apply dlNil.
-       apply derI with (ps:=[([Box (Neg conj)] ++ X, [] ++  Box (Neg disj) :: ⊥ :: Y);
-       ([Box (Neg conj)] ++ Bot :: X, [] ++ ⊥ :: Y)]).
-       apply ImpL. apply ImpLRule_I. apply dlCons. 2: apply dlCons. 3: apply dlNil.
-       2: apply derI with (ps:=[]) ; [apply BotL ; apply BotLRule_I | apply dlNil].
-       apply derI with (ps:=[(XBoxed_list (Box (Neg conj) :: top_boxes X) ++ [Box (Neg disj)], [Neg disj])]).
-       apply GLR. apply GLRRule_I.
-       intro. intros. inversion H3. exists (Neg conj) ; rewrite <- H4 ; auto. apply in_top_boxes in H4. destruct H4.
-       destruct s0 ; auto. destruct s0. destruct p0. exists x ; rewrite <- e ; auto.
-       simpl. apply univ_gen_ext_cons. apply top_boxes_nobox_gen_ext. simpl. apply dlCons. 2: apply dlNil.
-       apply derI with (ps:=[([] ++ disj :: Neg conj  :: Box (Neg conj) :: XBoxed_list (top_boxes X) ++ [Box (Neg disj)], [] ++ Bot :: [])]).
-       apply ImpR. assert ((Neg conj :: Box (Neg conj) :: XBoxed_list (top_boxes X) ++ [Box (Neg disj)], [Neg disj]) =
-       ([] ++ Neg conj :: Box (Neg conj) :: XBoxed_list (top_boxes X) ++ [Box (Neg disj)], [] ++ [Neg disj])). auto. rewrite H3.
-       apply ImpRRule_I. apply dlCons. 2: apply dlNil. simpl.
-       subst. eapply OrL with (s:=(_,_)) ; simpl.
-       1-2: apply derI with (ps:=[]) ; [ apply BotL ; eapply (BotLRule_I []) | apply dlNil].
-
-      (* LHS s is not empty *)
-      ++ assert (J41: fst (XBoxed_list (top_boxes (fst s)), @nil MPropF) <> @nil MPropF). simpl ; intro. rewrite <- HeqLHS in H2 ; inversion H2.
-      rewrite HeqLHS in *. clear HeqLHS.
-      pose (@GUI_inv_critic_not_init_not_emptyLHS p (XBoxed_list (top_boxes (fst s)), []%list) _ _ _ J0 c J41 J J1 J2). rewrite <- e. clear e. simpl.
+      pose (@GUI_inv_critic_not_init p (XBoxed_list (top_boxes (fst s)), []%list) _ _ _ J0 c DE J J1 J2). rewrite <- e. clear e. simpl.
       assert ((GLR_prems (nodupseq (XBoxed_list (top_boxes (fst s)), []%list))) = nil).
       unfold GLR_prems. destruct (finite_GLR_premises_of_S (nodupseq (XBoxed_list (top_boxes (fst s)), []%list))). simpl.
       destruct x ; auto. assert (InT l (l::x)). apply InT_eq. apply p0 in H2.
@@ -162,7 +133,7 @@
        2: pose (TopR (disj :: Box (Neg (And (N p s (nodupseq (XBoxed_list (top_boxes (fst s)), []%list))) Top)) :: XBoxed_list (top_boxes X) ++ [Box (Neg disj)]) [] [Bot]) ; simpl in g0 ; auto.
        pose (@GLS_prv_wkn_R (disj :: Box (Neg (And (N p s (nodupseq (XBoxed_list (top_boxes (fst s)), []%list))) Top)) :: XBoxed_list (top_boxes X) ++ [Box (Neg disj)], [N p s (nodupseq (XBoxed_list (top_boxes (fst s)), []%list))])).
        apply g with (A:=Bot). clear g. subst.
-      2: epose (wkn_RI Bot _ [N p s (nodupseq (XBoxed_list (top_boxes (fst s)), []%list))] []) ; simpl in w ; apply w. clear LHS.
+      2: epose (wkn_RI Bot _ [N p s (nodupseq (XBoxed_list (top_boxes (fst s)), []%list))] []) ; simpl in w ; apply w.
 
        (* Naming LHS. *)
        remember (Box (Neg (And (N p s (nodupseq (XBoxed_list (top_boxes (fst s)), []%list))) Top)) :: XBoxed_list (top_boxes X) ++ [Box (Neg (Or ⊥ (Or (list_disj (map Neg (restr_list_prop p (XBoxed_list (top_boxes (fst s))))))
@@ -184,8 +155,8 @@
          pose (GN_inv_noinit_lessub p g J40 l (UI_spec p _)). rewrite <- e. rewrite <- e in HeqLHS. clear e.
          assert (J00: GUI p (nodupseq (XBoxed_list (top_boxes (fst s)), []%list)) (UI p (nodupseq (XBoxed_list (top_boxes (fst s)), []%list)))). apply UI_GUI ; auto.
          assert (J01: critical_Seq (nodupseq (XBoxed_list (top_boxes (fst s)), []%list))). apply critical_nodupseq in c ; auto.
-         assert (J43: fst (nodupseq (XBoxed_list (top_boxes (fst s)), @nil MPropF)) <> @nil MPropF). simpl ; intro. apply J41 ; simpl.
-         apply nodup_nil ; auto.
+         assert (J43: (nodupseq (XBoxed_list (top_boxes (fst s)), @nil MPropF)) <> ([],[])). simpl ; intro. inversion H4.
+         apply nodup_nil in H6. rewrite H6 in DE ; auto.
          assert (J44: is_init (nodupseq (XBoxed_list (top_boxes (fst s)), []%list)) -> False). intro. apply J. apply is_init_nodupseq ; auto.
          assert (J45: Gimap (GUI p) (GLR_prems (nodupseq (nodupseq (XBoxed_list (top_boxes (fst s)), []%list)))) (map (UI p) (GLR_prems (nodupseq (nodupseq (XBoxed_list (top_boxes (fst s)), []%list)))))).
          apply Gimap_map. intros. apply UI_GUI ; auto.
@@ -193,7 +164,7 @@
          (Canopy (nodupseq (XBoxed_list (top_boxes (fst (nodupseq (XBoxed_list (top_boxes (fst s)), []%list)))), []%list)))
          (map (N p (nodupseq (XBoxed_list (top_boxes (fst s)), []%list))) (Canopy (nodupseq (XBoxed_list (top_boxes (fst (nodupseq (XBoxed_list (top_boxes (fst s)), []%list)))), []%list))))).
          simpl. apply Gimap_map. intros. apply (N_spec p (nodupseq (XBoxed_list (top_boxes (fst s)), []%list)) x0).
-         pose (@GUI_inv_critic_not_init_not_emptyLHS p (nodupseq (XBoxed_list (top_boxes (fst s)), []%list)) _ _ _ J00 J01 J43 J44 J45 J46). rewrite <- e. clear e. simpl.
+         pose (@GUI_inv_critic_not_init p (nodupseq (XBoxed_list (top_boxes (fst s)), []%list)) _ _ _ J00 J01 J43 J44 J45 J46). rewrite <- e. clear e. simpl.
          assert ((GLR_prems (nodupseq (nodupseq (XBoxed_list (top_boxes (fst s)), []%list)))) = nil).
          unfold GLR_prems. destruct (finite_GLR_premises_of_S (nodupseq (nodupseq (XBoxed_list (top_boxes (fst s)), []%list)))). simpl.
          destruct x0 ; auto. assert (InT l0 (l0::x0)). apply InT_eq. apply p0 in H4.
@@ -496,220 +467,192 @@
      assert (J4: Gimap (GN p (GUI p) x) (Canopy (nodupseq (XBoxed_list (top_boxes (fst x)), @nil MPropF)))
      (map (N p x) (Canopy (nodupseq (XBoxed_list (top_boxes (fst x)), @nil MPropF))))).
      simpl. apply Gimap_map. intros. apply (N_spec p x x0).
+     destruct (empty_seq_dec x) as [EEx | DEx].
+     { subst. assert (GUI p ([],[]) Bot). apply GUI_empty_seq ; auto. apply UI_GUI in H3.
+       rewrite H3 in *. apply derI with []. apply BotL ; apply (BotLRule_I []). apply dlNil. }
 
-     (* Case distinction on LHSx. *)
-     remember (fst x) as LHSx. destruct LHSx.
+      { epose (GUI_inv_critic_not_init _ J2 c DEx H2 J3 J4). rewrite <- e0.
+      destruct (lt_decT (length (usable_boxes x)) (length (usable_boxes s))).
+      (* The sequent x has less usable boxes than s. *)
+      assert ((forall (x : Seq) (l m : MPropF), (fun (s1 : Seq) (A : MPropF) => UI p s1 = A) x l -> (fun (s1 : Seq) (A : MPropF) => UI p s1 = A) x m -> l = m)).
+      intros. subst. auto.
+      pose (N_spec p s x).
+      epose (@GN_inv_noinit_lessub _ _ _ _ _ g H2 l (UI_spec p _)). rewrite <- e1 ; auto. rewrite <- e0.
+      epose (Id_all_form _ [] _ [] []). simpl in d ; apply d.
+      (* The sequent x does not have less usable boxes than s. *)
+      assert ((forall (x : Seq) (l m : MPropF), (fun (s1 : Seq) (A : MPropF) => UI p s1 = A) x l -> (fun (s1 : Seq) (A : MPropF) => UI p s1 = A) x m -> l = m)).
+      intros. subst. auto.
+      pose (N_spec p s x).
+      assert (J5: Gimap (GUI p) (GLR_prems (nodupseq x)) (map (UI p) (GLR_prems (nodupseq x)))).
+      apply Gimap_map ; auto. intros ; apply UI_GUI ; auto.
+      epose (@GN_inv_noinit_nolessub _ _ _ _ _ g H2 f1 J5). rewrite <- e1 ; auto.
 
-     (* LHSx is empty. *)
-     + symmetry in HeqLHSx. epose (GUI_inv_critic_not_init_emptyLHS _ J2 c HeqLHSx H2 J3).
-        rewrite <- e0.
-        destruct (lt_decT (length (usable_boxes x)) (length (usable_boxes s))).
-        (* The sequent x has less usable boxes than s. *)
-        assert ((forall (x : Seq) (l m : MPropF), (fun (s1 : Seq) (A : MPropF) => UI p s1 = A) x l -> (fun (s1 : Seq) (A : MPropF) => UI p s1 = A) x m -> l = m)).
-        intros. subst. auto.
-        pose (N_spec p s x).
-        epose (@GN_inv_noinit_lessub _ _ _ _ _ g H2 l (UI_spec p _)). rewrite <- e1 ; auto. rewrite <- e0.
-        epose (Id_all_form _ [] _ [] []). simpl in d ; apply d.
-        (* The sequent x does not have less usable boxes than s. *)
-        assert ((forall (x : Seq) (l m : MPropF), (fun (s1 : Seq) (A : MPropF) => UI p s1 = A) x l -> (fun (s1 : Seq) (A : MPropF) => UI p s1 = A) x m -> l = m)).
-        intros. subst. auto.
-        pose (N_spec p s x).
-        assert (J5: Gimap (GUI p) (GLR_prems (nodupseq x)) (map (UI p) (GLR_prems (nodupseq x)))).
-        apply Gimap_map ; auto. intro ; apply UI_GUI ; auto.
-        epose (@GN_inv_noinit_nolessub _ _ _ _ _ g H2 f1 J5). rewrite <- e1 ; auto. rewrite HeqLHSx ; simpl.
+       (* Proof-theoretic work. *)
+       epose (OrL (LHS,_)). simpl in g0. apply g0. clear g0.
+       epose (OrR (_,[])). simpl in g0. apply g0. epose (Id_all_form _ [] _ [] _). simpl in d ; apply d.
+       apply g0. clear g0. epose (OrR (_,[])). simpl in g0. apply g0.
+       pose (@GLS_prv_wkn_R (list_disj (map Neg (restr_list_prop p (fst x))) :: LHS, [Or (list_disj (map Neg (restr_list_prop p (fst x)))) (list_disj (map Box (map (UI p) (GLR_prems (nodupseq x)))))])).
+       apply g1 with (A:=list_disj (restr_list_prop p (snd x))). clear g1. apply g0. epose (Id_all_form _ [] _ [] _). simpl in d ; apply d.
+       epose (wkn_RI _ _ []). simpl in w. apply w.
+       apply g0. clear g0. epose (OrR (_,[])). simpl in g0. apply g0.
+       pose (@GLS_prv_wkn_R (list_disj (map Box (map (UI p) (GLR_prems (nodupseq x)))) :: LHS, [Or (list_disj (map Neg (restr_list_prop p (fst x)))) (list_disj (map Box (map (UI p) (GLR_prems (nodupseq x)))))])).
+       apply g1 with (A:=list_disj (restr_list_prop p (snd x))). clear g1. apply g0.
+       pose (@GLS_prv_wkn_R (list_disj (map Box (map (UI p) (GLR_prems (nodupseq x)))) :: LHS, [(list_disj (map Box (map (UI p) (GLR_prems (nodupseq x)))))])).
+       apply g1 with (A:=list_disj (map Neg (restr_list_prop p (fst x)))). clear g1. clear g0.
+       epose (Id_all_form _ [] _ [] _). simpl in d ; apply d.
+       epose (wkn_RI _ _ []). simpl in w. apply w. epose (wkn_RI _ _ []). simpl in w. apply w.
+       clear g0. epose (OrR (_,[])). simpl in g0. apply g0.
+       pose (@GLS_prv_wkn_R (Diam (list_conj (map (N p x) (Canopy (nodupseq (XBoxed_list (top_boxes (fst x)), []%list))))) :: LHS, [Or (list_disj (map Neg (restr_list_prop p (fst x)))) (list_disj (map Box (map (UI p) (GLR_prems (nodupseq x)))))])).
+       apply g1 with (A:=list_disj (restr_list_prop p (snd x))). clear g1. apply g0.
+       pose (@GLS_prv_wkn_R (Diam (list_conj (map (N p x) (Canopy (nodupseq (XBoxed_list (top_boxes (fst x)), []%list))))) :: LHS, [(list_disj (map Box (map (UI p) (GLR_prems (nodupseq x)))))])).
+       apply g1 with (A:=list_disj (map Neg (restr_list_prop p (fst x)))). clear g1. clear g0.
+       2-3: epose (wkn_RI _ _ []) ; simpl in w ; apply w.
+      remember [list_disj (map Box (map (UI p) (GLR_prems (nodupseq x))))] as RHS. unfold Diam.
+      apply derI with (ps:=[([] ++ LHS, [] ++  Box (Neg (list_conj (map (N p x) (Canopy (nodupseq (XBoxed_list (top_boxes (fst x)), []%list)))))) :: RHS);
+      ([] ++ Bot :: LHS, [] ++ RHS)]).
+      apply ImpL. apply ImpLRule_I. apply dlCons. 2: apply dlCons. 3: apply dlNil.
+      2: apply derI with (ps:=[]) ; [apply BotL ; apply BotLRule_I | apply dlNil].
+      apply derI with (ps:=[(XBoxed_list (top_boxes LHS) ++ [Box (Neg (list_conj (map (N p x) (Canopy (nodupseq (XBoxed_list (top_boxes (fst x)), []%list))))))], [(Neg (list_conj (map (N p x) (Canopy (nodupseq (XBoxed_list (top_boxes (fst x)), []%list))))))])]).
+      apply GLR. apply GLRRule_I.
+      intro. intros. subst. simpl in H4. repeat rewrite top_boxes_distr_app in H4. simpl in H4.
+      inversion H4. symmetry in H5 ;  eexists ; apply H5. apply in_app_or in H5. destruct H5.
+      apply in_top_boxes in H5. destruct H5. destruct s0 ; auto. destruct s0. destruct p0. exists x0 ; rewrite <- e ; auto.
+      simpl in H5. destruct H5. symmetry in H5 ; eexists ; apply H5. inversion H5.
+      simpl. apply top_boxes_nobox_gen_ext. apply dlCons. 2: apply dlNil. subst. simpl.
+      pose (@GLS_prv_list_wkn_L [Neg (list_conj (map (N p s) (Canopy (nodupseq (XBoxed_list (top_boxes (fst s)), []%list)))))] []
+      [Neg (list_conj (map (N p x) (Canopy (nodupseq (XBoxed_list (top_boxes (fst x)), []%list)))))]).
+      simpl in g0.
 
-         (* Proof-theoretic work. *)
-         epose (OrL (LHS,_)). simpl in g0. apply g0. clear g0.
-         epose (OrR (_,[])). simpl in g0. apply g0. epose (Id_all_form _ [] _ [] _). simpl in d ; apply d.
-         clear g0. epose (OrR (_,[])). simpl in g0. apply g0.
-         pose (@GLS_prv_wkn_R (list_disj (map Box (map (UI p) (GLR_prems (nodupseq x)))) :: LHS, [Or ⊥ (list_disj (map Box (map (UI p) (GLR_prems (nodupseq x)))))])).
-         apply g1 with (A:=list_disj (restr_list_prop p (snd x))). clear g1. apply g0. epose (Id_all_form _ [] _ [Bot] []). simpl in d ; apply d.
-         epose (wkn_RI _ _ []). simpl in w. apply w.
+      assert (J20: GLS_prv ([Neg (list_conj (map (N p s) (Canopy (nodupseq (XBoxed_list (top_boxes (fst s)), []%list)))))],
+      [Neg (list_conj (map (N p x) (Canopy (nodupseq (XBoxed_list (top_boxes (fst x)), []%list)))))])).
+      remember (list_conj (map (N p s) (Canopy (nodupseq (XBoxed_list (top_boxes (fst s)), []%list))))) as conj1. clear e0.
+      remember (list_conj (map (N p x) (Canopy (nodupseq (XBoxed_list (top_boxes (fst x)), []%list))))) as conj2.
+      apply derI with (ps:=[([conj2;Neg conj1], [Bot])]). apply ImpR. epose (ImpRRule_I _ _ [] _ [] []). simpl in i0. apply i0.
+      apply dlCons. 2: apply dlNil.
+      apply derI with (ps:=[([conj2] , [conj1; ⊥]);([conj2;Bot], [⊥])]). apply ImpL. epose (ImpLRule_I _ _[conj2] [] [] [Bot]). simpl in i0.
+      apply i0. apply dlCons. 2: apply dlCons. 3: apply dlNil.
+      2: apply derI with (ps:=[]) ; [apply BotL ; eapply (BotLRule_I [conj2] [] _) | apply dlNil]. simpl. subst.
+      pose (@GLS_prv_wkn_R ([list_conj (map (N p x) (Canopy (nodupseq (XBoxed_list (top_boxes (fst x)), []%list))))], [list_conj (map (N p s) (Canopy (nodupseq (XBoxed_list (top_boxes (fst s)), []%list))))])).
+      apply g1 with (A:=Bot). clear g1.
+      2: epose (wkn_RI  Bot _ [list_conj (map (N p s) (Canopy (nodupseq (XBoxed_list (top_boxes (fst s)), []%list))))] []) ; simpl in w ; apply w.
+      epose (list_conj_R _ (_,_)). apply g1 ; clear g1 ; simpl.
+      intros A HA. apply InT_map_iff in HA. destruct HA. destruct p0 ; subst.
 
-     (* LHSx is not empty. *)
-     + assert (J60: fst x <> []%list). intro He ; rewrite <- HeqLHSx in He ; inversion He. rewrite HeqLHSx in *.
-        epose (GUI_inv_critic_not_init_not_emptyLHS _ J2 c J60 H2 J3 J4). rewrite <- e0.
-        destruct (lt_decT (length (usable_boxes x)) (length (usable_boxes s))).
-        (* The sequent x has less usable boxes than s. *)
-        assert ((forall (x : Seq) (l m : MPropF), (fun (s1 : Seq) (A : MPropF) => UI p s1 = A) x l -> (fun (s1 : Seq) (A : MPropF) => UI p s1 = A) x m -> l = m)).
-        intros. subst. auto.
-        pose (N_spec p s x).
-        epose (@GN_inv_noinit_lessub _ _ _ _ _ g H2 l (UI_spec p _)). rewrite <- e1 ; auto. rewrite <- e0.
-        epose (Id_all_form _ [] _ [] []). simpl in d ; apply d.
-        (* The sequent x does not have less usable boxes than s. *)
-        assert ((forall (x : Seq) (l m : MPropF), (fun (s1 : Seq) (A : MPropF) => UI p s1 = A) x l -> (fun (s1 : Seq) (A : MPropF) => UI p s1 = A) x m -> l = m)).
-        intros. subst. auto.
-        pose (N_spec p s x).
-        assert (J5: Gimap (GUI p) (GLR_prems (nodupseq x)) (map (UI p) (GLR_prems (nodupseq x)))).
-        apply Gimap_map ; auto. intros ; apply UI_GUI ; auto.
-        epose (@GN_inv_noinit_nolessub _ _ _ _ _ g H2 f1 J5). rewrite <- e1 ; auto.
+      assert (PermutationTS (nodupseq (XBoxed_list (top_boxes (fst s)), []%list)) (nodupseq (XBoxed_list (top_boxes (fst x)), []%list))).
+      unfold PermutationTS. split ; simpl. 2: apply permT_nil. apply Permutation_PermutationT.
+      apply NoDup_Permutation. 1-2: apply NoDup_nodup.
+      assert (length (usable_boxes x) < length (usable_boxes (nodupseq (XBoxed_list (top_boxes (fst s)), []%list))) -> False).
+      intro. rewrite <- ub_nodupseq in H4. pose (leq_ub_unif s). lia.
+      assert (forall A, In A (top_boxes (fst s)) <-> In A (top_boxes (fst x))).
+      intros ; split ; intros. apply top_boxes_diam_jump in H5 ; auto.
+      pose (top_boxes_Canopy_noless_ub _ _ i H4). simpl in p0 ; destruct p0. destruct p0.
+      destruct p0. apply i4. rewrite <- nodup_top_boxes. apply nodup_In. auto.
+      pose (leq_ub_unif s). inversion l ; auto ; subst. exfalso. rewrite <- ub_nodupseq in H4.
+      pose (leq_ub_Canopy _ _ i). rewrite <- ub_nodupseq in l0. lia.
+      apply top_boxes_diam_jump ; auto. pose (leq_ub_unif s). inversion l ; auto ; subst. exfalso. rewrite <- ub_nodupseq in H4.
+      pose (leq_ub_Canopy _ _ i). rewrite <- ub_nodupseq in l0. lia.
+      pose (top_boxes_Canopy_noless_ub _ _ i H4). simpl in p0 ; destruct p0. destruct p0.
+      destruct p0. apply i3 in H5. rewrite <- nodup_top_boxes in H5. apply nodup_In in H5. auto.
+      intros. split ; intro ; apply nodup_In ; apply nodup_In in H6.
+      apply In_XBoxed_list in H6. destruct H6. apply list_preserv_XBoxed_list ; apply H5 ; auto.
+      destruct H6. destruct H6 ; subst. apply XBoxed_list_In. apply H5 ; auto.
+      apply In_XBoxed_list in H6. destruct H6. apply list_preserv_XBoxed_list ; apply H5 ; auto.
+      destruct H6. destruct H6 ; subst. apply XBoxed_list_In. apply H5 ; auto.
+      pose (PermutationTS_Canopy _ _ H4 _ i0). destruct s0. destruct p0.
+      epose (list_conj_wkn_L _ (_,_) (N p x x1)). apply g1 ; clear g1 ; simpl.
+      apply InT_map_iff. exists x1 ; split ; auto.
 
-         (* Proof-theoretic work. *)
-         epose (OrL (LHS,_)). simpl in g0. apply g0. clear g0.
-         epose (OrR (_,[])). simpl in g0. apply g0. epose (Id_all_form _ [] _ [] _). simpl in d ; apply d.
-         apply g0. clear g0. epose (OrR (_,[])). simpl in g0. apply g0.
-         pose (@GLS_prv_wkn_R (list_disj (map Neg (restr_list_prop p (fst x))) :: LHS, [Or (list_disj (map Neg (restr_list_prop p (fst x)))) (list_disj (map Box (map (UI p) (GLR_prems (nodupseq x)))))])).
-         apply g1 with (A:=list_disj (restr_list_prop p (snd x))). clear g1. apply g0. epose (Id_all_form _ [] _ [] _). simpl in d ; apply d.
-         epose (wkn_RI _ _ []). simpl in w. apply w.
-         apply g0. clear g0. epose (OrR (_,[])). simpl in g0. apply g0.
-         pose (@GLS_prv_wkn_R (list_disj (map Box (map (UI p) (GLR_prems (nodupseq x)))) :: LHS, [Or (list_disj (map Neg (restr_list_prop p (fst x)))) (list_disj (map Box (map (UI p) (GLR_prems (nodupseq x)))))])).
-         apply g1 with (A:=list_disj (restr_list_prop p (snd x))). clear g1. apply g0.
-         pose (@GLS_prv_wkn_R (list_disj (map Box (map (UI p) (GLR_prems (nodupseq x)))) :: LHS, [(list_disj (map Box (map (UI p) (GLR_prems (nodupseq x)))))])).
-         apply g1 with (A:=list_disj (map Neg (restr_list_prop p (fst x)))). clear g1. clear g0.
-         epose (Id_all_form _ [] _ [] _). simpl in d ; apply d.
-         epose (wkn_RI _ _ []). simpl in w. apply w. epose (wkn_RI _ _ []). simpl in w. apply w.
-         clear g0. epose (OrR (_,[])). simpl in g0. apply g0.
-         pose (@GLS_prv_wkn_R (Diam (list_conj (map (N p x) (Canopy (nodupseq (XBoxed_list (top_boxes (fst x)), []%list))))) :: LHS, [Or (list_disj (map Neg (restr_list_prop p (fst x)))) (list_disj (map Box (map (UI p) (GLR_prems (nodupseq x)))))])).
-         apply g1 with (A:=list_disj (restr_list_prop p (snd x))). clear g1. apply g0.
-         pose (@GLS_prv_wkn_R (Diam (list_conj (map (N p x) (Canopy (nodupseq (XBoxed_list (top_boxes (fst x)), []%list))))) :: LHS, [(list_disj (map Box (map (UI p) (GLR_prems (nodupseq x)))))])).
-         apply g1 with (A:=list_disj (map Neg (restr_list_prop p (fst x)))). clear g1. clear g0.
-         2-3: epose (wkn_RI _ _ []) ; simpl in w ; apply w.
-        remember [list_disj (map Box (map (UI p) (GLR_prems (nodupseq x))))] as RHS. unfold Diam.
-        apply derI with (ps:=[([] ++ LHS, [] ++  Box (Neg (list_conj (map (N p x) (Canopy (nodupseq (XBoxed_list (top_boxes (fst x)), []%list)))))) :: RHS);
-        ([] ++ Bot :: LHS, [] ++ RHS)]).
-        apply ImpL. apply ImpLRule_I. apply dlCons. 2: apply dlCons. 3: apply dlNil.
-        2: apply derI with (ps:=[]) ; [apply BotL ; apply BotLRule_I | apply dlNil].
-        apply derI with (ps:=[(XBoxed_list (top_boxes LHS) ++ [Box (Neg (list_conj (map (N p x) (Canopy (nodupseq (XBoxed_list (top_boxes (fst x)), []%list))))))], [(Neg (list_conj (map (N p x) (Canopy (nodupseq (XBoxed_list (top_boxes (fst x)), []%list))))))])]).
-        apply GLR. apply GLRRule_I.
-        intro. intros. subst. simpl in H4. repeat rewrite top_boxes_distr_app in H4. simpl in H4.
-        inversion H4. symmetry in H5 ;  eexists ; apply H5. apply in_app_or in H5. destruct H5.
-        apply in_top_boxes in H5. destruct H5. destruct s0 ; auto. destruct s0. destruct p0. exists x0 ; rewrite <- e ; auto.
-        simpl in H5. destruct H5. symmetry in H5 ; eexists ; apply H5. inversion H5.
-        simpl. apply top_boxes_nobox_gen_ext. apply dlCons. 2: apply dlNil. subst. simpl.
-        pose (@GLS_prv_list_wkn_L [Neg (list_conj (map (N p s) (Canopy (nodupseq (XBoxed_list (top_boxes (fst s)), []%list)))))] []
-        [Neg (list_conj (map (N p x) (Canopy (nodupseq (XBoxed_list (top_boxes (fst x)), []%list)))))]).
-        simpl in g0.
+      assert (J80: length (usable_boxes s) = length (usable_boxes x)).
+      pose (leq_ub_unif s). pose (leq_ub_Canopy _ _ i). rewrite <- ub_nodupseq in l0. lia.
 
-        assert (J20: GLS_prv ([Neg (list_conj (map (N p s) (Canopy (nodupseq (XBoxed_list (top_boxes (fst s)), []%list)))))],
-        [Neg (list_conj (map (N p x) (Canopy (nodupseq (XBoxed_list (top_boxes (fst x)), []%list)))))])).
-        remember (list_conj (map (N p s) (Canopy (nodupseq (XBoxed_list (top_boxes (fst s)), []%list))))) as conj1. clear e0.
-        remember (list_conj (map (N p x) (Canopy (nodupseq (XBoxed_list (top_boxes (fst x)), []%list))))) as conj2.
-        apply derI with (ps:=[([conj2;Neg conj1], [Bot])]). apply ImpR. epose (ImpRRule_I _ _ [] _ [] []). simpl in i0. apply i0.
-        apply dlCons. 2: apply dlNil.
-        apply derI with (ps:=[([conj2] , [conj1; ⊥]);([conj2;Bot], [⊥])]). apply ImpL. epose (ImpLRule_I _ _[conj2] [] [] [Bot]). simpl in i0.
-        apply i0. apply dlCons. 2: apply dlCons. 3: apply dlNil.
-        2: apply derI with (ps:=[]) ; [apply BotL ; eapply (BotLRule_I [conj2] [] _) | apply dlNil]. simpl. subst.
-        pose (@GLS_prv_wkn_R ([list_conj (map (N p x) (Canopy (nodupseq (XBoxed_list (top_boxes (fst x)), []%list))))], [list_conj (map (N p s) (Canopy (nodupseq (XBoxed_list (top_boxes (fst s)), []%list))))])).
-        apply g1 with (A:=Bot). clear g1.
-        2: epose (wkn_RI  Bot _ [list_conj (map (N p s) (Canopy (nodupseq (XBoxed_list (top_boxes (fst s)), []%list))))] []) ; simpl in w ; apply w.
-        epose (list_conj_R _ (_,_)). apply g1 ; clear g1 ; simpl.
-        intros A HA. apply InT_map_iff in HA. destruct HA. destruct p0 ; subst.
+    (* Massage the Ns. *)
+    destruct (dec_init_rules x0).
+    (* The sequents x1 and x0 is initial. *)
+     assert (is_init x0) ; auto.
+     pose (N_spec p s x0).
+     pose (GN_inv_init _  g1). rewrite <- e ; auto.
+     epose (TopR _ [] []). simpl in g2 ; apply g2.
+    (* The sequent x is not initial. *)
+     assert (is_init x0 -> False) ; auto.
+     assert (is_init x1 -> False). intro. apply H5. apply (PermutationTS_is_init _ _ (PermutationTS_sym _ _ p0) X0).
+     assert (J20: GUI p x0 (UI p x0)). apply UI_GUI ; auto.
+     assert (J30: GUI p x1 (UI p x1)). apply UI_GUI ; auto.
+     pose (Canopy_critical _ _ i0).
+     pose (Canopy_critical _ _ i1).
+     destruct (lt_decT (length (usable_boxes x0)) (length (usable_boxes s))).
+     (* The sequent x has less usable boxes than s. *)
+     pose (N_spec p s x0).
+     epose (@GN_inv_noinit_lessub _ _ _ _ _ g1 H5 l (UI_spec p _)). rewrite <- e ; auto.
+     assert (J40: length (usable_boxes x1) < length (usable_boxes x)). rewrite <- J80 ; auto.
+     assert (incl (usable_boxes x1) (usable_boxes x0)). intros A HA.
+     apply InT_In ; apply In_InT in HA. apply (PermutationTS_usable_boxes _ _ (PermutationTS_sym _ _ p0)) ; auto.
+     pose (NoDup_incl_length (NoDup_usable_boxes x1) H7).
+     assert (incl (usable_boxes x0) (usable_boxes x1)). intros A HA.
+     apply InT_In ; apply In_InT in HA. apply (PermutationTS_usable_boxes _ _ p0) ; auto.
+     pose (NoDup_incl_length (NoDup_usable_boxes x0) H8). lia.
+     pose (N_spec p x x1).
+     epose (@GN_inv_noinit_lessub _ _ _ _ _ g2 H6 J40 (UI_spec p _)). rewrite <- e0 ; auto.
+     apply PermutationTS_UI ; apply PermutationTS_sym ; auto.
+     (* The sequent x does not have less usable boxes than s. *)
+     pose (N_spec p s x0).
+     assert (J41: Gimap (GUI p) (GLR_prems (nodupseq x0)) (map (UI p) (GLR_prems (nodupseq x0)))).
+     apply Gimap_map ; auto. intros ; apply UI_GUI ; auto.
+     epose (@GN_inv_noinit_nolessub _ _ _ _ _ g1 H5 f3 J41). rewrite <- e ; auto.
+     assert (J42: (length (usable_boxes x1) < length (usable_boxes x)) -> False). rewrite <- J80.
+     assert (incl (usable_boxes x1) (usable_boxes x0)). intros A HA.
+     apply InT_In ; apply In_InT in HA. apply (PermutationTS_usable_boxes _ _ (PermutationTS_sym _ _ p0)) ; auto.
+     pose (NoDup_incl_length (NoDup_usable_boxes x1) H7).
+     assert (incl (usable_boxes x0) (usable_boxes x1)). intros A HA.
+     apply InT_In ; apply In_InT in HA. apply (PermutationTS_usable_boxes _ _ p0) ; auto.
+     pose (NoDup_incl_length (NoDup_usable_boxes x0) H8). lia.
+     pose (N_spec p x x1).
+     assert (J43: Gimap (GUI p) (GLR_prems (nodupseq x1)) (map (UI p) (GLR_prems (nodupseq x1)))).
+     apply Gimap_map ; auto. intro ; apply UI_GUI ; auto.
+     epose (@GN_inv_noinit_nolessub _ _ _ _ _ g2 H6 J42 J43). rewrite <- e0 ; auto.
 
-        assert (PermutationTS (nodupseq (XBoxed_list (top_boxes (fst s)), []%list)) (nodupseq (XBoxed_list (top_boxes (fst x)), []%list))).
-        unfold PermutationTS. split ; simpl. 2: apply permT_nil. apply Permutation_PermutationT.
-        apply NoDup_Permutation. 1-2: apply NoDup_nodup.
-        assert (length (usable_boxes x) < length (usable_boxes (nodupseq (XBoxed_list (top_boxes (fst s)), []%list))) -> False).
-        intro. rewrite <- ub_nodupseq in H4. pose (leq_ub_unif s). lia.
-        assert (forall A, In A (top_boxes (fst s)) <-> In A (top_boxes (fst x))).
-        intros ; split ; intros. apply top_boxes_diam_jump in H5 ; auto.
-        pose (top_boxes_Canopy_noless_ub _ _ i H4). simpl in p0 ; destruct p0. destruct p0.
-        destruct p0. apply i4. rewrite <- nodup_top_boxes. apply nodup_In. auto.
-        pose (leq_ub_unif s). inversion l ; auto ; subst. exfalso. rewrite <- ub_nodupseq in H4.
-        pose (leq_ub_Canopy _ _ i). rewrite <- ub_nodupseq in l0. lia.
-        apply top_boxes_diam_jump ; auto. pose (leq_ub_unif s). inversion l ; auto ; subst. exfalso. rewrite <- ub_nodupseq in H4.
-        pose (leq_ub_Canopy _ _ i). rewrite <- ub_nodupseq in l0. lia.
-        pose (top_boxes_Canopy_noless_ub _ _ i H4). simpl in p0 ; destruct p0. destruct p0.
-        destruct p0. apply i3 in H5. rewrite <- nodup_top_boxes in H5. apply nodup_In in H5. auto.
-        intros. split ; intro ; apply nodup_In ; apply nodup_In in H6.
-        apply In_XBoxed_list in H6. destruct H6. apply list_preserv_XBoxed_list ; apply H5 ; auto.
-        destruct H6. destruct H6 ; subst. apply XBoxed_list_In. apply H5 ; auto.
-        apply In_XBoxed_list in H6. destruct H6. apply list_preserv_XBoxed_list ; apply H5 ; auto.
-        destruct H6. destruct H6 ; subst. apply XBoxed_list_In. apply H5 ; auto.
-        pose (PermutationTS_Canopy _ _ H4 _ i0). destruct s0. destruct p0.
-        epose (list_conj_wkn_L _ (_,_) (N p x x1)). apply g1 ; clear g1 ; simpl.
-        apply InT_map_iff. exists x1 ; split ; auto.
+       (* Proof-theoretic work. *)
+       epose (OrL (_,_)). simpl in g3. apply g3 ; clear g3.
+       epose (OrR (_,[])). simpl in g3. apply g3 ; clear g3.
+       epose (list_disj_L _ (_,_)). simpl in g3. apply g3 ; clear g3. intros.
+       epose (list_disj_wkn_R _ (_,_) A). apply g3 ; clear g3.
+       apply PermutationTS_restr_list_prop_snd with (s:=x1) ; auto. apply PermutationTS_sym ; auto.
+       simpl. epose (Id_all_form _ [] _ [] _). simpl in d ; apply d.
+       epose (OrL (_,_)). simpl in g3. apply g3 ; clear g3.
+       epose (OrR (_,[])). simpl in g3. apply g3 ; clear g3.
+       pose (@GLS_prv_wkn_R ([list_disj (map Neg (restr_list_prop p (fst x1)))],[Or (list_disj (map Neg (restr_list_prop p (fst x0)))) (list_disj (map Box (map (UI p) (GLR_prems (nodupseq x0)))))])).
+       apply g3 with (A:=list_disj (restr_list_prop p (snd x0))). clear g3.
+       2: epose (wkn_RI _ _ []) ; simpl in w ; apply w.
+       epose (OrR (_,[])). simpl in g3. apply g3 ; clear g3.
+       epose (list_disj_L _ (_,_)). simpl in g3. apply g3 ; clear g3. intros.
+       epose (list_disj_wkn_R _ (_,_) A). apply g3 ; clear g3.
+       apply InT_map_iff. apply InT_map_iff in H7. destruct H7. destruct p1 ; subst.
+       exists x2 ; split ; auto.
+       apply PermutationTS_restr_list_prop_fst with (s:=x1) ; auto. apply PermutationTS_sym ; auto.
+       simpl. epose (Id_all_form _ [] _ [] _). simpl in d ; apply d.
+       epose (OrR (_,[])). simpl in g3. apply g3 ; clear g3.
+       pose (@GLS_prv_wkn_R ([list_disj (map Box (map (UI p) (GLR_prems (nodupseq x1))))],[Or (list_disj (map Neg (restr_list_prop p (fst x0)))) (list_disj (map Box (map (UI p) (GLR_prems (nodupseq x0)))))])).
+       apply g3 with (A:=list_disj (restr_list_prop p (snd x0))). clear g3.
+       2: epose (wkn_RI _ _ []) ; simpl in w ; apply w.
+       epose (OrR (_,[])). simpl in g3. apply g3 ; clear g3.
+       pose (@GLS_prv_wkn_R ([list_disj (map Box (map (UI p) (GLR_prems (nodupseq x1))))],[(list_disj (map Box (map (UI p) (GLR_prems (nodupseq x0)))))])).
+       apply g3 with (A:=list_disj (map Neg (restr_list_prop p (fst x0)))). clear g3.
+       2: epose (wkn_RI _ _ []) ; simpl in w ; apply w.
+       epose (list_disj_L _ (_,_)). simpl in g3. apply g3 ; clear g3. intros.
+       apply InT_map_iff in H7. destruct H7. destruct p1 ; subst.
+       apply InT_map_iff in i2. destruct i2. destruct p1 ; subst.
+       pose (PermutationTS_GLR_prems _ _ (PermutationTS_nodupseq _ _ (PermutationTS_sym _ _ p0)) _ i2).
+       destruct s0. destruct p1.
+       epose (list_disj_wkn_R _ (_,_) (Box (UI p x2))). apply g3 ; clear g3.
+       apply InT_map_iff. exists (UI p x2) ; split ; auto.
+       apply InT_map_iff. exists x2 ; split ; auto. simpl.
+       apply derI with (ps:=[([UI p x3 ; Box (UI p x3) ; Box (UI p x2)], [UI p x2])]).
+       apply GLR. epose (@GLRRule_I _ [Box (UI p x3)] _ [] []). simpl in g3. apply g3 ; clear g3.
+       intros A HA. inversion HA ; subst. eexists ; auto. inversion H7. apply univ_gen_ext_refl.
+       apply dlCons. 2: apply dlNil.
+       pose (PermutationTS_UI _ _ p p1).
+       pose (@GLS_prv_list_wkn_L [UI p x3] [] [UI p x2] g3 [Box (UI p x3); Box (UI p x2)]). simpl in g4.
+       auto.
 
-        assert (J80: length (usable_boxes s) = length (usable_boxes x)).
-        pose (leq_ub_unif s). pose (leq_ub_Canopy _ _ i). rewrite <- ub_nodupseq in l0. lia.
-
-      (* Massage the Ns. *)
-      destruct (dec_init_rules x0).
-      (* The sequents x1 and x0 is initial. *)
-       assert (is_init x0) ; auto.
-       pose (N_spec p s x0).
-       pose (GN_inv_init _  g1). rewrite <- e ; auto.
-       epose (TopR _ [] []). simpl in g2 ; apply g2.
-      (* The sequent x is not initial. *)
-       assert (is_init x0 -> False) ; auto.
-       assert (is_init x1 -> False). intro. apply H5. apply (PermutationTS_is_init _ _ (PermutationTS_sym _ _ p0) X0).
-       assert (J20: GUI p x0 (UI p x0)). apply UI_GUI ; auto.
-       assert (J30: GUI p x1 (UI p x1)). apply UI_GUI ; auto.
-       pose (Canopy_critical _ _ i0).
-       pose (Canopy_critical _ _ i1).
-       destruct (lt_decT (length (usable_boxes x0)) (length (usable_boxes s))).
-       (* The sequent x has less usable boxes than s. *)
-       pose (N_spec p s x0).
-       epose (@GN_inv_noinit_lessub _ _ _ _ _ g1 H5 l (UI_spec p _)). rewrite <- e ; auto.
-       assert (J40: length (usable_boxes x1) < length (usable_boxes x)). rewrite <- J80 ; auto.
-       assert (incl (usable_boxes x1) (usable_boxes x0)). intros A HA.
-       apply InT_In ; apply In_InT in HA. apply (PermutationTS_usable_boxes _ _ (PermutationTS_sym _ _ p0)) ; auto.
-       pose (NoDup_incl_length (NoDup_usable_boxes x1) H7).
-       assert (incl (usable_boxes x0) (usable_boxes x1)). intros A HA.
-       apply InT_In ; apply In_InT in HA. apply (PermutationTS_usable_boxes _ _ p0) ; auto.
-       pose (NoDup_incl_length (NoDup_usable_boxes x0) H8). lia.
-       pose (N_spec p x x1).
-       epose (@GN_inv_noinit_lessub _ _ _ _ _ g2 H6 J40 (UI_spec p _)). rewrite <- e0 ; auto.
-       apply PermutationTS_UI ; apply PermutationTS_sym ; auto.
-       (* The sequent x does not have less usable boxes than s. *)
-       pose (N_spec p s x0).
-       assert (J41: Gimap (GUI p) (GLR_prems (nodupseq x0)) (map (UI p) (GLR_prems (nodupseq x0)))).
-       apply Gimap_map ; auto. intros ; apply UI_GUI ; auto.
-       epose (@GN_inv_noinit_nolessub _ _ _ _ _ g1 H5 f3 J41). rewrite <- e ; auto.
-       assert (J42: (length (usable_boxes x1) < length (usable_boxes x)) -> False). rewrite <- J80.
-       assert (incl (usable_boxes x1) (usable_boxes x0)). intros A HA.
-       apply InT_In ; apply In_InT in HA. apply (PermutationTS_usable_boxes _ _ (PermutationTS_sym _ _ p0)) ; auto.
-       pose (NoDup_incl_length (NoDup_usable_boxes x1) H7).
-       assert (incl (usable_boxes x0) (usable_boxes x1)). intros A HA.
-       apply InT_In ; apply In_InT in HA. apply (PermutationTS_usable_boxes _ _ p0) ; auto.
-       pose (NoDup_incl_length (NoDup_usable_boxes x0) H8). lia.
-       pose (N_spec p x x1).
-       assert (J43: Gimap (GUI p) (GLR_prems (nodupseq x1)) (map (UI p) (GLR_prems (nodupseq x1)))).
-       apply Gimap_map ; auto. intro ; apply UI_GUI ; auto.
-       epose (@GN_inv_noinit_nolessub _ _ _ _ _ g2 H6 J42 J43). rewrite <- e0 ; auto.
-
-         (* Proof-theoretic work. *)
-         epose (OrL (_,_)). simpl in g3. apply g3 ; clear g3.
-         epose (OrR (_,[])). simpl in g3. apply g3 ; clear g3.
-         epose (list_disj_L _ (_,_)). simpl in g3. apply g3 ; clear g3. intros.
-         epose (list_disj_wkn_R _ (_,_) A). apply g3 ; clear g3.
-         apply PermutationTS_restr_list_prop_snd with (s:=x1) ; auto. apply PermutationTS_sym ; auto.
-         simpl. epose (Id_all_form _ [] _ [] _). simpl in d ; apply d.
-         epose (OrL (_,_)). simpl in g3. apply g3 ; clear g3.
-         epose (OrR (_,[])). simpl in g3. apply g3 ; clear g3.
-         pose (@GLS_prv_wkn_R ([list_disj (map Neg (restr_list_prop p (fst x1)))],[Or (list_disj (map Neg (restr_list_prop p (fst x0)))) (list_disj (map Box (map (UI p) (GLR_prems (nodupseq x0)))))])).
-         apply g3 with (A:=list_disj (restr_list_prop p (snd x0))). clear g3.
-         2: epose (wkn_RI _ _ []) ; simpl in w ; apply w.
-         epose (OrR (_,[])). simpl in g3. apply g3 ; clear g3.
-         epose (list_disj_L _ (_,_)). simpl in g3. apply g3 ; clear g3. intros.
-         epose (list_disj_wkn_R _ (_,_) A). apply g3 ; clear g3.
-         apply InT_map_iff. apply InT_map_iff in H7. destruct H7. destruct p1 ; subst.
-         exists x2 ; split ; auto.
-         apply PermutationTS_restr_list_prop_fst with (s:=x1) ; auto. apply PermutationTS_sym ; auto.
-         simpl. epose (Id_all_form _ [] _ [] _). simpl in d ; apply d.
-         epose (OrR (_,[])). simpl in g3. apply g3 ; clear g3.
-         pose (@GLS_prv_wkn_R ([list_disj (map Box (map (UI p) (GLR_prems (nodupseq x1))))],[Or (list_disj (map Neg (restr_list_prop p (fst x0)))) (list_disj (map Box (map (UI p) (GLR_prems (nodupseq x0)))))])).
-         apply g3 with (A:=list_disj (restr_list_prop p (snd x0))). clear g3.
-         2: epose (wkn_RI _ _ []) ; simpl in w ; apply w.
-         epose (OrR (_,[])). simpl in g3. apply g3 ; clear g3.
-         pose (@GLS_prv_wkn_R ([list_disj (map Box (map (UI p) (GLR_prems (nodupseq x1))))],[(list_disj (map Box (map (UI p) (GLR_prems (nodupseq x0)))))])).
-         apply g3 with (A:=list_disj (map Neg (restr_list_prop p (fst x0)))). clear g3.
-         2: epose (wkn_RI _ _ []) ; simpl in w ; apply w.
-         epose (list_disj_L _ (_,_)). simpl in g3. apply g3 ; clear g3. intros.
-         apply InT_map_iff in H7. destruct H7. destruct p1 ; subst.
-         apply InT_map_iff in i2. destruct i2. destruct p1 ; subst.
-         pose (PermutationTS_GLR_prems _ _ (PermutationTS_nodupseq _ _ (PermutationTS_sym _ _ p0)) _ i2).
-         destruct s0. destruct p1.
-         epose (list_disj_wkn_R _ (_,_) (Box (UI p x2))). apply g3 ; clear g3.
-         apply InT_map_iff. exists (UI p x2) ; split ; auto.
-         apply InT_map_iff. exists x2 ; split ; auto. simpl.
-         apply derI with (ps:=[([UI p x3 ; Box (UI p x3) ; Box (UI p x2)], [UI p x2])]).
-         apply GLR. epose (@GLRRule_I _ [Box (UI p x3)] _ [] []). simpl in g3. apply g3 ; clear g3.
-         intros A HA. inversion HA ; subst. eexists ; auto. inversion H7. apply univ_gen_ext_refl.
-         apply dlCons. 2: apply dlNil.
-         pose (PermutationTS_UI _ _ p p1).
-         pose (@GLS_prv_list_wkn_L [UI p x3] [] [UI p x2] g3 [Box (UI p x3); Box (UI p x2)]). simpl in g4.
-         auto.
-
-        epose (GLS_prv_list_wkn_L [_] [] _ _). rewrite <- app_nil_end in g1 ; simpl in g1. apply g1.
-        Unshelve. apply GUI_fun. rewrite <- app_nil_end ; auto.
+      epose (GLS_prv_list_wkn_L [_] [] _ _). rewrite <- app_nil_end in g1 ; simpl in g1. apply g1.
+      Unshelve. apply GUI_fun. rewrite <- app_nil_end ; auto. } }
   Qed.

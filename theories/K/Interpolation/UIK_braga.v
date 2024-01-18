@@ -127,6 +127,8 @@ Arguments imap {X} {Y} _ {D} _ {l}.
   Unset Elimination Schemes.
 
   Inductive GUI : Seq -> MPropF -> Prop :=
+    | GUI_empty_seq {s} : (s = ([],[])) ->                                       (* If the sequent is empty, output Bot. *)
+                                      GUI s Bot
     | GUI_critic_init {s} : critical_Seq s ->                                             (* If critical and initial, output Top. *)
                                       is_init s ->
                                       GUI s Top
@@ -135,28 +137,23 @@ Arguments imap {X} {Y} _ {D} _ {l}.
                                       GUI s (list_conj l)
     | GUI_critic_not_init {s l A} : critical_Seq s ->                               (* If critical but not initial, store the propositional variables, recursively call on
                                                                                                                the KR premises of the sequent, and consider the diamond jump. *)
-                                           (fst s <> []) ->
+                                           (s <> ([],[])) ->
                                            (is_init s -> False) ->
                                            (Gimap GUI (KR_prems s) l) ->
                                            (GUI (unboxed_list (top_boxes (fst s)), []) A) ->
                                            GUI s (Or (list_disj (restr_list_prop p (snd s)))
                                                      (Or (list_disj (map Neg (restr_list_prop p (fst s))))
                                                      (Or (list_disj (map Box l))
-                                                     (Diam A))))
-    | GUI_critic_not_init_emptyLHS {s l} : critical_Seq s ->
-                                           (is_init s -> False) ->
-                                           (fst s = []) ->
-                                           (Gimap GUI (KR_prems s) l) ->
-                                           GUI s (Or (list_disj (restr_list_prop p (snd s)))
-                                                     (list_disj (map Box l))).
+                                                     (Diam A)))).
 
  Set Elimination Schemes.
 
   Lemma GUI_fun : forall x l m, GUI x l -> GUI x m -> l = m.
   Proof.
   apply (LtSeq_ind (fun x => forall l m, GUI x l -> GUI x m -> l = m)).
-  intros s IH l m H H0. subst. inversion H ; inversion H0 ; subst ; auto. 1-3: exfalso ; auto. exfalso ; auto.
-  2: exfalso ; auto. 2,3,4,6,7,8,9: exfalso ; auto.
+  intros s IH l m H H0. subst. inversion H ; inversion H0 ; subst ; auto ; simpl in *. 1-8: exfalso ; auto.
+  6-9: exfalso ; auto. 1,3: apply not_init_empty_set ; auto. apply H4 ; apply critical_empty_set.
+  apply H1 ; apply critical_empty_set.
   - assert (J0: (forall x : Seq, InT x (Canopy s) -> forall y0 y1 : MPropF, GUI x y0 -> GUI x y1 -> y0 = y1)).
     intros. apply IH with (s1:=x) ; auto. destruct (Canopy_LtSeq s x H3) ; subst ; auto.
     exfalso. apply H1. apply Canopy_critical with (s:=x) ; subst ; auto.
@@ -165,38 +162,46 @@ Arguments imap {X} {Y} _ {D} _ {l}.
     assert (J00: (forall x : Seq, InT x (KR_prems s) -> forall y0 y1 : MPropF, GUI x y0 -> GUI x y1 -> y0 = y1)).
     intros. apply IH with (s1:=x) ; auto. apply KR_prems_LtSeq ; auto.
     pose (Gimap_fun_rest _ _ GUI (KR_prems s) l0 l1 J00). rewrite e ; auto.
-    assert (J1: A = A0). apply IH with (s1:=(unboxed_list (top_boxes (fst s)), [])) ; auto.
-    unfold LtSeq. unfold measure ; simpl. pose (size_LF_nil_unbox_top_box _ H9). lia.
+    assert (J1: A = A0).
+    { destruct (eq_dec_listsF (fst s) []) ; subst.
+       - rewrite e in * ; simpl in *. inversion H12 ; inversion H5 ; subst ; auto.
+         1-14: exfalso ; auto. 1,3: apply not_init_empty_set ; auto.
+         1-3: pose critical_empty_set ; auto.
+       - apply IH with (s1:=(unboxed_list (top_boxes (fst s)), [])) ; auto.
+         unfold LtSeq. unfold measure ; simpl.
+         pose (size_LF_nil_unbox_top_box _ n). lia. }
     subst. rewrite J0. auto.
-  - assert (J0: l0 = l1).
-    assert (J00: (forall x : Seq, InT x (KR_prems  s) -> forall y0 y1 : MPropF, GUI x y0 -> GUI x y1 -> y0 = y1)).
-    intros. apply IH with (s1:=x) ; auto. apply KR_prems_LtSeq ; auto.
-    pose (Gimap_fun_rest _ _ GUI (KR_prems s) l0 l1 J00). rewrite e ; auto.
-    rewrite J0 ; auto.
   Qed.
 
   Lemma GUI_tot : forall s : Seq, {A : MPropF | GUI s A}.
   Proof.
   apply (LtSeq_ind (fun x => existsT A : MPropF, GUI x A)).
-  intros s IH. destruct (critical_Seq_dec s).
-  - destruct (dec_KS_init_rules s).
-    * assert (is_init s) ; auto. exists Top. apply GUI_critic_init ; auto.
-    * assert (is_init s -> False) ; auto.
-      assert ((forall x : Seq, In x (KR_prems s) -> {x0 : MPropF | GUI x x0})).
-      intros. apply IH with (s1:=x) ; auto. apply KR_prems_LtSeq ; auto. apply InT_In_Seq ; auto.
-      epose (@imap _ _ GUI (fun (x : Seq) => In x (KR_prems s)) H0 (KR_prems s)). simpl in s0. destruct s0 ; auto.
-      destruct (eq_dec_listsF (fst s) []).
-      + exists (Or (list_disj (restr_list_prop p (snd s))) (list_disj (map Box x))). apply GUI_critic_not_init_emptyLHS ; auto.
-      + assert (J10: existsT A : MPropF, GUI (unboxed_list (top_boxes (fst s)), []%list) A). apply IH.
-         unfold LtSeq. unfold measure. simpl. pose (size_LF_nil_unbox_top_box (fst s) n). lia. destruct J10.
-         exists (Or (list_disj (restr_list_prop p (snd s))) (Or (list_disj (map Neg (restr_list_prop p (fst s))))
-         (Or (list_disj (map Box x)) (Diam x0)))). apply GUI_critic_not_init ; auto.
-  - assert ((forall x : Seq, In x (Canopy s) -> {x0 : MPropF | GUI x x0})).
-    intros. apply IH with (s1:=x) ; auto. destruct (Canopy_LtSeq s x) ; auto.
-    apply InT_In_Seq ; auto. subst. exfalso. apply f. apply InT_In_Seq in H ; apply Canopy_critical in H ; auto.
-    epose (@imap _ _ GUI (fun (x : Seq) => In x (Canopy s)) H (Canopy s)). simpl in s0. destruct s0 ; auto.
-    exists (list_conj x). apply GUI_not_critic ; auto.
+  intros s IH. destruct (empty_seq_dec s).
+  - subst. exists Bot. apply GUI_empty_seq ; auto.
+  - destruct (critical_Seq_dec s).
+    -- destruct (dec_KS_init_rules s).
+      * assert (is_init s) ; auto. exists Top. apply GUI_critic_init ; auto.
+      * assert (is_init s -> False) ; auto.
+        assert ((forall x : Seq, In x (KR_prems s) -> {x0 : MPropF | GUI x x0})).
+        intros. apply IH with (s1:=x) ; auto. apply KR_prems_LtSeq ; auto. apply InT_In_Seq ; auto.
+        epose (@imap _ _ GUI (fun (x : Seq) => In x (KR_prems s)) H0 (KR_prems s)). simpl in s0. destruct s0 ; auto.
+        destruct (eq_dec_listsF (fst s) []).
+        + exists (Or (list_disj (restr_list_prop p (snd s))) (Or (list_disj (map Neg (restr_list_prop p (fst s))))
+           (Or (list_disj (map Box x)) (Diam Bot)))). apply GUI_critic_not_init ; auto. rewrite e ; simpl.
+           apply GUI_empty_seq ; auto.
+        + assert (J10: existsT A : MPropF, GUI (unboxed_list (top_boxes (fst s)), []%list) A). apply IH.
+           unfold LtSeq. unfold measure. simpl. pose (size_LF_nil_unbox_top_box (fst s) n0). lia. destruct J10.
+           exists (Or (list_disj (restr_list_prop p (snd s))) (Or (list_disj (map Neg (restr_list_prop p (fst s))))
+           (Or (list_disj (map Box x)) (Diam x0)))). apply GUI_critic_not_init ; auto.
+    -- assert ((forall x : Seq, In x (Canopy s) -> {x0 : MPropF | GUI x x0})).
+      intros. apply IH with (s1:=x) ; auto. destruct (Canopy_LtSeq s x) ; auto.
+      apply InT_In_Seq ; auto. subst. exfalso. apply f. apply InT_In_Seq in H ; apply Canopy_critical in H ; auto.
+      epose (@imap _ _ GUI (fun (x : Seq) => In x (Canopy s)) H (Canopy s)). simpl in s0. destruct s0 ; auto.
+      exists (list_conj x). apply GUI_not_critic ; auto.
   Qed.
+
+  Fact GUI_inv_empty_seq {s A} : GUI s A -> s = ([],[]) -> Bot = A.
+  Proof. intros. pose (GUI_empty_seq H0). apply (GUI_fun _ _ _ g H). Qed.
 
   Fact GUI_inv_critic_init {s A} : GUI s A -> critical_Seq s -> is_init s -> Top = A.
   Proof. intros. pose (GUI_critic_init H0 X). apply (GUI_fun _ _ _ g H). Qed.
@@ -208,8 +213,8 @@ Arguments imap {X} {Y} _ {D} _ {l}.
   intros. pose (GUI_not_critic H0 H1). apply (GUI_fun _ _ _ g H).
   Qed.
 
-  Fact GUI_inv_critic_not_init_not_emptyLHS {s A B l0 } : GUI s A -> critical_Seq s ->
-                           (fst s <> []) ->
+  Fact GUI_inv_critic_not_init {s A B l0 } : GUI s A -> critical_Seq s ->
+                           (s <> ([],[])) ->
                            (is_init s -> False) ->
                            (Gimap GUI (KR_prems s) l0) ->
                            (GUI (unboxed_list (top_boxes (fst s)), []) B) ->
@@ -219,15 +224,6 @@ Arguments imap {X} {Y} _ {D} _ {l}.
                                                      (Diam B)))) = A).
   Proof.
   intros. pose (GUI_critic_not_init H0 H1 H2 H3 H4). apply (GUI_fun _ _ _ g H).
-  Qed.
-
-  Fact GUI_inv_critic_not_init_emptyLHS {s A l} : GUI s A -> critical_Seq s ->
-                           (fst s = []) ->
-                           (is_init s -> False) ->
-                           (Gimap GUI (KR_prems s) l) ->
-                           ((Or (list_disj (restr_list_prop p (snd s))) (list_disj (map Box l))) = A).
-  Proof.
-  intros. pose (GUI_critic_not_init_emptyLHS H0 H2 H1 H3). apply (GUI_fun _ _ _ g H).
   Qed.
 
   Let UI_pwc : forall x, sig (GUI x).

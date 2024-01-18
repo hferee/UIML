@@ -189,4 +189,25 @@ Section Arithmetic.
 
   End LtSeq_properties.
 
+  Section empty_seq.
+
+  Lemma empty_seq_dec : forall (s: Seq), (s = ([],[])) + (s <> ([],[])).
+  Proof.
+  intros. destruct s. destruct l ; destruct l0 ; auto.
+  all: right ; intro H ; inversion H.
+  Qed.
+
+  Lemma not_init_empty_set : is_init ([],[]) -> False.
+  Proof.
+  intro. destruct X. inversion i. destruct Γ0 ; inversion H.
+  inversion b ; subst. destruct Γ0 ; inversion H.
+  Qed.
+
+  Lemma critical_empty_set : critical_Seq ([],[]).
+  Proof.
+  intros A HA ; simpl in *. inversion HA.
+  Qed.
+
+  End empty_seq.
+
 
