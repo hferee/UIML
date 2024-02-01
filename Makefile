@@ -5,7 +5,7 @@ COQDOCFLAGS:= \
   --index indexpage --no-lib-name --parse-comments \
   --with-header $(EXTRA_DIR)/header.html --with-footer $(EXTRA_DIR)/footer.html
 export COQDOCFLAGS
-PUBLIC_URL="https://hferee.github.io/UIML/"
+PUBLIC_URL="https://hferee.github.io/UIML"
 SUBDIR_ROOTS := theories
 DIRS := . $(shell find $(SUBDIR_ROOTS) -type d)
 BUILD_PATTERNS := *.vok *.vos *.glob *.vo
@@ -28,5 +28,7 @@ clean::
 	rm makefile.coq makefile.coq.conf
 	rm -f $(BUILD_FILES)
 
+demo: theories/extraction/extraction.vo
+	cd theories/extraction; cabal run
 
 .PHONY: _

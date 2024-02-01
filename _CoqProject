@@ -3,4 +3,5 @@
 -R theories/Syntax Syntax
 -R theories/GL GL
 -R theories/K K
+-R theories/extraction extraction
 theories
