@@ -121,35 +121,35 @@ Qed.
 
 Lemma ImpL_help01 : forall prems s l, InT prems (prems_Imp_L l s) ->
                   (existsT2 n prem1 prem2 A B Γ0 Γ1 Δ0 Δ1,
-                        (prems = [prem1; prem2]) *
-                        (In ((Imp A B), S n) l) *
-                        (prem1 = (Γ0 ++ Γ1, Δ0 ++ A :: Δ1)) *
-                        (prem2 = (Γ0 ++ B :: Γ1, Δ0 ++ Δ1)) *
-                        (Δ0 ++ Δ1 = snd s) *
-                        (Γ0 = (fst (nth_split n (remove_nth (S n) (Imp A B) (fst s))))) *
+                        (prems = [prem1; prem2]) /\
+                        (In ((Imp A B), S n) l) /\
+                        (prem1 = (Γ0 ++ Γ1, Δ0 ++ A :: Δ1)) /\
+                        (prem2 = (Γ0 ++ B :: Γ1, Δ0 ++ Δ1)) /\
+                        (Δ0 ++ Δ1 = snd s) /\
+                        (Γ0 = (fst (nth_split n (remove_nth (S n) (Imp A B) (fst s))))) /\
                         (Γ1 = (snd (nth_split n (remove_nth (S n) (Imp A B) (fst s)))))).
 Proof.
 intros prems s. destruct s. induction l1 ; intros X.
 - simpl in X. inversion X.
 - simpl (fst (l, l0)). destruct a. destruct m.
   * simpl in X. destruct n.
-    + pose (IHl1 X). repeat destruct s. repeat destruct p. exists x. exists x0. exists x1.
+    + pose (s := IHl1 X). repeat destruct s. exists x. exists x0. exists x1.
       exists x2. exists x3. exists x4. exists x5. exists x6. exists x7.
-      repeat split ; try auto. apply in_cons. assumption.
-    + pose (IHl1 X). repeat destruct s. repeat destruct p. exists x. exists x0. exists x1.
+      repeat split ; try tauto. apply in_cons. tauto.
+    + pose (s := IHl1 X). repeat destruct s. repeat destruct p. exists x. exists x0. exists x1.
       exists x2. exists x3. exists x4. exists x5. exists x6. exists x7.
-      repeat split ; try auto. apply in_cons. assumption.
+      repeat split ; try tauto. apply in_cons. tauto.
   * simpl in X. destruct n.
-    + pose (IHl1 X). repeat destruct s. repeat destruct p. exists x. exists x0. exists x1.
+    + pose (s := IHl1 X). repeat destruct s. repeat destruct p. exists x. exists x0. exists x1.
       exists x2. exists x3. exists x4. exists x5. exists x6. exists x7.
-      repeat split ; try auto. apply in_cons. assumption.
-    + pose (IHl1 X). repeat destruct s. repeat destruct p. exists x. exists x0. exists x1.
+      repeat split ; try tauto. apply in_cons. tauto.
+    + pose (s := IHl1 X). repeat destruct s. repeat destruct p. exists x. exists x0. exists x1.
       exists x2. exists x3. exists x4. exists x5. exists x6. exists x7.
-      repeat split ; try auto. apply in_cons. assumption.
+      repeat split ; try tauto. apply in_cons. tauto.
   * destruct n.
-    + pose (IHl1 X). repeat destruct s. repeat destruct p. exists x. exists x0. exists x1.
+    + pose (s := IHl1 X). repeat destruct s. repeat destruct p. exists x. exists x0. exists x1.
       exists x2. exists x3. exists x4. exists x5. exists x6. exists x7.
-      repeat split ; try auto. apply in_cons. assumption.
+      repeat split ; try tauto. apply in_cons. tauto.
     + apply InT_app_or in X. destruct X.
       { simpl (fst (l, l0)) in i. simpl (snd (l, l0)) in i.
         apply InT_flatten_list_InT_elem in i. destruct i. destruct p.
@@ -195,25 +195,34 @@ intros prems s. destruct s. induction l1 ; intros X.
         assumption. rewrite <- H. reflexivity. rewrite i1. apply InT_In. assumption. subst. inversion H0. }
       { pose (IHl1 i). repeat destruct s. repeat destruct p. exists x. exists x0. exists x1.
         exists x2. exists x3. exists x4. exists x5. exists x6. exists x7.
-        repeat split ; try auto. apply in_cons. assumption. }
+        repeat split ; try tauto. apply in_cons. tauto. }
   * simpl in X. destruct n.
     + pose (IHl1 X). repeat destruct s. repeat destruct p. exists x. exists x0. exists x1.
       exists x2. exists x3. exists x4. exists x5. exists x6. exists x7.
-      repeat split ; try auto. apply in_cons. assumption.
+      repeat split ; try tauto. apply in_cons. tauto.
     + pose (IHl1 X). repeat destruct s. repeat destruct p. exists x. exists x0. exists x1.
       exists x2. exists x3. exists x4. exists x5. exists x6. exists x7.
-      repeat split ; try auto. apply in_cons. assumption.
+      repeat split ; try tauto. apply in_cons. tauto.
 Qed.
 
 Lemma ImpL_help1 : forall prems s, InT prems (prems_Imp_L (pos_top_imps (fst s)) s) ->
                                          ImpLRule prems s.
 Proof.
-intros prem s X. pose (@ImpL_help01 _ _ _ X). repeat destruct s0. destruct s. simpl in X.
-repeat destruct p. subst. simpl in e1. simpl in i. subst. simpl (fst (l, x6 ++ x7)).
-simpl (fst (l, x6 ++ x7)) in X. apply In_pos_top_imps_split_l in i.
-destruct i. destruct s. repeat destruct p.
-subst. rewrite <- e. rewrite <- e0. apply ImpLRule_I.
+intros prem s X. pose (s0 := @ImpL_help01 _ _ _ X). destruct s0 as (n&Hn&A&B&Γ0&Γ1&Δ0& Δ1&e1&Heq&i&p). destruct s as (l&l0). simpl in X.
+intuition. subst.
+apply In_pos_top_imps_split_l in i.
+simpl (fst (l, l0)). simpl in H0. subst.
+ simpl (fst (l, Δ1 ++ e1)) in X.
+destruct i as (l0&l1&Heq1 & Hlen & Heq2 & Heq3).
+subst.
+simpl (fst (l, Δ1 ++ e1)) in Heq1.
+simpl (fst (l, Δ1 ++ e1)) in Heq2.
+remember (fst (nth_split (length l0) (remove_nth (S (length l0)) (B --> Γ0) l))) as Γ0'.
+remember (snd (nth_split (length l0) (remove_nth (S (length l0)) (B --> Γ0) l))) as Γ1'.
+rewrite Heq1, Heq2.
+apply ImpLRule_I.
 Qed.
+
 
 Lemma finite_ImpL_premises_of_S : forall (s : Seq), existsT2 listImpLprems,
               (forall prems, ((ImpLRule prems s) -> (InT prems listImpLprems)) *

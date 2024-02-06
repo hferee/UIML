@@ -7,6 +7,7 @@ Require Import Coq.Program.Equality. (* for dependent induction *)
 The main theorem proved in this file was first proved as Theorem 1 in:
 
 (Pitts 1992). A. M. Pitts. On an interpretation of second order quantification in first order intuitionistic propositional logic. J. Symb. Log., 57(1):33–52.
+It has been further extended to handle iSL
 
 It consists of two parts: 
 
@@ -14,7 +15,7 @@ It consists of two parts:
 
 2) a proof of its correctness. *)
 
-Section Pitts.
+Section UniformInterpolation.
 
 (** Throughout the construction and proof, we fix a variable p, with respect to
   which the propositional quantifier will be computed. *)
@@ -27,7 +28,7 @@ Section PropQuantDefinition.
 
 (** We define the formulas Eφ and Aφ associated to any formula φ. This
   is an implementation of Pitts' Table 5, together with a (mostly automatic)
-  proof that the definition terminates. *)
+  proof that the definition terminates*)
 
 
 (* solves the obligations of the following programs *)
@@ -859,9 +860,9 @@ End PropQuantCorrect.
 
 End Correctness.
 
-End Pitts.
+End UniformInterpolation.
 
-(** * Pitts' Theorem *)
+(** * Main uniform interpolation Theorem *)
 
 Open Scope type_scope.
 
@@ -875,7 +876,7 @@ Definition vars_incl φ l := forall x, occurs_in x φ -> In x l.
 
 (**  The overall correctness result is summarized here. *)
 
-Theorem pitts p V: p ∉ V ->
+Theorem iSL_uniform_interpolation p V: p ∉ V ->
   ∀ φ, vars_incl φ (p :: V) ->
     (vars_incl (Ef p φ) V)
   * ({[φ]} ⊢ (Ef p φ))

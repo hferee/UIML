@@ -1,18 +1,13 @@
-Cd "theories/extraction/app".
+Cd "extraction".
 
 
 Require Import GL.Interpolation.UIGL_braga.
 Require Import GLS_export.
-Require Import Coq.extraction.ExtrHaskellBasic ExtrHaskellNatInteger.
+Require Import Coq.extraction.ExtrOcamlBasic.
 
 
 Require Import K.Interpolation.UIK_braga.
 Require Import KS_export.
-
-
-
-
-
 Require Import ISL.PropQuantifiers.
 
 Fixpoint MPropF_of_form (f : Formulas.form) : MPropF  :=
@@ -40,15 +35,6 @@ Definition k_UI p s := form_of_MPropF(proj1_sig (K.Interpolation.UIK_braga.GUI_t
 Definition isl_E  (n : nat) f :=Ef n f.
 Definition isl_A (n : nat) f := Af n f.
 
-
-(* Ocaml can't handle some stuff for now *)
-
-(*
-Extract Constant V  => "Prelude.Integer".
-
-Extract Constant GLS_PSGLS_calcs.eq_dec_propvar  => "\x y -> if x Prelude.== y then Specif.Coq_left else Specif.Coq_right".
-*)
-Extraction Language Haskell.
 Separate Extraction gl_UI k_UI isl_E isl_A.
 
-Cd "../../..".
+Cd "..".

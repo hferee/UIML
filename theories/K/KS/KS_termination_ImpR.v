@@ -84,18 +84,18 @@ induction l.
 Qed.
 
 Lemma In_pos_top_imps_split_l : forall l (A : MPropF) n, In (A, S n) (pos_top_imps l) -> 
-          existsT2 l0 l1, (l = l0 ++ A :: l1) *
-                          (length l0 = n) *
-                          (l0 = fst (nth_split n (remove_nth (S n) A l))) *
+          existsT2 l0 l1, (l = l0 ++ A :: l1) /\
+                          (length l0 = n) /\
+                          (l0 = fst (nth_split n (remove_nth (S n) A l))) /\
                           (l1 = snd (nth_split n (remove_nth (S n) A l))).
 Proof.
 induction l.
 - intros. simpl. exfalso. simpl in H. destruct H.
 - intros. simpl in H. destruct a.
-  * apply In_InT_pair in H. apply InT_map_iff in H. destruct H. destruct p.
-    destruct x. simpl in e. inversion e. subst. destruct n. exfalso.
+  * apply In_InT_pair in H. apply InT_map_iff in H. destruct H as ([m n1] & e & i).
+    simpl in e. inversion e. subst. destruct n. exfalso.
     apply InT_In in i. apply In_pos_top_imps_0_False in i. assumption.
-    apply InT_In in i. pose (IHl A n i). repeat destruct s. repeat destruct p.
+    apply InT_In in i. pose (IHl A n i). destruct s as (x & x0 & e2 & e3 & e1 & e0).
     subst. exists (# n0 :: x). exists x0. repeat split.
     rewrite effective_remove_nth in e1. rewrite effective_remove_nth in e0.
     assert (fst (# n0 :: fst (nth_split (S (length x)) (x ++ x0)), snd (nth_split (S (length x)) (x ++ x0))) =
@@ -111,13 +111,13 @@ induction l.
     rewrite H0. clear H. clear H0. rewrite effective_remove_nth.
     pose (nth_split_idR (# n0 :: x) x0). simpl (length (# n0 :: x)) in e2.
     rewrite <- e2. reflexivity.
-  * apply In_InT_pair in H. apply InT_map_iff in H. destruct H. destruct p.
-    destruct x. simpl in e. inversion e. subst. destruct n. exfalso.
-    apply InT_In in i. apply In_pos_top_imps_0_False in i. assumption.
-    apply InT_In in i. pose (IHl A n i). repeat destruct s. repeat destruct p.
-    subst. exists (Bot :: x). exists x0. repeat split.
-    rewrite effective_remove_nth in e1. rewrite effective_remove_nth in e0.
-    assert (fst (Bot :: fst (nth_split (S (length x)) (x ++ x0)), snd (nth_split (S (length x)) (x ++ x0))) =
+  * apply In_InT_pair in H. apply InT_map_iff in H. destruct H as ([m n1] & e & i).
+    simpl in e. inversion e. subst. destruct n.
+    -- exfalso. apply InT_In in i. apply In_pos_top_imps_0_False in i. assumption.
+      -- apply InT_In in i. pose (IHl A n i). destruct s as (x & x0 & e2 & e3 & e1 & e0).
+      subst. exists (Bot :: x). exists x0. repeat split.
+      rewrite effective_remove_nth in e1. rewrite effective_remove_nth in e0.
+      assert (fst (Bot :: fst (nth_split (S (length x)) (x ++ x0)), snd (nth_split (S (length x)) (x ++ x0))) =
       Bot :: fst (nth_split (S (length x)) (x ++ x0))). simpl. reflexivity.
     assert (S (S (length x)) = S (length (Bot :: x))). simpl. reflexivity.
     rewrite H0. assert ((Bot :: x ++ A :: x0) = ((Bot :: x) ++ A :: x0)). simpl. reflexivity.
@@ -133,44 +133,44 @@ induction l.
   * apply In_InT_pair in H. inversion H.
     + inversion H1. subst. exists []. exists l. repeat split. simpl.
       destruct (eq_dec_form (a1 --> a2) (a1 --> a2)). reflexivity. exfalso. auto.
-    + subst. apply InT_map_iff in H1. destruct H1. destruct p.
-      destruct x. simpl in e. inversion e. subst. destruct n. exfalso.
-      apply InT_In in i. apply In_pos_top_imps_0_False in i. assumption.
-      apply InT_In in i. pose (IHl A n i). repeat destruct s. repeat destruct p.
-      subst. exists (a1 --> a2 :: x). exists x0. repeat split.
-      rewrite effective_remove_nth in e1. rewrite effective_remove_nth in e0.
-      assert (fst (a1 --> a2 :: fst (nth_split (S (length x)) (x ++ x0)), snd (nth_split (S (length x)) (x ++ x0))) =
-      a1 --> a2 :: fst (nth_split (S (length x)) (x ++ x0))). simpl. reflexivity.
-      assert (S (S (length x)) = S (length (a1 --> a2 :: x))). simpl. reflexivity.
-      rewrite H1. assert ((a1 --> a2 :: x ++ A :: x0) = ((a1 --> a2 :: x) ++ A :: x0)). simpl. reflexivity.
-      rewrite H2. clear H2. clear H1. rewrite effective_remove_nth.
-      pose (nth_split_idL (a1 --> a2 :: x) x0). simpl (length (a1 --> a2 :: x)) in e2.
-      rewrite <- e2. reflexivity.
-      rewrite effective_remove_nth in e0. rewrite effective_remove_nth in e1.
-      assert (S (S (length x)) = S (length (a1 --> a2 :: x))). simpl. reflexivity.
-      rewrite H0. assert ((a1 --> a2 :: x ++ A :: x0) = ((a1 --> a2 :: x) ++ A :: x0)). simpl. reflexivity.
-      rewrite H1. clear H0. clear H1. rewrite effective_remove_nth.
-      pose (nth_split_idR (a1 --> a2 :: x) x0). simpl (length (a1 --> a2 :: x)) in e2.
-      rewrite <- e2. reflexivity.
-  * apply In_InT_pair in H. apply InT_map_iff in H. destruct H. destruct p.
-    destruct x. simpl in e. inversion e. subst. destruct n. exfalso.
-    apply InT_In in i. apply In_pos_top_imps_0_False in i. assumption.
-    apply InT_In in i. pose (IHl A n i). repeat destruct s. repeat destruct p.
-    subst. exists (Box a :: x). exists x0. repeat split.
-    rewrite effective_remove_nth in e1. rewrite effective_remove_nth in e0.
-    assert (fst (Box a :: fst (nth_split (S (length x)) (x ++ x0)), snd (nth_split (S (length x)) (x ++ x0))) =
-    Box a :: fst (nth_split (S (length x)) (x ++ x0))). simpl. reflexivity.
-    assert (S (S (length x)) = S (length (Box a :: x))). simpl. reflexivity.
-    rewrite H0. assert ((Box a :: x ++ A :: x0) = ((Box a :: x) ++ A :: x0)). simpl. reflexivity.
-    rewrite H1. clear H0. clear H1. rewrite effective_remove_nth.
-    pose (nth_split_idL (Box a :: x) x0). simpl (length (Box a :: x)) in e2.
-    rewrite <- e2. reflexivity.
-    rewrite effective_remove_nth in e0. rewrite effective_remove_nth in e1.
-    assert (S (S (length x)) = S (length (Box a :: x))). simpl. reflexivity.
-    rewrite H. assert ((Box a :: x ++ A :: x0) = ((Box a :: x) ++ A :: x0)). simpl. reflexivity.
-    rewrite H0. clear H. clear H0. rewrite effective_remove_nth.
-    pose (nth_split_idR (Box a :: x) x0). simpl (length (Box a :: x)) in e2.
-    rewrite <- e2. reflexivity.
+    + subst. apply InT_map_iff in H1. destruct H1 as ([m n1] & e & i).
+        simpl in e. inversion e. subst. destruct n. exfalso.
+        apply InT_In in i. apply In_pos_top_imps_0_False in i. assumption.
+        apply InT_In in i. pose (IHl A n i). destruct s as (x & x0 & e2 & e3 & e1 & e0).
+        subst. exists (a1 --> a2 :: x). exists x0. repeat split.
+        rewrite effective_remove_nth in e1. rewrite effective_remove_nth in e0.
+        assert (fst (a1 --> a2 :: fst (nth_split (S (length x)) (x ++ x0)), snd (nth_split (S (length x)) (x ++ x0))) =
+        a1 --> a2 :: fst (nth_split (S (length x)) (x ++ x0))). simpl. reflexivity.
+        assert (S (S (length x)) = S (length (a1 --> a2 :: x))). simpl. reflexivity.
+        rewrite H1. assert ((a1 --> a2 :: x ++ A :: x0) = ((a1 --> a2 :: x) ++ A :: x0)). simpl. reflexivity.
+        rewrite H2. clear H2. clear H1. rewrite effective_remove_nth.
+        pose (nth_split_idL (a1 --> a2 :: x) x0). simpl (length (a1 --> a2 :: x)) in e2.
+        rewrite <- e2. reflexivity.
+        rewrite effective_remove_nth in e0. rewrite effective_remove_nth in e1.
+        assert (S (S (length x)) = S (length (a1 --> a2 :: x))). simpl. reflexivity.
+        rewrite H0. assert ((a1 --> a2 :: x ++ A :: x0) = ((a1 --> a2 :: x) ++ A :: x0)). simpl. reflexivity.
+        rewrite H1. clear H0. clear H1. rewrite effective_remove_nth.
+        pose (nth_split_idR (a1 --> a2 :: x) x0). simpl (length (a1 --> a2 :: x)) in e2.
+        rewrite <- e2. reflexivity.
+        * apply In_InT_pair in H. apply InT_map_iff in H. destruct H as ([m n1] & e & i).
+         simpl in e. inversion e. subst. destruct n. exfalso.
+        apply InT_In in i. apply In_pos_top_imps_0_False in i. assumption.
+        apply InT_In in i. pose (IHl A n i). destruct s  as (x & x0 & e2 & e3 & e1 & e0).
+        subst. exists (Box a :: x). exists x0. repeat split.
+        rewrite effective_remove_nth in e1. rewrite effective_remove_nth in e0.
+        assert (fst (Box a :: fst (nth_split (S (length x)) (x ++ x0)), snd (nth_split (S (length x)) (x ++ x0))) =
+        Box a :: fst (nth_split (S (length x)) (x ++ x0))). simpl. reflexivity.
+        assert (S (S (length x)) = S (length (Box a :: x))). simpl. reflexivity.
+        rewrite H0. assert ((Box a :: x ++ A :: x0) = ((Box a :: x) ++ A :: x0)). simpl. reflexivity.
+        rewrite H1. clear H0. clear H1. rewrite effective_remove_nth.
+        pose (nth_split_idL (Box a :: x) x0). simpl (length (Box a :: x)) in e2.
+        rewrite <- e2. reflexivity.
+        rewrite effective_remove_nth in e0. rewrite effective_remove_nth in e1.
+        assert (S (S (length x)) = S (length (Box a :: x))). simpl. reflexivity.
+        rewrite H. assert ((Box a :: x ++ A :: x0) = ((Box a :: x) ++ A :: x0)). simpl. reflexivity.
+        rewrite H0. clear H. clear H0. rewrite effective_remove_nth.
+        pose (nth_split_idR (Box a :: x) x0). simpl (length (Box a :: x)) in e2.
+        rewrite <- e2. reflexivity.
 Qed.
 
 Lemma In_l_imp_In_pos_top_imps : forall l (A B : MPropF), In (Imp A B) l ->
@@ -217,28 +217,29 @@ Qed.
 
 Lemma ImpR_help01 : forall prem s l, InT prem (prems_Imp_R l s) ->
                   (existsT2 n A B Γ0 Γ1 Δ0 Δ1,
-                        (In ((Imp A B), S n) l) *
-                        (prem = (Γ0 ++ A :: Γ1, Δ0 ++ B :: Δ1)) *
-                        (Γ0 ++ Γ1 = fst s) *
-                        (Δ0 = (fst (nth_split n (remove_nth (S n) (Imp A B) (snd s))))) *
+                        (In ((Imp A B), S n) l) /\
+                        (prem = (Γ0 ++ A :: Γ1, Δ0 ++ B :: Δ1)) /\
+                        (Γ0 ++ Γ1 = fst s) /\
+                        (Δ0 = (fst (nth_split n (remove_nth (S n) (Imp A B) (snd s))))) /\
                         (Δ1 = (snd (nth_split n (remove_nth (S n) (Imp A B) (snd s)))))).
 Proof.
 intros prem s. destruct s. destruct prem. induction l3 ; intros X.
 - simpl in X. inversion X.
-- destruct a. destruct m.
+- destruct a as [m n]. destruct m.
   * simpl in X. destruct n.
-    + pose (IHl3 X). repeat destruct s. repeat destruct p. exists x. exists x0. exists x1.
-      exists x2. exists x3. exists x4. exists x5. repeat split ; try auto. apply in_cons. assumption.
-    + pose (IHl3 X). repeat destruct s. repeat destruct p. exists x. exists x0. exists x1.
-      exists x2. exists x3. exists x4. exists x5. repeat split ; try auto. apply in_cons. assumption.
+    + pose (IHl3 X). destruct s as (x & x0 & x1 & x2 & x3 & x4 & x5 & p).
+        decompose record p. exists x. exists x0. exists x1.
+      exists x2. exists x3. exists x4. exists x5. repeat split ; try auto. apply in_cons. tauto.
+    + pose (IHl3 X). destruct s as (x & x0 & x1 & x2 & x3 & x4 & x5 & p). decompose record p. exists x. exists x0. exists x1.
+      exists x2. exists x3. exists x4. exists x5. repeat split ; try tauto. apply in_cons. tauto.
   * simpl in X. destruct n.
-    + pose (IHl3 X). repeat destruct s. repeat destruct p. exists x. exists x0. exists x1.
-      exists x2. exists x3. exists x4. exists x5. repeat split ; try auto. apply in_cons. assumption.
-    + pose (IHl3 X). repeat destruct s. repeat destruct p. exists x. exists x0. exists x1.
-      exists x2. exists x3. exists x4. exists x5. repeat split ; try auto. apply in_cons. assumption.
+    + pose (IHl3 X). destruct s as (x & x0 & x1 & x2 & x3 & x4 & x5 & p). decompose record p. exists x. exists x0. exists x1.
+      exists x2. exists x3. exists x4. exists x5. repeat split ; try tauto. apply in_cons. tauto.
+    + pose (IHl3 X). destruct s as (x & x0 & x1 & x2 & x3 & x4 & x5 & p). decompose record p. exists x. exists x0. exists x1.
+      exists x2. exists x3. exists x4. exists x5. repeat split ; try tauto. apply in_cons. tauto.
   * destruct n.
-    + pose (IHl3 X). repeat destruct s. repeat destruct p. exists x. exists x0. exists x1.
-      exists x2. exists x3. exists x4. exists x5. repeat split ; try auto. apply in_cons. assumption.
+    + pose (IHl3 X). destruct s as (x & x0 & x1 & x2 & x3 & x4 & x5 & p). decompose record p. exists x. exists x0. exists x1.
+      exists x2. exists x3. exists x4. exists x5. repeat split ; try tauto. apply in_cons. tauto.
     + apply InT_app_or in X. destruct X.
       { simpl (fst (l, l0)) in i. simpl (snd (l, l0)) in i.
         unfold listInsertsR_Seqs in i. apply InT_map_iff in i. destruct i.
@@ -249,22 +250,24 @@ intros prem s. destruct s. destruct prem. induction l3 ; intros X.
         exists (fst (nth_split n (remove_nth (S n) (m1 --> m2) l0))).
         exists (snd (nth_split n (remove_nth (S n) (m1 --> m2) l0))).
         repeat split ; try auto. apply in_eq. rewrite i0. apply InT_In. assumption. }
-      { pose (IHl3 i). repeat destruct s. repeat destruct p. exists x. exists x0. exists x1.
-      exists x2. exists x3. exists x4. exists x5. repeat split ; try auto. apply in_cons. assumption. }
+      { pose (IHl3 i). destruct s as (x & x0 & x1 & x2 & x3 & x4 & x5 & p). decompose record p. exists x. exists x0. exists x1.
+      exists x2. exists x3. exists x4. exists x5. repeat split ; try tauto. apply in_cons. tauto. }
   * simpl in X. destruct n.
-    + pose (IHl3 X). repeat destruct s. repeat destruct p. exists x. exists x0. exists x1.
-      exists x2. exists x3. exists x4. exists x5. repeat split ; try auto. apply in_cons. assumption.
-    + pose (IHl3 X). repeat destruct s. repeat destruct p. exists x. exists x0. exists x1.
-      exists x2. exists x3. exists x4. exists x5. repeat split ; try auto. apply in_cons. assumption.
+    + pose (IHl3 X). destruct s as (x & x0 & x1 & x2 & x3 & x4 & x5 & p). decompose record p. exists x. exists x0. exists x1.
+      exists x2. exists x3. exists x4. exists x5. repeat split ; try tauto. apply in_cons. tauto.
+    + pose (IHl3 X). destruct s as (x & x0 & x1 & x2 & x3 & x4 & x5 & p). decompose record p. exists x. exists x0. exists x1.
+      exists x2. exists x3. exists x4. exists x5. repeat split ; try tauto. apply in_cons. tauto.
 Qed.
 
 Lemma ImpR_help1 : forall prem s, InT prem (prems_Imp_R (pos_top_imps (snd s)) s) -> ImpRRule [prem] s.
 Proof.
 intros prem s X. pose (ImpR_help01 _ _ _ X). destruct s0. destruct s.
-destruct s0. repeat destruct s. repeat destruct p. subst. simpl in e1. subst.
-simpl (snd (x2 ++ x3, l0)) in i. simpl (snd (x2 ++ x3, l0)) in X.
-simpl (snd (x2 ++ x3, l0)). apply In_pos_top_imps_split_l in i. destruct i. destruct s. repeat destruct p.
-subst. rewrite <- e. rewrite effective_remove_nth. rewrite <- nth_split_idL.
+destruct s0. destruct s as (B & Γ0 & Γ1 & Δ0 & Δ1 & i & e2 & e3 & e4 & e5).
+subst. simpl in i, e3. subst.
+simpl (snd (_, _)) in *.
+apply In_pos_top_imps_split_l in i. destruct i. destruct s as (x2 & H1 & H2 & H3 & H4).
+subst.
+rewrite <- H4. rewrite effective_remove_nth. rewrite <- nth_split_idL.
 apply ImpRRule_I.
 Qed.
 

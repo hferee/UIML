@@ -23,34 +23,37 @@ end.
 
  Lemma KR_help01 : forall prems s (l : list MPropF), InT prems (prems_Box_R l s) ->
                   (existsT2 (A : MPropF),
-                        (In (Box A) l) *
+                        (In (Box A) l) /\
                         (prems = [(unboxed_list (top_boxes (fst s)) , [A])])).
 Proof.
 intros prems s. destruct s. induction l1 ; intros X.
 - simpl in X. inversion X.
 - simpl in X. destruct a.
-  * apply IHl1 in X. destruct X. repeat destruct s. repeat destruct p. subst.
+  * apply IHl1 in X. destruct X as [x p]. repeat destruct p. subst.
+     exists x. repeat split ; try auto ; try apply in_cons ; try assumption.
+  * apply IHl1 in X. destruct X as [x p]. repeat destruct p. subst.
     exists x. repeat split ; try auto ; try apply in_cons ; try assumption.
-  * apply IHl1 in X. destruct X. repeat destruct s. repeat destruct p. subst.
-    exists x. repeat split ; try auto ; try apply in_cons ; try assumption.
-  * apply IHl1 in X. destruct X. repeat destruct s. repeat destruct p. subst.
+  * apply IHl1 in X. destruct X as [x p]. repeat destruct p. subst.
     exists x. repeat split ; try auto ; try apply in_cons ; try assumption.
   * inversion X.
     + subst. exists a. repeat split ; try auto ; try apply in_eq.
-    + apply IHl1 in H0. destruct H0. repeat destruct s. repeat destruct p. subst.
+    + apply IHl1 in H0. destruct H0  as [x p]. repeat destruct p. subst.
       exists x. repeat split ; try auto ; try apply in_cons ; try assumption.
 Qed.
 
 Lemma KR_help1 : forall prems s, InT prems (prems_Box_R (top_boxes (snd s)) s) ->
                                          KRRule prems s.
 Proof.
-intros prems  s X. pose (@KR_help01 _ _ _ X). repeat destruct s0. destruct s. simpl in X.
-repeat destruct p. subst. simpl in i. assert (In (Box x) l0). apply top_boxes_incl_list.
+intros prems  s X. destruct (@KR_help01 _ _ _ X) as (x&Hi&Heq).
+repeat destruct s0. destruct s. simpl in X.
+repeat destruct p. subst. simpl in *. assert (In (Box x) l0). apply top_boxes_incl_list.
 assumption. apply in_splitT in H. destruct H. repeat destruct s.
 rewrite e. apply KRRule_I. intro. intros. apply in_top_boxes in H.
 destruct H. repeat destruct s. repeat destruct p. exists x2. assumption.
 simpl. apply top_boxes_nobox_gen_ext.
 Qed.
+
+
 
 Lemma KR_help02 : forall Γ Δ0 Δ1 BΓ A l, KRRule [(unboxed_list BΓ, [A])] (Γ, Δ0 ++ Box A :: Δ1) ->
                                              (is_Boxed_list BΓ) ->

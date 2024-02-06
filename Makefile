@@ -16,6 +16,7 @@ _: makefile.coq
 makefile.coq:
 	coq_makefile -f _CoqProject -docroot docs -o $@
 
+
 doc: makefile.coq
 	rm -fr html docs/*
 	COQDOCEXTRAFLAGS='--external $(PUBLIC_URL)'
@@ -27,8 +28,19 @@ doc: makefile.coq
 clean::
 	rm makefile.coq makefile.coq.conf
 	rm -f $(BUILD_FILES)
+	rm -f extraction/*.{ml,mli}
 
-demo: theories/extraction/extraction.vo
-	cd theories/extraction; cabal run
+# OCaml build
+#SOURCE_ROOT=extraction
+#BUILD_PATTERNS := *.ml *.mli
+#SOURCES=$(addprefix $(SOURCE_ROOT)/,$(BUILD_PATTERNS))
+#RESULT=extraction/UIML_extraction
+
+demo: extraction/UIML_extraction.vo
+	dune build
+	cp _build/default/bin/uiml_demo.bc.js docs/
+
+
+#-include OCamlMakefile
 
 .PHONY: _

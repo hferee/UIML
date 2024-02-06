@@ -3,5 +3,6 @@
 -R theories/Syntax Syntax
 -R theories/GL GL
 -R theories/K K
--R theories/extraction extraction
+-R extraction UIML_extraction
 theories
+extraction

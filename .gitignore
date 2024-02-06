@@ -48,3 +48,6 @@ CoqMakefile.conf
 _opam
 _build
 makefile.coq
+extraction/*
+._d/
+._ncdi/
