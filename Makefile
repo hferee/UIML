@@ -17,11 +17,12 @@ makefile.coq:
 	coq_makefile -f _CoqProject -docroot docs -o $@
 
 
-doc: makefile.coq
+doc: makefile.coq demo
 	rm -fr html docs/*
 	COQDOCEXTRAFLAGS='--external $(PUBLIC_URL)'
 	@$(MAKE) -f makefile.coq html
-	cp $(EXTRA_DIR)/resources/* html/* docs
+	cp $(EXTRA_DIR)/resources/* html/* _build/default/bin/uiml_demo.bc.js docs
+	cp -f  docs/
 
 -include makefile.coq
 
@@ -36,9 +37,8 @@ clean::
 #SOURCES=$(addprefix $(SOURCE_ROOT)/,$(BUILD_PATTERNS))
 #RESULT=extraction/UIML_extraction
 
-demo: extraction/UIML_extraction.vo
+demo: extraction/UIML_extraction.vo bin/uiml_demo.ml
 	dune build
-	cp _build/default/bin/uiml_demo.bc.js docs/
 
 
 #-include OCamlMakefile

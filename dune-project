@@ -21,7 +21,8 @@
  (name uiml)
  (synopsis "Propositional quantifiers for modal logics formalized")
  (description "")
- (depends ocaml dune coq-color coq-stdpp js_of_ocaml)
+ (allow_empty)
+ (depends ocaml dune coq-color coq-stdpp js_of_ocaml angstrom)
  (tags
   (coq "intuitionistic logic" "proof theory" "propositional quantifiers" "extraction")))
 
