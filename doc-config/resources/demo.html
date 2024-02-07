@@ -13,7 +13,7 @@
 <body onload="document.getElementById('content').focus()">
   <div id="header">
     <span class="left">
-      <span class="modulename"> <script> document.write(document.title) </script> </span>
+      <span class="modulename"> <script type="text/javascript"> document.write(document.title) </script> </span>
     </span>
 
     <span class="button" id="toggle-proofs"></span>
@@ -25,7 +25,7 @@
       <a href="./demo.html"> Demo </a>
     </span>
 </div>
-    <div id="content" tabindex="-1" onblur="document.getElementById('content').focus()">
+    <div id="content" onblur="document.getElementById('content').focus()">
     <div id="main">
   <script type="text/javascript" src="uiml_demo.bc.js"></script>
     <p><b>Disclaimer:</b> This is just for a demo. Parsing is unverified.<br/>
