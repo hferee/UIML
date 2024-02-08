@@ -26,22 +26,32 @@ let bot_u = spaces *> char '\xE2' *> char '\x8A' *> char '\xA5' *> spaces *> ret
 let rec nat_of_int (n: int) =
   if n <= 0 then O
   else S (nat_of_int (n-1))
-  
+
 let integer =
   char 'x' *> take_while1 (function '0' .. '9' -> true | _ -> false) >>| fun x -> Var (nat_of_int (int_of_string x))
 
+(* chain of left-associative operations *)
 let chainl1 e op =
   let rec go acc =
     (lift2 (fun f x -> f acc x) op e >>= go) <|> return acc in
   e >>= fun init -> go init
-(* TODO : not sure about boxes and ¬ *)
+
+  let chainr1 e op =
+    let rec go acc =
+      (lift2 (fun f x -> f acc x) op (e >>= go)) <|> return acc in
+    e >>= go  
+    (*
+  p ‘chainr1‘ op =
+  p ‘bind‘ \x ->
+  [f x y | f <- op, y <- p ‘chainr1‘ op] ++ [x]
+*)
 let expr : form t =
   fix (fun expr ->
     let factor = parens expr <|> integer <|> bot_u in
     let modality = box factor <|> neg factor <|> factor in
     let term   = chainl1 modality conj in
     let disjunctions = spaces *> chainl1 term disj <* spaces in
-    spaces *> chainl1 disjunctions impl <* spaces
+    spaces *> chainr1 disjunctions impl <* spaces
     )
 
 let eval (str:string) : form =

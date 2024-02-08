@@ -8,6 +8,13 @@
 <script type="text/javascript" src="config.js"></script>
 <script type="text/javascript" src="coqdocjs.js"></script>
 <title>Uniform interpolation for modal logics demo</title>
+<script type="text/javascript">
+  function make_call(f, in_id, out_id){
+    document.getElementById(out_id).textContent =
+    decodeURIComponent(escape(f(unescape(encodeURIComponent(document.getElementById(in_id).value)))))
+
+  }
+</script>
 </head>
 
 <body onload="document.getElementById('content').focus()">
@@ -35,28 +42,23 @@
     <h1>Input</h1>
     <input type="text" id="input_formula" size="30" value=" (x0 ∨ x2) ∧  □ (x0 →¬ x1)"/>
     <h1>Test Parsing</h1>
-    <button onclick="document.getElementById(&quot;output_parse&quot;).textContent =
-    decodeURIComponent(escape(UIML.parse(unescape(encodeURIComponent(document.getElementById('input_formula').value)))))">Parse</button>
+    <button onclick="make_call(UIML.parse,'input_formula', 'output_parse')">Parse</button>
   <p id="output_parse"></p>
     <h1>iSL</h1>
     <h2>E</h2>
-    <button onclick="document.getElementById(&quot;output_iSLE&quot;).textContent =
-      decodeURIComponent(escape(UIML.islE((unescape(encodeURIComponent(document.getElementById('input_formula').value))))))">iSL(E)</button>
+    <button onclick="make_call(UIML.islE,'input_formula', 'output_iSLE')">iSL(E)</button>
     <p id="output_iSLE"></p>
 
     <h2>A</h2>
-    <button onclick="document.getElementById(&quot;output_iSLA&quot;).textContent =
-      decodeURIComponent(escape(UIML.islA((unescape(encodeURIComponent(document.getElementById('input_formula').value))))))">iSL(A)</button>
+    <button onclick="make_call(UIML.islA,'input_formula', 'output_iSLA')">iSL(A)</button>
     <p id="output_iSLA"></p>
 
     <h1>K</h1>
-    <button onclick="document.getElementById(&quot;output_K&quot;).textContent =
-      decodeURIComponent(escape(UIML.k((unescape(encodeURIComponent(document.getElementById('input_formula').value))))))">K</button>
+    <button onclick="make_call(UIML.k,'input_formula', 'output_K')">K</button>
     <p id="output_K"></p>
 
     <h1>GL</h1>
-    <button onclick="document.getElementById(&quot;output_GL&quot;).textContent =
-      decodeURIComponent(escape(UIML.gl((unescape(encodeURIComponent(document.getElementById('input_formula').value))))))">GL</button>
+    <button onclick="make_call(UIML.gl,'input_formula', 'output_GL')">GL</button>
     <p id="output_GL"></p>
 
 </div>
