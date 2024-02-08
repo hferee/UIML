@@ -44,8 +44,8 @@ let _ =
     (object%js
        method islA s = string_of_formula (isl_A O (eval s))
        method islE s = string_of_formula (isl_E O (eval s))
-       method k s = string_of_formula (gl_UI O (eval s))
-       method gl s = string_of_formula (k_UI O (eval s))
+       method k s = string_of_formula (k_UI O (eval s))
+       method gl s = string_of_formula (gl_UI O (eval s))
        method parse s = string_of_formula (eval s)
 
      end)
