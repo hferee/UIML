@@ -14,9 +14,10 @@ let rec string_of_formula = function
 | Box f -> "□ " ^ bracket f
 | And (f, g) -> bracket f ^ " ∧ " ^ bracket g
 | Or (f, g) -> bracket f ^ " ∨ " ^ bracket g
+| Implies (f, Bot) -> "¬ " ^ bracket f (* pretty print ¬ *)
 | Implies (f, g) -> bracket f ^ " → " ^ bracket g
 and bracket e = match e with
-| Var _ | Bot -> string_of_formula e
+| Var _ | Bot | Implies(_, Bot) -> string_of_formula e
 | e -> "(" ^ string_of_formula e ^ ")"
 (* disable optims for now
 | Implies (Bot, _) -> "⊤"                             (* ⊥ -> φ ≡ ⊤ *)

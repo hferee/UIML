@@ -67,9 +67,8 @@ match θ with
   (E (Δ'•(δ₂ → δ₃)) _⇢ A (Δ'•(δ₂ → δ₃), δ₁ → δ₂) _) ⇢ E (Δ'•δ₃) _
 | Bot → _ => ⊤
 | □ φ => □(E ((⊗Δ') • φ ) _) (* very redundant ; identical for each box *)
-| (□δ1 → δ2) =>  (□(E((⊗Δ') • δ2 • □δ1) _ → A((⊗Δ') • δ2 • □δ1, δ1) _) → E(Δ' • δ2) _)
-end. (* TODO: E((⊗Δ') • δ2 • □δ1) _) →  ? *)
-(* TODO lemma : E(Δ) |- θ -> E(⊗Δ) ⊢ θ *)
+| (□δ1 → δ2) =>  (□(E((⊗Δ') • δ2 • □δ1) _ ⇢ A((⊗Δ') • δ2 • □δ1, δ1) _)) ⇢ E(Δ' • δ2) _
+end.
 
 (** The implementation of the rules for defining A is separated into two pieces.
     Referring to Table 5 in Pitts, the definition a_rule_env handles A1-8 and A10,
@@ -112,8 +111,8 @@ match θ with
 | Bot => ⊥
 | Bot → _ => ⊥
 | □δ => ⊥
-| ((□δ1) → δ2) => □(E((⊗Δ')• δ2 • □δ1) _  → A((⊗Δ')• δ2 • □δ1, δ1) _) ∧ A(Δ' • δ2, ϕ) _
-(* TODO: (E((⊗Δ') • δ2 • □δ1)  _ → ? *)
+| ((□δ1) → δ2) => (□(E((⊗Δ')• δ2 • □δ1) _  ⇢ A((⊗Δ')• δ2 • □δ1, δ1) _)) ∧ A(Δ' • δ2, ϕ) _
+(* using ⊼ here breaks congruence *)
 end.
 
 (* make sure that the proof obligations do not depend on EA0 *)
@@ -169,8 +168,8 @@ Proof.
   intro Heq.
   destruct θ; simpl; trivial; repeat (destruct decide);
   f_equal; repeat erewrite Heq; trivial;
-  destruct θ1; try (destruct decide); trivial;
-  repeat erewrite Heq; trivial.
+  destruct θ1; try (destruct decide); trivial; simpl;
+  repeat erewrite Heq; trivial; (destruct decide); trivial.
 Qed.
 
 Lemma a_rule_form_cong Δ ϕ EA1 EA2:
@@ -182,7 +181,6 @@ Proof.
   repeat (erewrite Heq; eauto); trivial.
 Qed.
 
-(** The following lemma requires proof irrelevance due to in_map. *)
 Lemma EA_eq Δ ϕ:
   (E (Δ, ϕ) =  ⋀ (in_map Δ (@e_rule Δ ϕ (λ pe _, EA pe)))) /\
   (A (Δ, ϕ) = (⋁ (in_map Δ (@a_rule_env Δ ϕ (λ pe _, EA pe)))) ⊻
@@ -243,7 +241,8 @@ destruct θ; unfold e_rule.
       subst. tauto.
   + intros Hocc. apply occurs_in_make_impl in Hocc.
       destruct Hocc as [Hocc|Hocc]; [apply occurs_in_make_impl in Hocc as [Hocc|Hocc]|]; vars_tac; subst; tauto.
-  + intros Hocc; repeat destruct Hocc as [Hocc|Hocc]; simpl in Hocc; vars_tac.
+  + intros Hocc. repeat (apply occurs_in_make_impl in Hocc; destruct Hocc as [Hocc|Hocc]);
+      simpl in Hocc; vars_tac.
 - intuition; simpl in *; vars_tac.
 Qed.
 (** *** (b) *)
@@ -275,7 +274,7 @@ destruct θ; unfold a_rule_env.
       destruct Hocc as [Hocc|Hocc].
       * apply occurs_in_make_impl in Hocc; vars_tac; vars_tac.
       * vars_tac.
-  + intros Hocc.  try apply occurs_in_make_impl in Hocc.
+  + intros Hocc.  try apply occurs_in_make_conj in Hocc.
       destruct Hocc as [Hocc|Hocc].
       * try apply occurs_in_make_conj in Hocc; vars_tac; vars_tac.
       * vars_tac.
@@ -381,10 +380,11 @@ destruct θ; exhibit Hin 1.
   + simpl; exch 0. apply ImpLAnd. apply make_impl_complete_L2. exch 0...
   + simpl; exch 0. apply ImpLOr. exch 1. exch 0...
   + apply make_conj_sound_L. exch 0. apply ImpLImp; exch 0.
-      * apply AndL...
+      * apply AndL. exch 0. apply make_impl_sound_L. exch 0...
       * apply AndL. exch 0. apply weakening, HA.
-  + exch 0. simpl. exch 0. apply AndL. exch 1; exch 0. apply ImpBox.
-      * box_tac. box_tac. exch 0; exch 1; exch 0. apply weakening. exch 1; exch 0. apply ImpL.
+  + exch 0. exch 0. simpl. apply  AndL. exch 1; exch 0. apply ImpBox.
+      * box_tac. box_tac. exch 0; exch 1; exch 0. apply weakening. exch 1; exch 0.
+         apply make_impl_sound_L. apply ImpL.
          -- auto with proof.
          -- apply HA.
       * exch 1; exch 0. apply weakening. exch 0. auto with proof.
@@ -429,8 +429,8 @@ destruct ψ; unfold e_rule; exhibit Hin 0.
       apply make_impl_sound_R, ImpR. apply make_impl_sound_L. exch 0. apply ImpLImp.
       * exch 0. auto with proof.
       * exch 0. auto with proof.
-  + foldEA. apply ImpR. exch 0. apply ImpBox.
-         --  box_tac. exch 0; exch 1; exch 0. apply ImpL. 
+  + foldEA. apply make_impl_sound_R, ImpR. exch 0. apply ImpBox.
+         --  box_tac. exch 0; exch 1; exch 0. apply make_impl_sound_L, ImpL.
             ++ apply weakening, HE. order_tac.
             ++ apply HA. order_tac.
          -- exch 0; apply weakening, HE. order_tac.
@@ -795,8 +795,8 @@ end; simpl.
       * erewrite E_irr with (ϕ' := ψ).
           exch 0. apply IHHp2. occ. rewrite Heq'. (* TODO: equiv_tac should do that *) equiv_tac.
 - split; Etac.
-  + foldEA. apply ImpBox.
-        -- do 2 apply weakening. apply ImpR.
+  + foldEA. apply make_impl_sound_L, ImpBox.
+        -- do 2 apply weakening. apply make_impl_sound_R, ImpR.
             erewrite E_irr with (ϕ' := φ1) by ms.
             apply IHHp1.
             ++ intros φ0 Hin1 HF. destruct (occurs_in_open_boxes _ _ _ HF Hin1) as (θ0 & Hθ0 & Hinθ).
@@ -806,21 +806,21 @@ end; simpl.
                     simpl. rewrite union_difference_R by auto with proof. ms.
         -- apply IHHp2. occ. equiv_tac. trivial.
   + foldEA. Atac.  apply AndR.
-     * apply ImpBox.
-        -- do 2 apply weakening. apply ImpR.
+     * apply make_impl_sound_L, ImpBox.
+        -- do 2 apply weakening. apply make_impl_sound_R, ImpR.
             erewrite E_irr with (ϕ' := φ1).
             apply IHHp1.
             ++ intros φ0 Hin1 HF. destruct (occurs_in_open_boxes _ _ _ HF Hin1) as (θ0 & Hθ0 & Hinθ).
                     apply (Hnin θ0); ms.
             ++ rewrite Heq', union_difference_R, open_boxes_disj_union, open_boxes_remove by trivial. ms.
-       -- apply BoxR. box_tac. do 2 apply weakening. apply ImpR. foldEA. 
+       -- apply BoxR. box_tac. do 2 apply weakening. apply make_impl_sound_R, ImpR. foldEA. 
            erewrite E_irr with (ϕ' := φ1) by ms.
            apply IHHp1.
             ++ intros φ0 Hin1 HF. destruct (occurs_in_open_boxes _ _ _ HF Hin1) as (θ0 & Hθ0 & Hinθ).
                     apply (Hnin θ0); ms.
             ++ rewrite Heq', union_difference_R, open_boxes_disj_union, open_boxes_remove by trivial. ms.
-     * foldEA. apply ImpBox.
-        ++ do 2 apply weakening. apply ImpR.
+     * foldEA. apply make_impl_sound_L, ImpBox.
+        ++ do 2 apply weakening. apply make_impl_sound_R, ImpR.
                erewrite E_irr with (ϕ' := φ1).
                apply IHHp1.
                ** intros φ0 Hφ0 HF. destruct (occurs_in_open_boxes _ _ _ HF Hφ0) as (θ0 & Hθ0 & Hinθ).
