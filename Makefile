@@ -29,7 +29,7 @@ doc: makefile.coq demo
 clean::
 	rm makefile.coq makefile.coq.conf
 	rm -f $(BUILD_FILES)
-	rm -f extraction/*.{ml,mli}
+	rm -f extraction/*.ml extraction/*.mli
 
 # OCaml build
 #SOURCE_ROOT=extraction
