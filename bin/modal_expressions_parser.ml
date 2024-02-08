@@ -20,7 +20,7 @@ let conj = spaces *> ((char '\xE2' *> char '\x88' *> char '\xA7') <|> char '&') 
 let impl = spaces *> ((char '\xE2' *> char '\x86' *> char '\x92') <|> (char '-' *> char '>')) *> spaces *> return (fun x y -> Implies(x, y))
 
 (* this is ⊥ *)
-let bot_u = spaces *> char '\xE2' *> char '\x8A' *> char '\xA5' *> spaces *> return (Bot)
+let bot_u = spaces *> ((char '\xE2' *> char '\x8A' *> char '\xA5') <|> char '#') *> spaces *> return (Bot)
 
 (* temporary fix *)
 let rec nat_of_int (n: int) =

@@ -2,25 +2,27 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 
 <head>
-<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
-<link href="coqdoc.css" rel="stylesheet" type="text/css" />
-<link href="coqdocjs.css" rel="stylesheet" type="text/css"/>
-<script type="text/javascript" src="config.js"></script>
-<script type="text/javascript" src="coqdocjs.js"></script>
-<title>Uniform interpolation for modal logics demo</title>
-<script type="text/javascript">
-  function make_call(f, in_id, out_id){
-    document.getElementById(out_id).textContent =
-    decodeURIComponent(escape(f(unescape(encodeURIComponent(document.getElementById(in_id).value)))))
+  <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+  <link href="coqdoc-demo.css" rel="stylesheet" type="text/css" />
+  <link href="coqdocjs.css" rel="stylesheet" type="text/css" />
+  <script type="text/javascript" src="config.js"></script>
+  <!-- <script type="text/javascript" src="coqdocjs.js"></script> -->
+  <title>Uniform interpolant calculator</title>
+  <script type="text/javascript">
+    function make_call(f, in_id, out_id) {
+      document.getElementById(out_id).textContent =
+        decodeURIComponent(escape(f(unescape(encodeURIComponent(document.getElementById(in_id).value)))))
 
-  }
-</script>
+    }
+  </script>
 </head>
 
 <body onload="document.getElementById('content').focus()">
   <div id="header">
     <span class="left">
-      <span class="modulename"> <script type="text/javascript"> document.write(document.title) </script> </span>
+      <span class="modulename">
+        <script type="text/javascript"> document.write(document.title) </script>
+      </span>
     </span>
 
     <span class="button" id="toggle-proofs"></span>
@@ -31,41 +33,91 @@
       <a href="./toc.html"> Table of Contents </a>
       <a href="./demo.html"> Demo </a>
     </span>
-</div>
-    <div id="content" onblur="document.getElementById('content').focus()">
+  </div>
+  <div id="content" onblur="document.getElementById('content').focus()">
     <div id="main">
-  <script type="text/javascript" src="uiml_demo.bc.js"></script>
-    <p><b>Disclaimer:</b> This is just for a demo. Parsing is unverified.<br/>
-        The function involved have high complexity ; expect unreasonably long running times for relatively small formulas.
-    Symbols are unicode with utf8 alternatives: →/->, ¬/~, ∧/&, ∨/|, □/[], ⊥. Variables are of the form "xn" with n an integer.<br/>
-    All quantifiers are for variable x0.</p>
-    <h1>Input</h1>
-    <input type="text" id="input_formula" size="30" value=" (x0 ∨ x2) ∧  □ (x0 →¬ x1)"/>
-    <h1>Test Parsing</h1>
-    <button onclick="make_call(UIML.parse,'input_formula', 'output_parse')">Parse</button>
-  <p id="output_parse"></p>
-    <h1>iSL</h1>
-    <h2>E</h2>
-    <button onclick="make_call(UIML.islE,'input_formula', 'output_iSLE')">iSL(E)</button>
-    <p id="output_iSLE"></p>
+      <script type="text/javascript" src="uiml_demo.bc.js"></script>
+      <p>Enter a formula below and choose the uniform interpolant that you want to compute.</p>
+      <input style="font-size:1em; font-family:'Courier New', Courier, monospace; padding: .2em;" type="text" id="input_formula" size="30" value="(x0 ∨ x2) ∧ □(x0 → ¬x1)" />
+      <select style="font-size:1em;  padding: .2em;" id="function_select">
+        <option value="islE">iSL: E(x0)</option>
+        <option value="islA">iSL: A(x0)</option>
+        <option value="k">K: A(x0)</option>
+        <option value="gl">GL: A(x0)</option>
+        <option value="parse">Test parsing</option>
+      </select>
+      <button style="font-size:1em; padding: .2em;"
+        onclick="make_call(UIML[document.getElementById('function_select').value],'input_formula', 'output_result')">Execute</button>
+      <button style="font-size:1em; padding: .2em;" onclick="document.getElementById('output_result').textContent = ''; document.getElementById('input_formula').value = ''">Clear</button>
 
-    <h2>A</h2>
-    <button onclick="make_call(UIML.islA,'input_formula', 'output_iSLA')">iSL(A)</button>
-    <p id="output_iSLA"></p>
+      <p><b>Result:</b> <div id="output_result"> </div></p>
+      <br>
 
-    <h1>K</h1>
-    <button onclick="make_call(UIML.k,'input_formula', 'output_K')">K</button>
-    <p id="output_K"></p>
+      <p><b>Usage instructions.</b>
+      We support three logics: 
+      <ul>
+        <li>intuitionistic Strong Löb <b>(iSL)</b>, which can in particular be used to compute uniform interpolants for <b>IL</b> when the input contains no □;</li> 
+        <li>Gödel-Löb logic <b>(GL)</b>, and</li> 
+        <li>basic modal logic <b>(K)</b>.</li> 
+      </ul>  
+      You may use the following symbols:
+      <table style="border-collapse: collapse; border: 0; 
+    border-spacing: 10px 0;">
+        <tr>
+          <td>→</td>
+          <td class="ms">-></td>
+          <td>implication</td>
+        </tr>
+        <tr>
+          <td>¬</td>
+          <td class="ms">~</td>
+          <td>negation</td>
+        </tr>
+        <tr>
+          <td>∧</td>
+          <td class="ms">&</td>
+          <td>conjunction (and)</td>
+        </tr>
+        <tr>
+          <td>∨</td>
+          <td class="ms">|</td>
+          <td>disjunction (or)</td>
+        </tr>
+        <tr>
+          <td>□</td>
+          <td class="ms">[]</td>
+          <td>necessity (box)</td>
+        <tr>
+          <td>⊥</td>
+          <td class="ms">#</td>
+          <td>falsum</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td class="ms">x0</td>
+          <td>propositional variable to be quantified</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td class="ms">x1, x2, ...</td>
+          <td>other propositional variables</td>
+        </tr>
+      </table>
+      <p>The quantifiers are always with respect to the variable x0.</p>
+      <p style="font-size: .6em;">
+        <b>Disclaimer:</b>
+        This page is only for the purpose of easy demonstration of the formally verified implementation in Coq. The
+        parsing library and the <a href="https://github.com/ocsigen/js_of_ocaml">OCaml to JS</a> compiler that were used
+        for building this page are not verified formally.
+        The functions have not yet been optimized; high run-time may occur even on small examples.
+      </p>
 
-    <h1>GL</h1>
-    <button onclick="make_call(UIML.gl,'input_formula', 'output_GL')">GL</button>
-    <p id="output_GL"></p>
 
-</div>
-<div id="footer">
-  Generated by <a href="http://coq.inria.fr/">coqdoc</a> and improved with <a href="https://github.com/tebbi/coqdocjs">CoqdocJS</a>
-</div>
-</div>
+    <div id="footer">
+      Generated by <a href="http://coq.inria.fr/">coqdoc</a> and improved with <a
+        href="https://github.com/tebbi/coqdocjs">CoqdocJS</a>
+    </div>
+  </div>
 </body>
 
 </html>
