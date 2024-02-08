@@ -204,11 +204,3 @@ End irred.
 Arguments Girred {X}.
 Arguments irred {X f}.
 
-About irred.
-Check irred_nil.
-Check irred_not.
-
-Extraction Inline list_is_nil.
-(* Extraction Inline flatmap. *)
-Recursive Extraction irred.
-

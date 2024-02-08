@@ -264,7 +264,7 @@ Arguments imap {X} {Y} _ {D} _ {l}.
       * assert (is_init s -> False) ; auto.
         assert ((forall x : Seq, In x (GLR_prems (nodupseq s)) -> {x0 : MPropF | GUI x x0})).
         intros. apply IH with (s1:=x) ; auto. apply LexSeq_nodupseq. apply GLR_prems_LexSeq ; auto.
-        intro. pose (is_init_nodupseq s). apply f. apply p0. unfold is_init ; auto. Search InT Seq In. apply InT_In_Seq ; auto.
+        intro. pose (is_init_nodupseq s). apply f. apply p0. unfold is_init ; auto. apply InT_In_Seq ; auto.
         epose (@imap _ _ GUI (fun (x : Seq) => In x (GLR_prems (nodupseq s))) H0 (GLR_prems (nodupseq s))). simpl in s0. destruct s0 ; auto.
         assert (J10: (forall z : Seq, In z (Canopy (nodupseq (XBoxed_list (top_boxes (fst s)), []%list))) -> existsT A : MPropF, (GN p GUI s) z A)).
          { intros. destruct (dec_init_rules z).

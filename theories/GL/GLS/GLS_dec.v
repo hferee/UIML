@@ -5,8 +5,6 @@ Require Import Lia.
 
 Require Import GLS_calcs.
 
-Delimit Scope My_scope with M.
-Open Scope My_scope.
 Set Implicit Arguments.
 
 (* In this file we show that the applicability of the rules in GLS is decidable. *)

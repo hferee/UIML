@@ -11,8 +11,6 @@ Require Import GLS_wkn.
 Require Import GLS_dec.
 Require Import GLS_inv_ImpR_ImpL.
 
-Delimit Scope My_scope with M.
-Open Scope My_scope.
 Set Implicit Arguments.
 
 Theorem GLS_cut_adm_main : forall n A s Γ0 Γ1 Δ0 Δ1,

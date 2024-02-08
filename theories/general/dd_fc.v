@@ -141,7 +141,6 @@ with dersrec_height X rules prems concls
     | dlCons d ds => max (derrec_height d) (dersrec_height ds)
   end.
 
-Print derI.
 
 Fixpoint derrec_size X rules prems concl 
   (der : @derrec X rules prems concl) :=
@@ -156,7 +155,7 @@ with dersrec_size X rules prems concls
     | dlCons d ds => (derrec_size d) + (dersrec_size ds)
   end.
 
-Fixpoint derrec_concl X rules prems concl 
+Definition derrec_concl X rules prems concl 
   (der : @derrec X rules prems concl) :=
   match der with 
     | dpI _ _ c _ => c
@@ -170,24 +169,38 @@ Fixpoint dersrec_concls X rules prems concls
     | dlCons d ds => derrec_concl d :: dersrec_concls ds
   end.
 
-Fixpoint der_botr_ps X rules prems concl 
+Definition der_botr_ps X rules prems concl 
   (der : @derrec X rules prems concl) :=
   match der with 
     | dpI _ _ _ _ => []
     | @derI _ _ _ ps _ _ _ => ps
   end.
 
-(* see coq-club emails 25/4/20 *)
-Fixpoint dersrec_hd X rules prems c cs
-  (ders : @dersrec X rules prems (c :: cs)) {struct ders} :=
-  match ders with 
-    | dlCons d ds => d
+Definition dersrec_hd X rules prems c cs
+  (ders : @dersrec X rules prems (c :: cs)) : derrec rules prems c :=
+  match
+    ders in (dersrec _ _ l) return match l with
+                                   | [] => IDProp
+                                   | c1 :: _ => derrec rules prems c1
+                                   end
+  with
+  | dlNil _ _ => idProp
+  | dlCons d _ => d
   end.
 
-Fixpoint dersrec_tl X rules prems c cs
-  (ders : @dersrec X rules prems (c :: cs)) {struct ders} :=
-  match ders with 
-    | dlCons d ds => ds
+
+Definition dersrec_tl X rules prems c cs
+  (ders : @dersrec X rules prems (c :: cs)) :=
+  match
+    ders as ders0 in (dersrec _ _ l)
+    return
+      (match l as x return (dersrec rules prems x -> Type) with
+       | [] => fun _ : dersrec rules prems [] => IDProp
+       | c1 :: c0 => fun _ : dersrec rules prems (c1 :: c0) => dersrec rules prems c0
+       end ders0)
+  with
+  | dlNil _ _ => idProp
+  | dlCons _ ds => ds
   end.
 
 Definition dersrec_singleD' X rules prems c 
@@ -345,13 +358,13 @@ Definition nextup W rules prems (dt : @derrec_fc W rules prems) :=
     | fcI (derI _ _ ds) => dersrec_trees ds
   end.
 
-Fixpoint derrec_fc_concl X rules prems 
+Definition derrec_fc_concl X rules prems 
   (der : @derrec_fc X rules prems) :=
   match der with 
     | fcI d => derrec_concl d
   end.
 
-Fixpoint dersrec_fc_concls X rules prems 
+Definition dersrec_fc_concls X rules prems 
   (ders : @dersrec_fcs X rules prems) :=
   match ders with 
     | fcsI ds => dersrec_concls ds
@@ -374,25 +387,25 @@ Fixpoint derrec_of_fc X rules prems
 (* while we can't get something of type derrec rules prems _
   from something of type derrec_fc ..., we can get it and then
   apply any function to it whose result type doesn't involve the conclusion *)
-Fixpoint derrec_fc_size X rules prems 
+Definition derrec_fc_size X rules prems 
   (der : @derrec_fc X rules prems) :=
   match der with 
     | fcI d => derrec_size d
   end.
 
-Fixpoint dersrec_fc_size X rules prems 
+Definition dersrec_fc_size X rules prems 
   (ders : @dersrec_fcs X rules prems) :=
   match ders with 
     | fcsI ds => dersrec_size ds
   end.
 
-Fixpoint derrec_fc_height X rules prems 
+Definition derrec_fc_height X rules prems 
   (der : @derrec_fc X rules prems) :=
   match der with 
     | fcI d => derrec_height d
   end.
 
-Fixpoint dersrec_fc_height X rules prems 
+Definition dersrec_fc_height X rules prems 
   (ders : @dersrec_fcs X rules prems) :=
   match ders with 
     | fcsI ds => dersrec_height ds
@@ -511,12 +524,12 @@ Lemma drs_trees_height W rules prems ps (ds : @dersrec W rules prems ps) dn:
   InT dn (dersrec_trees ds) -> derrec_fc_height dn <= dersrec_height ds.
 Proof. induction ds ; simpl ; intro inn ; inversion inn.
 subst. simpl. apply PeanoNat.Nat.le_max_l.
-apply (Le.le_trans _ _ _ (IHds X)).  apply PeanoNat.Nat.le_max_r. Qed.
+apply (Nat.le_trans _ _ _ (IHds X)).  apply PeanoNat.Nat.le_max_r. Qed.
 
 Lemma nextup_height W rules prems dt dn: InT dn (nextup dt) ->
   (@derrec_fc_height W rules prems dn) < derrec_fc_height dt.
 Proof. intro inn.  destruct dt. destruct d ; simpl in inn. inversion inn.
-simpl.  exact (Lt.le_lt_n_Sm _ _ (drs_trees_height _ inn)). Qed.
+simpl.  apply Nat.lt_succ_r, drs_trees_height, inn. Qed.
 
 Lemma fcI_inj: forall X rules prems concl (d1 : @derrec X rules prems concl) d2,
   fcI d1 = fcI d2 -> d1 = d2.
@@ -563,7 +576,7 @@ Lemma dersrec_derrec_height : forall n {X : Type} {rules prems G}
     existsT2 (D1 : derrec rules prems G),
       @derrec_height X _ _ _ D1 = n.
 Proof.
-  intros until 0.
+  intros *.
   intros Ht.
   remember D2 as D2'.
   remember [G] as GG.
@@ -583,7 +596,7 @@ Lemma dersrec_derrec2_height : forall n {X : Type} {rules prems G1 G2}
     existsT2 (D1a : derrec rules prems G1) (D1b : derrec rules prems G2),
      n = max (@derrec_height X _ _ _ D1a) (@derrec_height X _ _ _ D1b).
 Proof.
-  intros until 0.
+  intros *.
   intros Ht.
   remember D2 as D2'.
   remember [G1;G2] as GG.
@@ -661,8 +674,7 @@ eq_rect_r
      existT (fun D3 : derrec rules prems H => dp D2 = dp D3) D2 eq_refl) H0 D1)
               X rules prems
 G H D pf in D').
-Check get_D.
-Print get_D.
+
 (*
 Parameter (X : Type) (rules : list X -> X -> Type) (prems : X -> Type) 
   (G H : X) (D : derrec rules prems G) (pf : G = H).
@@ -680,8 +692,6 @@ Definition get_dpD {X : Type} (rules : list X -> X -> Type) (prems : X -> Type) 
     forall D0 : derrec rules prems G0, dp D0 = dp (get_D D0 pf0))
    (fun D0 : derrec rules prems H => eq_refl) pf D.
 
-Check get_dpD.
-
 Ltac tfm_dersrec_derrec_dp D2s D2 Hdp HdpD2 Hdp'' Hdp' :=  
   destruct (dersrec_derrec_dp D2s eq_refl) as [D2 HdpD2];
   match goal with
@@ -697,8 +707,8 @@ Ltac tfm_dersrec_derrec2_dp D2s D2 Hdp HdpD2 Hdpa'' Hdpb'' Hdpa' Hdpb' HeqD2s Hm
   [reflexivity |];
   destruct (dersrec_derrec2_dp D2s HeqD2s) as [D2a [D2b HdpD2]];
   clear HeqD2s;
-  epose proof (Max.le_max_r _ _) as Hmax1;
-  epose proof (Max.le_max_l _ _) as Hmax2;
+  epose proof (Nat.le_max_r _ _) as Hmax1;
+  epose proof (Nat.le_max_r _ _) as Hmax2;
   rewrite <- HdpD2 in Hmax1;
   rewrite <- HdpD2 in Hmax2;
   match goal with
@@ -713,15 +723,3 @@ Ltac tfm_dersrec_derrec2_dp D2s D2 Hdp HdpD2 Hdpa'' Hdpb'' Hdpa' Hdpb' HeqD2s Hm
   [lia | ];
   clear HdpD2 D2s Hdp Hmax1 Hmax2
   end.
-
-(*
-Print botRule_fc.
-Print Implicit der_concl_eq.
-Print Implicit der_fc_concl_eq.
-Print Implicit der_botRule.
-Print Implicit botRule_fc_concl.
-Print Implicit botRule_fc_rules.
-Print Implicit botRule_fc_drs.
-Print Implicit botRule_fc_ps.
-Print Implicit botRule_fc_prems.
-*)

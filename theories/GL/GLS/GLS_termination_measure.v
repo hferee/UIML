@@ -7,8 +7,6 @@ Require Import Wellfounded.
 Require Import GLS_calcs.
 Require Import DLW_wf_lex.
 
-Delimit Scope My_scope with M.
-Open Scope My_scope.
 Set Implicit Arguments.
 
 Lemma eq_dec_nat : forall (n m : nat), {n = m} + {n <> m}.

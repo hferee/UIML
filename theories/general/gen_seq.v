@@ -1,5 +1,3 @@
-
-
 Require Export List.
 Export ListNotations.
 Set Implicit Arguments.
@@ -57,7 +55,7 @@ Lemma Sctxt_e: forall (W : Type) (pr : rlsT (rel (list W))) ps U V Phi1 Phi2 Psi
   pr ps (U, V) ->
   seqrule pr (map (seqext Phi1 Phi2 Psi1 Psi2) ps) (Phi1 ++ U ++ Phi2, Psi1 ++ V ++ Psi2).
 Proof.
-  intros until 0. intros H. rewrite <- seqext_def.
+  intros *. intros H. rewrite <- seqext_def.
   apply Sctxt. exact H.
 Qed.
 
@@ -140,13 +138,12 @@ Inductive seqrule' (W : Type) (pr : rlsT (rel (list W))) :
   | Sctxt' : forall ps c pse ce,
     pr ps c -> seqrule_s ps c pse ce -> seqrule' pr pse ce.
 
-Check (Sctxt' _ _ (Sctxt_s _ _ _ _ _ _)). 
 
 (* Check, get same as Sctxt but for seqrule' *)
 Lemma Sctxt_alt : forall (W : Type) (pr : rlsT (rel (list W))) ps c Phi1 Phi2 Psi1 Psi2,
     pr ps c -> seqrule' pr (map (seqext Phi1 Phi2 Psi1 Psi2) ps) (seqext Phi1 Phi2 Psi1 Psi2 c).
 Proof.
-  intros until 0. intros H.
+  intros *. intros H.
   eapply Sctxt'. exact H. apply Sctxt_s.
 Qed.
 
@@ -154,7 +151,7 @@ Lemma Sctxt_e': forall (W : Type) (pr : rlsT (rel (list W))) ps U V Phi1 Phi2 Ps
   pr ps (U, V) ->
   seqrule pr (map (seqext Phi1 Phi2 Psi1 Psi2) ps) ((Phi1 ++ U) ++ Phi2, Psi1 ++ V ++ Psi2).
 Proof.
-  intros until 0. intros H.
+  intros *. intros H.
   rewrite <- app_assoc. apply Sctxt_e. exact H.
 Qed.  
 
@@ -177,7 +174,7 @@ Definition seqrule_mono' X rulesa rulesb rs :=
 Lemma Sctxt_nil: forall (W : Type) pr c Gam1 Gam2 Delt1 Delt2, (pr [] c : Type) ->
   @seqrule W pr [] (seqext Gam1 Gam2 Delt1 Delt2 c).
 Proof.
-  intros until 0.  intros H. eapply Sctxt in H.
+  intros *.  intros H. eapply Sctxt in H.
   simpl in H. exact H.
 Qed.
 
@@ -220,7 +217,7 @@ Lemma InT_seqext : forall {W : Type} Gam Delt A B,
     InT B Delt ->
     existsT2 Phi1 Phi2 Psi1 Psi2, @seqext W Phi1 Phi2 Psi1 Psi2 ([A], [B]) = (Gam, Delt).
 Proof.
-  intros until 0. intros Hin1 Hin2.
+  intros *. intros Hin1 Hin2.
   destruct (@InT_seqextL _ _ Delt _ Hin1) as [H1 [H2 H3]].
   destruct (@InT_seqextR _ Gam _ _ Hin2) as [J1 [J2 J3]].
   unfold seqext in *.
@@ -403,7 +400,6 @@ simpl in incm0. destruct incm0. simpl in fwk.
 unfold wkL_valid' in fwk.  unfold wkL_valid in fwk.  simpl in fwk.
 rewrite - fmlsext_fmlsext. apply fwk.  Qed.
 
-Print Implicit weakeningL.
 
 (** exchange **)
 (* properties can exchange adjacent sublists, and resulting sequent
@@ -518,7 +514,6 @@ fwl_tac H.
 - fwl_tac pl.
 Qed.
 
-Print Implicit exchL_std_rule.
 
 Lemma exchR_std_rule: forall U W (rules : rlsT (U * list W)),
   (forall ps U S, rules ps (U, S) -> sing_empty S) ->
@@ -563,7 +558,6 @@ fwr_tac H.
 - fwr_tac pr.
 Qed.
 
-Print Implicit exchR_std_rule.
 
 Definition rev_pair {U W} (p : U * W) := let (x, y) := p in (y, x).
 
@@ -577,7 +571,6 @@ eapply fextI.  eapply rmI_eq. apply rmI. exact X.
 clear X.  induction ps0. reflexivity.
 simpl. rewrite IHps0.  destruct a. reflexivity. Qed.
 
-Print Implicit sext_rev_fext.
 
 
 (*

@@ -866,7 +866,7 @@ Ltac hd_tl_inv_arg H :=
 
 Ltac list_assoc_r_single_hyp :=
   match goal with
-  | [ H : (?l1 : list ?T) = ?l2 |- _ ] => list_assoc_r_arg H; tac_cons_singleton_hyp H ; rem_nil_hyp_arg H
+  | [ l1 : list ?T, H : ?l1 = ?l2 |- _ ] => list_assoc_r_arg H; tac_cons_singleton_hyp H ; rem_nil_hyp_arg H
   end.
 
 Ltac list_assoc_r_single_arg H :=
@@ -946,7 +946,7 @@ Ltac inv_app_hd_tl :=
 
 Ltac tac_cons_singleton_eq_hyp :=
   repeat match goal with
-         | [ H : (?l1 : list ?T) = ?l2 |- _ ] => tac_cons_singleton_hyp H;
+         | [ l1 : list ?T, H : ?l1 = ?l2 |- _ ] => tac_cons_singleton_hyp H;
                                                    list_assoc_r_single_arg H
          end.
 
@@ -1079,16 +1079,13 @@ Ltac app_eq_app_dest3_arg H :=
 
 Ltac app_eq_app_dest3 :=
   repeat (inv_app_hd_tl_full ; subst ; match goal with
-  | [H : (?l1 : list ?T) = ?l2 |- _ ] => app_eq_app_dest3_arg H; sD; subst
+  | [l1 : list ?T, H : ?l1 = ?l2 |- _ ] => app_eq_app_dest3_arg H; sD; subst
           end); try (inv_app_hd_tl_full ; subst).
 
 Ltac app_eq_app_dest3' :=
   repeat ((inv_app_hd_tl_full ; subst ; match goal with
-  | [H : (?l1 : list ?T) = ?l2 |- _ ] => app_eq_app_dest3_arg H; sD; subst
+  | [l1 : list ?T, H : ?l1 = ?l2 |- _ ] => app_eq_app_dest3_arg H; sD; subst
           end); try (inv_app_hd_tl_full ; subst)).
-
-
-
 
 Ltac eapply_refl tac := eapply tac; reflexivity.
 

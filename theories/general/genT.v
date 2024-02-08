@@ -258,7 +258,7 @@ Ltac solve_InT := apply InT_eq ||
 
 Lemma InT_appE': forall A a Z, InT (a : A) Z -> 
   forall X Y, Z = X ++ Y -> InT a X + InT a Y.
-Proof.  intros until 0.  intro.  induction X ; intros.
+Proof.  intros *.  intro.  induction X ; intros.
 destruct X ; simpl in H. subst. right. apply InT_eq.
 injection H. intros. subst. left. apply InT_eq.
 destruct X0 ; simpl in H. subst. right. apply InT_cons. assumption.
@@ -314,7 +314,7 @@ simpl. apply InT_appR. assumption. Qed.
 
 Lemma Forall2T_ex_l: forall A B (R : A -> B -> Type) xs ys x,
   Forall2T R xs ys -> InT x xs -> sigT2 (fun y => InT y ys) (fun y => R x y).
-Proof. intros until 0. intro. induction X.
+Proof. intros *. intro. induction X.
 intro. eapply InT_nilE in X. eassumption.
 intro. inversion X0 ; subst. eexists. apply InT_eq. assumption.
 apply IHX in X1. destruct X1. eexists. eapply InT_cons. eassumption.
@@ -322,7 +322,7 @@ assumption. Qed.
 
 Lemma Forall2T_ex_r: forall A B (R : A -> B -> Type) xs ys x,
   Forall2T R ys xs -> InT x xs -> sigT2 (fun y => InT y ys) (fun y => R y x).
-Proof. intros until 0. intro. induction X.
+Proof. intros *. intro. induction X.
 intro. eapply InT_nilE in X. eassumption.
 intro. inversion X0 ; subst. eexists. apply InT_eq. assumption.
 apply IHX in X1. destruct X1. eexists. eapply InT_cons. eassumption.

@@ -151,7 +151,7 @@ Qed.
               (incl (subform_boxesLF l) (subform_boxesLF (nodup eq_dec_form l))) *
               (incl (subform_boxesLF (nodup eq_dec_form l)) (subform_boxesLF l)).
   Proof.
-  induction l ; simpl ; intuition.
+  induction l ; simpl; intuition auto with *.
   - intros A HA. destruct (in_dec eq_dec_form a l). apply a0. apply in_app_or in HA.
     destruct HA. apply In_incl_subform_boxes with (A:=a) ; auto. apply In_remove_list_In_list in H ; auto.
     simpl. apply in_app_or in HA. destruct HA. apply in_or_app ; auto. apply In_remove_list_In_list_not_In_remove_list in H.
@@ -180,7 +180,7 @@ Qed.
               (incl (top_boxes l) (top_boxes (nodup eq_dec_form l))) *
               (incl (top_boxes (nodup eq_dec_form l)) (top_boxes l)).
   Proof.
-  induction l ; simpl ; intuition.
+  induction l ; simpl ; intuition auto with *.
   - intros A HA. destruct (in_dec eq_dec_form a l). apply a0. destruct a ; auto. inversion HA ; subst ; auto.
     apply is_box_in_top_boxes ; auto. eexists ; auto.
     simpl. destruct a ; simpl in * ; auto. destruct HA ; auto.

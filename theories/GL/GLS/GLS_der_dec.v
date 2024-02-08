@@ -11,8 +11,6 @@ Require Import GLS_wkn.
 Require Import GLS_dec.
 Require Import GLS_inv_ImpR_ImpL.
 
-Delimit Scope My_scope with M.
-Open Scope My_scope.
 Set Implicit Arguments.
 
 Lemma forall_elem_list : forall {A : Type} (l : list A) (P : A -> Type),

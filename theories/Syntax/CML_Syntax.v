@@ -4,8 +4,6 @@ Require Import PeanoNat.
 
 Require Import general_export.
 
-Delimit Scope My_scope with M.
-Open Scope My_scope.
 Set Implicit Arguments.
 
 (* Definitions Language *)
@@ -21,8 +19,8 @@ Inductive MPropF : Type :=
 
 Notation "# p" := (Var p) (at level 1).
 Notation "A --> B" := (Imp A B) (at level 16, right associativity).
-Notation "⊥" := Bot (at level 0)  : My_scope.
-Notation "¬ A" := (A --> ⊥) (at level 42) : My_scope.
+Notation "⊥" := Bot (at level 0).
+Notation "¬ A" := (A --> ⊥) (at level 42).
 
   Definition Top := (Bot --> Bot).
   Definition Neg (A : MPropF) := A --> Bot.

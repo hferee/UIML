@@ -6,8 +6,6 @@ Require Import Lia.
 Require Import GLS_calcs.
 Require Import GLS_dec.
 
-Delimit Scope My_scope with M.
-Open Scope My_scope.
 Set Implicit Arguments.
 
 (* We define the relations which take care of the notion of weakening. *)

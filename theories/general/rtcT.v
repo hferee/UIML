@@ -22,7 +22,6 @@ Definition relationT (A : Type) := A -> A -> Type.
 
 Definition transitiveT W (R : relationT W) :=
   forall (x y z : W), R x y -> R y z -> R x z.
-Check transitiveT.
 
 (* see https://coq.inria.fr/stdlib/Coq.Relations.Relation_Operators.html *)
 Section Reflexive_ClosureT.

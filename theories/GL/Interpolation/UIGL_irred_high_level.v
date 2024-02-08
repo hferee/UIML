@@ -87,6 +87,3 @@ Section irred_high_level.
   End provability.
 
 End irred_high_level.
-
-Check irred_high_level_spec.
-Check irred_provability.

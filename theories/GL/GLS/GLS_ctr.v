@@ -6,9 +6,6 @@ Require Import Lia.
 Require Import GLS_calcs.
 Require Import GLS_inv_ImpR_ImpL.
 
-
-Delimit Scope My_scope with M.
-Open Scope My_scope.
 Set Implicit Arguments.
 
 (* Next are the definitions for contraction of one formula on the left, and

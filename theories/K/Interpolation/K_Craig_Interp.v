@@ -9,8 +9,6 @@ Require Import Lia.
 Require Import KS_export.
 Require Import general_export.
 
-Delimit Scope My_scope with M.
-Open Scope My_scope.
 Set Implicit Arguments.
 
 (* Material to define Craig interpolants. *)

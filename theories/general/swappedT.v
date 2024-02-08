@@ -19,23 +19,23 @@ Inductive swapped T: list T -> list T -> Type :=
 Lemma swapped_I': forall T (A B C D : list T),
   swapped (A ++ B ++ C ++ D) (A ++ C ++ B ++ D).
 Proof.  intros.  eapply swapped_I ; reflexivity. Qed.
-   
+
 Lemma swapped_same: forall T X, swapped X (X : list T).
 Proof.  intros.  apply (swapped_I [] [] [] X) ; simpl ; reflexivity. Qed.
 
 Lemma swapped_L: forall T X Y Z,
   swapped X (Y : list T) -> swapped (Z ++ X) (Z ++ Y).
-Proof.  intros until 0; intros X0. inversion X0. subst. 
+Proof.  intros *; intros X0. inversion X0. subst. 
   rewrite !(app_assoc Z). apply swapped_I'. Qed.
 
 Lemma swapped_R: forall T X Y Z,
   swapped X (Y : list T) -> swapped (X ++ Z) (Y ++ Z).
-Proof.  intros until 0; intros X0. destruct X0. subst. rewrite <- !app_assoc. apply swapped_I'. Qed.
+Proof.  intros *; intros X0. destruct X0. subst. rewrite <- !app_assoc. apply swapped_I'. Qed.
 
 Lemma swapped_cons: forall T (x : T) Y Z,
   swapped Y Z -> swapped (x :: Y) (x :: Z).
 Proof.
-  intros until 0; intros H. destruct H.
+  intros *; intros H. destruct H.
   subst. repeat rewrite app_comm_cons.
   apply swapped_I'.
 Qed.
@@ -143,7 +143,7 @@ Lemma swapped_app_L : forall {T} n (l A B : list T),
     swapped_spec n A B ->
     swapped_spec n (l ++ A) (l ++ B).
 Proof.
-  induction n; intros until 0; intros Hswap.
+  induction n; intros *; intros Hswap.
   constructor. apply swapped_L. inversion Hswap. auto.
   inversion Hswap as [ | ? ? ? ? X X0]. subst.
   econstructor. eapply IHn. exact X.
@@ -155,7 +155,7 @@ Lemma swapped_spec_trans : forall {T} n1 n2 (l1 l2 l3 : list T),
     swapped_spec n2 l2 l3 ->
     existsT2 m, swapped_spec m l1 l3.
 Proof.
-  induction n2; intros until 0; intros H1 H2.
+  induction n2; intros *; intros H1 H2.
   inversion H2. subst. exists (S n1).
   econstructor. apply H1. assumption.
   inversion H2 as [ | ? ? ? ? X X0]. subst.
@@ -169,7 +169,7 @@ Lemma swapped_spec_trans_exact : forall {T} n1 n2 (l1 l2 l3 : list T),
     swapped_spec n2 l2 l3 ->
     swapped_spec (S (n1 + n2)) l1 l3.
 Proof.
-  induction n2; intros until 0; intros H1 H2.
+  induction n2; intros *; intros H1 H2.
   inversion H2 as [? ?  X | ]. subst. rewrite PeanoNat.Nat.add_0_r. 
   econstructor. apply H1. apply X.
   inversion H2 as [| ? ? ? ? X X0]. subst.
@@ -182,7 +182,7 @@ Lemma swapped_spec_comm : forall {T} n (A B : list T),
     swapped_spec n A B ->
     swapped_spec n B A.
 Proof.
-  induction n; intros until 0; intros H.
+  induction n; intros *; intros H.
   constructor. inversion H as [? ? X | ]. subst.
   eapply swapped_comm. assumption.
   inversion H as [ | ? ? ? ? X X0]. subst.
@@ -202,7 +202,7 @@ Lemma swapped_app_mid_L : forall {T} n (A B C D E : list T),
     swapped_spec n (A ++ B ++ C ++ D) E ->
     swapped_spec (S n) (A ++ C ++ B ++ D) E.
 Proof.
-  intros until 0; intros Hswap.
+  intros *; intros Hswap.
   assert (S n = S (0 + n)) as Hass.
   reflexivity.
   eapply swapped_spec_conv. symmetry. apply Hass.
@@ -215,7 +215,7 @@ Lemma swapped_app_mid_R : forall {T} n (A B C D E : list T),
     swapped_spec n E (A ++ B ++ C ++ D) ->
     swapped_spec (S n) E (A ++ C ++ B ++ D).
 Proof.
-  intros until 0; intros H.
+  intros *; intros H.
   eapply swapped_spec_comm in H.
   eapply swapped_spec_comm.
   eapply swapped_app_mid_L.
@@ -239,7 +239,7 @@ Lemma swapped__n_mid : forall {T} m (l Gam1 Gam2 Gam1' Gam2' : list T),
     swapped_spec m (Gam1 ++ Gam2) (Gam1' ++ Gam2') ->
     existsT2 n, swapped_spec n (Gam1 ++ l ++ Gam2) (Gam1' ++ l ++ Gam2').
 Proof.
-  intros until 0.
+  intros *.
   intros H. eapply swapped_app_L in H.
   rewrite <- app_nil_l in H.
   eexists.
@@ -269,7 +269,7 @@ Lemma swapped_spec_opp : forall {T} n (A B C : list T),
     swapped A B ->
     swapped_spec (S n) A C.
 Proof.
-  intros until 0; intros H1 H2.
+  intros *; intros H1 H2.
   eapply swapped_spec_I in H2.
   eapply swapped_spec_trans_exact in H1.
   2 : eapply H2. auto.

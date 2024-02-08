@@ -8,8 +8,6 @@ Require Import GLS_exch.
 Require Import GLS_wkn.
 Require Import GLS_dec.
 
-Delimit Scope My_scope with M.
-Open Scope My_scope.
 Set Implicit Arguments.
 
 Lemma remove_rest_gen_ext : forall l A, rest_gen_ext [A] (remove eq_dec_form A l) l.

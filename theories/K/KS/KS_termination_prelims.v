@@ -7,8 +7,6 @@ Require Import KS_calc.
 Require Import KS_dec.
 Require Import KS_termination_measure.
 
-Delimit Scope My_scope with M.
-Open Scope My_scope.
 Set Implicit Arguments.
 
 (* In this file we prove that each sequent Γ |- Δ has a derivation (not proof) D in

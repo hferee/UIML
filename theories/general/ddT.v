@@ -423,7 +423,7 @@ Definition dersrec_appR X rules prems cs ds da :=
 Definition dersrec_appJ X rules prems cs ds := 
   iffT_D2 (@dersrec_app X rules prems cs ds).
 Definition dersrec_appI X rules prems cs ds := 
-  prod_uncurry (@dersrec_appJ X rules prems cs ds).
+  curry (@dersrec_appJ X rules prems cs ds).
 
 Lemma dersrec_single: forall X rules prems c,
   iffT (dersrec rules prems [c]) (derrec rules prems (c : X)).

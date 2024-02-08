@@ -5,8 +5,6 @@ Require Import Lia.
 
 Require Import GLS_calcs.
 
-Delimit Scope My_scope with M.
-Open Scope My_scope.
 Set Implicit Arguments.
 
 (* First, as we want to mimick sequents based on multisets of formulae we need to
