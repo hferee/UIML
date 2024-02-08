@@ -48,7 +48,9 @@ CoqMakefile.conf
 _opam
 _build
 makefile.coq
-extraction/*
+extraction/*.ml
+extraction/*.mli
+extraction/*.d
 ._d/
 ._ncdi/
 uiml.opam
