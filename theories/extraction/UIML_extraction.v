@@ -29,7 +29,7 @@ match f with
 end.
 
 
-Definition gl_UI p s := form_of_MPropF (proj1_sig (GUI_tot p ([],[MPropF_of_form s]))).
+Definition gl_UI p s := form_of_MPropF (proj1_sig (GL.Interpolation.UIGL_braga.GUI_tot p ([],[MPropF_of_form s]))).
 Definition k_UI p s := form_of_MPropF(proj1_sig (K.Interpolation.UIK_braga.GUI_tot p ([],[MPropF_of_form s]))).
 
 Definition isl_E  (n : nat) f :=Ef n f.

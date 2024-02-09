@@ -791,34 +791,34 @@ Qed.
 
 Lemma ImpL_help01 : forall prems s l, InT prems (prems_Imp_L l s) ->
                   (existsT2 n prem1 prem2 A B Γ0 Γ1 Δ0 Δ1,
-                        (prems = [prem1; prem2]) *
-                        (In ((Imp A B), S n) l) *
-                        (prem1 = (Γ0 ++ Γ1, Δ0 ++ A :: Δ1)) *
-                        (prem2 = (Γ0 ++ B :: Γ1, Δ0 ++ Δ1)) *
-                        (Δ0 ++ Δ1 = snd s) *
-                        (Γ0 = (fst (nth_split n (remove_nth (S n) (Imp A B) (fst s))))) *
+                        (prems = [prem1; prem2]) /\
+                        (In ((Imp A B), S n) l) /\
+                        (prem1 = (Γ0 ++ Γ1, Δ0 ++ A :: Δ1)) /\
+                        (prem2 = (Γ0 ++ B :: Γ1, Δ0 ++ Δ1)) /\
+                        (Δ0 ++ Δ1 = snd s) /\
+                        (Γ0 = (fst (nth_split n (remove_nth (S n) (Imp A B) (fst s))))) /\
                         (Γ1 = (snd (nth_split n (remove_nth (S n) (Imp A B) (fst s)))))).
 Proof.
 intros prems s. destruct s. induction l1 ; intros X.
 - simpl in X. inversion X.
-- simpl (fst (l, l0)). destruct a. destruct m.
+- simpl (fst (l, l0)). destruct a as (m & n). destruct m.
   * simpl in X. destruct n.
-    + pose (IHl1 X). repeat destruct s. repeat destruct p. exists x. exists x0. exists x1.
-      exists x2. exists x3. exists x4. exists x5. exists x6. exists x7.
-      repeat split ; try auto. apply in_cons. assumption.
-    + pose (IHl1 X). repeat destruct s. repeat destruct p. exists x. exists x0. exists x1.
-      exists x2. exists x3. exists x4. exists x5. exists x6. exists x7.
+    + destruct (IHl1 X) as (x&x0&x1&x2&x3&x4&x5&x6&x7&p). decompose record p.
+        exists x. exists x0. exists x1. exists x2. exists x3. exists x4. exists x5. exists x6. exists x7.
+       repeat split ; try auto. apply in_cons. assumption.
+    + destruct (IHl1 X) as (x&x0&x1&x2&x3&x4&x5&x6&x7&p). decompose record p.
+        exists x. exists x0. exists x1. exists x2. exists x3. exists x4. exists x5. exists x6. exists x7.
       repeat split ; try auto. apply in_cons. assumption.
   * simpl in X. destruct n.
-    + pose (IHl1 X). repeat destruct s. repeat destruct p. exists x. exists x0. exists x1.
-      exists x2. exists x3. exists x4. exists x5. exists x6. exists x7.
+    + destruct (IHl1 X) as (x&x0&x1&x2&x3&x4&x5&x6&x7&p). decompose record p.
+        exists x. exists x0. exists x1. exists x2. exists x3. exists x4. exists x5. exists x6. exists x7.
       repeat split ; try auto. apply in_cons. assumption.
-    + pose (IHl1 X). repeat destruct s. repeat destruct p. exists x. exists x0. exists x1.
-      exists x2. exists x3. exists x4. exists x5. exists x6. exists x7.
+    + destruct (IHl1 X) as (x&x0&x1&x2&x3&x4&x5&x6&x7&p). decompose record p.
+        exists x. exists x0. exists x1. exists x2. exists x3. exists x4. exists x5. exists x6. exists x7.
       repeat split ; try auto. apply in_cons. assumption.
   * destruct n.
-    + pose (IHl1 X). repeat destruct s. repeat destruct p. exists x. exists x0. exists x1.
-      exists x2. exists x3. exists x4. exists x5. exists x6. exists x7.
+    + destruct (IHl1 X) as (x&x0&x1&x2&x3&x4&x5&x6&x7&p). decompose record p.
+        exists x. exists x0. exists x1. exists x2. exists x3. exists x4. exists x5. exists x6. exists x7.
       repeat split ; try auto. apply in_cons. assumption.
     + apply InT_app_or in X. destruct X.
       { simpl (fst (l, l0)) in i. simpl (snd (l, l0)) in i.
@@ -863,26 +863,27 @@ intros prems s. destruct s. induction l1 ; intros X.
         exists l2. exists l3. simpl (snd (l, l0)). simpl (fst (l, l0)).
         repeat split ; try auto. apply in_eq. simpl. assert (l2 ++ l3 = l0). rewrite i1. apply InT_In.
         assumption. rewrite <- H. reflexivity. rewrite i1. apply InT_In. assumption. subst. inversion H0. }
-      { pose (IHl1 i). repeat destruct s. repeat destruct p. exists x. exists x0. exists x1.
+      { destruct (IHl1 i) as (x&x0&x1&x2&x3&x4&x5&x6&x7&p). decompose record p. exists x. exists x0. exists x1.
         exists x2. exists x3. exists x4. exists x5. exists x6. exists x7.
         repeat split ; try auto. apply in_cons. assumption. }
   * simpl in X. destruct n.
-    + pose (IHl1 X). repeat destruct s. repeat destruct p. exists x. exists x0. exists x1.
-      exists x2. exists x3. exists x4. exists x5. exists x6. exists x7.
+    +destruct (IHl1 X) as (x&x0&x1&x2&x3&x4&x5&x6&x7&p). decompose record p.
+        exists x. exists x0. exists x1. exists x2. exists x3. exists x4. exists x5. exists x6. exists x7.
       repeat split ; try auto. apply in_cons. assumption.
-    + pose (IHl1 X). repeat destruct s. repeat destruct p. exists x. exists x0. exists x1.
-      exists x2. exists x3. exists x4. exists x5. exists x6. exists x7.
+    + destruct (IHl1 X) as (x&x0&x1&x2&x3&x4&x5&x6&x7&p). decompose record p.
+        exists x. exists x0. exists x1. exists x2. exists x3. exists x4. exists x5. exists x6. exists x7.
       repeat split ; try auto. apply in_cons. assumption.
 Qed.
 
 Lemma ImpL_help1 : forall prems s, InT prems (prems_Imp_L (pos_top_imps (fst s)) s) ->
                                          ImpLRule prems s.
 Proof.
-intros prem s X. pose (@ImpL_help01 _ _ _ X). repeat destruct s0. destruct s. simpl in X.
-repeat destruct p. subst. simpl in e1. simpl in i. subst. simpl (fst (l, x6 ++ x7)).
-simpl (fst (l, x6 ++ x7)) in X. apply In_pos_top_imps_split_l in i.
-destruct i. destruct s. repeat destruct p.
-subst. rewrite <- e. rewrite <- e0. apply ImpLRule_I.
+intros prem s X. destruct (@ImpL_help01 _ _ _ X) as (n&Hn&A&B&Γ0&Γ1&Δ0& Δ1&e1&Heq&i&p).
+decompose record p. clear p.
+subst. simpl in X. simpl in i. subst. simpl (fst (_,_)).
+simpl (fst (_, _)) in X. apply In_pos_top_imps_split_l in i.
+destruct i as (l0&l1 &p). destruct s. decompose record p.
+subst. subst. rewrite <- b1. rewrite <- a. simpl (fst (_,_)). . subst. rewrite <- e0. apply ImpLRule_I.
 Qed.
 
 Lemma finite_ImpL_premises_of_S : forall (s : Seq), existsT2 listImpLprems,
@@ -914,29 +915,29 @@ end.
 
  Lemma GLR_help01 : forall prems s (l : list MPropF), InT prems (prems_Box_R l s) ->
                   (existsT2 (A : MPropF),
-                        (In (Box A) l) *
+                        (In (Box A) l) /\
                         (prems = [(XBoxed_list (top_boxes (fst s)) ++ [Box A], [A])])).
 Proof.
 intros prems s. destruct s. induction l1 ; intros X.
 - simpl in X. inversion X.
 - simpl in X. destruct a.
-  * apply IHl1 in X. destruct X. repeat destruct s. repeat destruct p. subst.
-    exists x. repeat split ; try auto ; try apply in_cons ; try assumption.
-  * apply IHl1 in X. destruct X. repeat destruct s. repeat destruct p. subst.
-    exists x. repeat split ; try auto ; try apply in_cons ; try assumption.
-  * apply IHl1 in X. destruct X. repeat destruct s. repeat destruct p. subst.
-    exists x. repeat split ; try auto ; try apply in_cons ; try assumption.
+  * apply IHl1 in X. destruct X as (x & i & p). subst.
+     exists x. repeat split ; try auto ; try apply in_cons ; try assumption.
+  * apply IHl1 in X. destruct X as (x & i & p). subst.
+     exists x. repeat split ; try auto ; try apply in_cons ; try assumption.
+  * apply IHl1 in X. destruct X  as (x & i & p). subst.
+     exists x. repeat split ; try auto ; try apply in_cons ; try assumption.
   * inversion X.
-    + subst. exists a. repeat split ; try auto ; try apply in_eq.
-    + apply IHl1 in H0. destruct H0. repeat destruct s. repeat destruct p. subst.
-      exists x. repeat split ; try auto ; try apply in_cons ; try assumption.
+    + subst. eexists a. repeat split ; try auto ; try apply in_eq.
+    + apply IHl1 in H0. decompose record H0. subst.
+        exists x. repeat split ; try auto ; try apply in_cons ; try assumption.
 Qed.
 
 Lemma GLR_help1 : forall prems s, InT prems (prems_Box_R (top_boxes (snd s)) s) ->
                                          GLRRule prems s.
 Proof.
-intros prems  s X. pose (@GLR_help01 _ _ _ X). repeat destruct s0. destruct s. simpl in X.
-repeat destruct p. subst. simpl in i. assert (In (Box x) l0). apply top_boxes_incl_list.
+intros prems  s X. destruct (@GLR_help01 _ _ _ X) as (x&i&Heq). destruct s. simpl in X.
+subst. simpl in i. assert (In (Box x) l0). apply top_boxes_incl_list.
 assumption. apply in_splitT in H. destruct H. repeat destruct s.
 rewrite e. apply GLRRule_I. intro. intros. apply in_top_boxes in H.
 destruct H. repeat destruct s. repeat destruct p. exists x2. assumption.
