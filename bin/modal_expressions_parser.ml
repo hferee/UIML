@@ -9,20 +9,23 @@ let spaces = skip_while is_space
 
 let parens p = char '(' *> p <* char ')'
 
-let box p = ((char '[' *> char ']') <|> (char '\xE2' *> char '\x96' *> char '\xA1')) *> spaces *> p >>| (fun x -> Box x)
+let box p = ((char '[' *> char ']') <|> (char '\xE2' *> char '\x96' *> char '\xA1')) *> spaces *> p
+  >>| fun x -> Box x
+let diamond p = ((char '<' *> char '>') <|> (char '\xE2' *> char '\x8B' *> char '\x84')) *> spaces *> p
+  >>| fun x -> Implies (Box (Implies(x, Bot)), Bot)
 
-let neg p = ((char '~') <|> (char '\xC2' *> char '\xAC')) *> spaces *> p >>| (fun x -> Implies(x, Bot))
-
+let neg p = ((char '~') <|> (char '\xC2' *> char '\xAC')) *> spaces *> p
+  >>| fun x -> Implies(x, Bot)
 
 let disj = spaces *> ((char '\xE2' *> char '\x88' *> char '\xA8') <|> char '|') *> spaces *>  return (fun x y -> Or(x, y))
 let conj = spaces *> ((char '\xE2' *> char '\x88' *> char '\xA7') <|> char '&') *> spaces *> return (fun x y -> And (x, y))
 
-let modal (p : form t) : form t = (((char '[' *> char ']') <|> (char '\xE2' *> char '\x96' *> char '\xA1')) *> spaces *> p >>| (fun x -> Box x))
-        <|> (((char '~') <|> (char '\xC2' *> char '\xAC')) *> spaces *> p >>| (fun x -> Implies(x, Bot)))
+let modal (p : form t) : form t = box p <|> neg p <|> diamond p
 let impl = spaces *> ((char '\xE2' *> char '\x86' *> char '\x92') <|> (char '-' *> char '>')) *> spaces *> return (fun x y -> Implies(x, y))
 
 (* this is ⊥ *)
-let bot_u = spaces *> ((char '\xE2' *> char '\x8A' *> char '\xA5') <|> char '#') *> spaces *> return (Bot)
+let bot = spaces *> ((char '\xE2' *> char '\x8A' *> char '\xA5') <|> char '#') *> spaces *> return (Bot)
+let top = spaces *> ((char '\xE2' *> char '\x8A' *> char '\xA4') <|> char 'T') *> spaces *> return (Implies(Bot,Bot))
 
 (* temporary fix *)
 let rec nat_of_int (n: int) =
@@ -56,7 +59,7 @@ let chainmod (e : 'a t) (op : 'a t -> 'a t) : 'a t =
 *)
 let expr : form t =
   fix (fun expr ->
-    let factor = parens expr <|> integer <|> bot_u in
+    let factor = parens expr <|> integer <|> bot <|> top in
     let modality = chainmod factor modal  in
     let term   = chainl1 modality conj in
     let disjunctions = spaces *> chainl1 term disj <* spaces in
