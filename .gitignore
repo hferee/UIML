@@ -54,3 +54,4 @@ extraction/*.d
 ._d/
 ._ncdi/
 uiml.opam
+makefile.coq.conf
