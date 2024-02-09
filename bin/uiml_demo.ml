@@ -3,14 +3,7 @@ open UIML.Datatypes
 open UIML.Formulas
 open Js_of_ocaml
 open Modal_expressions_parser
-
-(* from compcert !*)
-let camlstring_of_coqstring (s: char list) =
-  let r = Bytes.create (List.length s) in
-  let rec fill pos = function
-  | [] -> r
-  | c :: s -> Bytes.set r pos c; fill (pos + 1) s
-  in Bytes.to_string (fill 0 s)
+open Stringconversion
 
 let rec string_of_formula ?(classical = false) = function
 | Var v -> camlstring_of_coqstring v
