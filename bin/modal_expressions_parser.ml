@@ -66,7 +66,8 @@ let expr : form t =
     spaces *> chainr1 disjunctions impl <* spaces
     )
 
+exception ParseError
 let eval (str:string) : form =
   match parse_string ~consume:All expr str with
   | Ok v      -> v
-  | Error msg -> failwith msg;;
+  | Error _ -> raise ParseError;;

@@ -42,15 +42,19 @@ let rec test_formula (n: int) =
 (*
 let _ = print_endline(string_of_formula (eval "□□□¬□#"))
 *)
+
+let catch_e f = try f() with 
+| ParseError -> "Parse Error"
+| e -> "Error: " ^ Printexc.to_string e
 (* export functions to js *)
 let _ =
   Js.export "UIML"
     (object%js
-       method islA s = try string_of_formula (isl_A O (eval s)) with | e -> "Error: " ^ Printexc.to_string e
-       method islE s = try string_of_formula (isl_E O (eval s)) with | e -> "Error: " ^ Printexc.to_string e
-       method k s = try string_of_formula ~classical: true (k_UI O (eval s)) with | e -> "Error: " ^ Printexc.to_string e
-       method gl s = try string_of_formula ~classical: true (gl_UI O (eval s)) with | e -> "Error: " ^ Printexc.to_string e
-       method parse s = try string_of_formula (eval s) with | e -> "Error: " ^ Printexc.to_string e
+       method islA s = catch_e (fun () -> string_of_formula (isl_A O (eval s)))
+       method islE s = catch_e (fun () -> string_of_formula (isl_E O (eval s)))
+       method k s = catch_e (fun () -> string_of_formula ~classical: true (k_UI O (eval s)))
+       method gl s = catch_e (fun () -> string_of_formula ~classical: true (gl_UI O (eval s)))
+       method parse s = catch_e (fun () -> string_of_formula (eval s))
 
      end);;
 
