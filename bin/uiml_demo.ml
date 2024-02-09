@@ -36,16 +36,20 @@ let rec test_formula (n: int) =
   if n = 1 then Implies(Implies(var 1, var 0), var 0) else Bot *)
 *)
 
-let _ = print_endline (string_of_formula (eval " (~x1 | □⊥ ) "))
-
+(* let example1 = "x0 | (x1 & x2)" *)
+(* let example2 = "x2 -> (x2 -> #)" *)
+(* let _ = print_endline (string_of_formula (eval " (~x1 | □⊥ ) ")) *)
+(* let _ = print_endline (string_of_formula (simplify true (gl_UI O (eval example1))))
+let _ = print_endline (string_of_formula (simplify true (eval example2))) *)
 (* export functions to js *)
+let simplify _ f = f
+
 let _ =
   Js.export "UIML"
     (object%js
-       method islA s = string_of_formula (isl_A O (eval s))
-       method islE s = string_of_formula (isl_E O (eval s))
-       method k s = string_of_formula (k_UI O (eval s))
-       method gl s = string_of_formula (gl_UI O (eval s))
+       method islA s = string_of_formula (simplify false (isl_A O (eval s)))
+       method islE s = string_of_formula (simplify false (isl_E O (eval s)))
+       method k s = string_of_formula (simplify true (k_UI O (eval s)))
+       method gl s = string_of_formula (simplify true (gl_UI O (eval s)))
        method parse s = string_of_formula (eval s)
-
-     end)
+     end) 
