@@ -1,5 +1,4 @@
-# UIML
-Uniform Interpolation for Modal Logics K, GL and iSL
+# Mechanized Uniform Interpolation in Intuitionistic and Modal Logics
 
 This project formalizes the construction of uniform interpolants for basic
 modal logic K, Gödel-Löb provability logic GL, and intuitionistic strong Löb
