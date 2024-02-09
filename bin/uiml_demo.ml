@@ -8,9 +8,12 @@ let rec int_of_nat = function
 | O -> 0
 | S n -> 1 + int_of_nat n
 
-let rec string_of_formula = function
+let rec string_of_formula ?(classical = false) = function
 | Var v -> "x" ^ string_of_int (int_of_nat v)
 | Bot -> "⊥"
+| Implies(Bot, Bot) -> "⊤"
+| Implies(Box(Implies(f, Bot)),Bot) when classical -> "⋄ " ^ bracket f
+| Implies(Implies(f, Bot), Bot) when classical -> string_of_formula f
 | Box f -> "□ " ^ bracket f
 | And (f, g) -> bracket f ^ " ∧ " ^ bracket g
 | Or (f, g) -> bracket f ^ " ∨ " ^ bracket g
@@ -36,20 +39,18 @@ let rec test_formula (n: int) =
   if n = 1 then Implies(Implies(var 1, var 0), var 0) else Bot *)
 *)
 
-
+(*
 let _ = print_endline(string_of_formula (eval "□□□¬□#"))
-
-
-
+*)
 (* export functions to js *)
 let _ =
   Js.export "UIML"
     (object%js
-       method islA s = string_of_formula (isl_A O (eval s))
-       method islE s = string_of_formula (isl_E O (eval s))
-       method k s = string_of_formula (k_UI O (eval s))
-       method gl s = string_of_formula (gl_UI O (eval s))
-       method parse s = string_of_formula (eval s)
+       method islA s = try string_of_formula (isl_A O (eval s)) with | e -> "Error: " ^ Printexc.to_string e
+       method islE s = try string_of_formula (isl_E O (eval s)) with | e -> "Error: " ^ Printexc.to_string e
+       method k s = try string_of_formula ~classical: true (k_UI O (eval s)) with | e -> "Error: " ^ Printexc.to_string e
+       method gl s = try string_of_formula ~classical: true (gl_UI O (eval s)) with | e -> "Error: " ^ Printexc.to_string e
+       method parse s = try string_of_formula (eval s) with | e -> "Error: " ^ Printexc.to_string e
 
      end);;
 
