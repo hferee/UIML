@@ -44,7 +44,7 @@ let _ = print_endline(string_of_formula (eval "□□□¬□#"))
 *)
 
 let catch_e f = try f() with 
-| ParseError -> "Parse Error"
+  ParseError -> "Parse Error"
 | e -> "Error: " ^ Printexc.to_string e
 (* export functions to js *)
 let _ =
