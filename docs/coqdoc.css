@@ -1,9 +1,15 @@
-@import url(https://fonts.googleapis.com/css?family=Open+Sans:400,700);
-
-body{
-    font-family: 'Open Sans', sans-serif;
-    font-size: 14px;
+body {
+    font-family: Times New Roman, serif;
+    font-size: 1.5em;
     color: #2D2D2D
+}
+
+td {
+    padding: 0 10px;
+}
+
+td.ms {
+    font-family: 'Courier New', monospace;
 }
 
 a {
@@ -17,44 +23,55 @@ a {
     font-weight: bold;
 }
 
-#main .code a, #main .inlinecode a, #toc a {
+#main .code a,
+#main .inlinecode a,
+#toc a {
     font-weight: inherit;
 }
 
-a[href]:hover, [clickable]:hover{
-    background-color: rgba(0,0,0,0.1);
+a[href]:hover,
+[clickable]:hover {
+    background-color: rgba(0, 0, 0, 0.1);
     cursor: pointer;
 }
 
-h, h1, h2, h3, h4, h5 {
+h,
+h1,
+h2,
+h3,
+h4,
+h5 {
     line-height: 1;
     color: black;
     text-rendering: optimizeLegibility;
     font-weight: normal;
-    letter-spacing: 0.1em;
     text-align: left;
 }
 
-div + br {
-  display: none;
+div+br {
+    display: none;
 }
 
-div:empty{ display: none;}
+div:empty {
+    display: none;
+}
 
 #main h1 {
-	font-size: 2em;
+    font-size: 2em;
 }
 
 #main h2 {
-	font-size: 1.667rem;
+    font-size: 1.667rem;
 }
 
 #main h3 {
-	font-size: 1.333em;
+    font-size: 1.333em;
 }
 
-#main h4, #main h5, #main h6 {
-	font-size: 1em;
+#main h4,
+#main h5,
+#main h6 {
+    font-size: 1em;
 }
 
 #toc h2 {
@@ -66,19 +83,21 @@ div:empty{ display: none;}
     text-align: justify;
 }
 
-.inlinecode, .code, #main pre {
+.inlinecode,
+.code,
+#main pre {
     font-family: monospace;
 }
 
-.code > br:first-child {
-  display: none;
+.code>br:first-child {
+    display: none;
 }
 
-.doc + .code{
-  margin-top:0.5em;
+.doc+.code {
+    margin-top: 0.5em;
 }
 
-.block{
+.block {
     display: block;
     margin-top: 5px;
     margin-bottom: 5px;
@@ -86,15 +105,15 @@ div:empty{ display: none;}
     text-align: center;
 }
 
-.block img{
+.block img {
     margin: 15px;
 }
 
 table.infrule {
-  border: 0px;
-  margin-left: 50px;
-  margin-top: 10px;
-  margin-bottom: 10px;
+    border: 0px;
+    margin-left: 50px;
+    margin-top: 10px;
+    margin-bottom: 10px;
 }
 
 td.infrule {
@@ -109,45 +128,65 @@ tr.infrulemiddle hr {
 }
 
 .infrulenamecol {
-    color: rgb(60%,60%,60%);
+    color: rgb(60%, 60%, 60%);
     padding-left: 1em;
     padding-bottom: 0.1em
 }
 
-.id[type="constructor"], .id[type="projection"], .id[type="method"],
-.id[title="constructor"], .id[title="projection"], .id[title="method"]  {
+.id[type="constructor"],
+.id[type="projection"],
+.id[type="method"],
+.id[title="constructor"],
+.id[title="projection"],
+.id[title="method"] {
     color: #A30E16;
 }
 
-.id[type="var"], .id[type="variable"],
-.id[title="var"], .id[title="variable"] {
+.id[type="var"],
+.id[type="variable"],
+.id[title="var"],
+.id[title="variable"] {
     color: inherit;
 }
 
-.id[type="definition"], .id[type="record"], .id[type="class"], .id[type="instance"], .id[type="inductive"], .id[type="library"],
-.id[title="definition"], .id[title="record"], .id[title="class"], .id[title="instance"], .id[title="inductive"], .id[title="library"] {
+.id[type="definition"],
+.id[type="record"],
+.id[type="class"],
+.id[type="instance"],
+.id[type="inductive"],
+.id[type="library"],
+.id[title="definition"],
+.id[title="record"],
+.id[title="class"],
+.id[title="instance"],
+.id[title="inductive"],
+.id[title="library"] {
     color: #A6650F;
 }
 
 .id[type="lemma"],
-.id[title="lemma"]{
+.id[title="lemma"] {
     color: #188B0C;
 }
 
-.id[type="keyword"], .id[type="notation"], .id[type="abbreviation"],
-.id[title="keyword"], .id[title="notation"], .id[title="abbreviation"]{
- color : #2874AE;
+.id[type="keyword"],
+.id[type="notation"],
+.id[type="abbreviation"],
+.id[title="keyword"],
+.id[title="notation"],
+.id[title="abbreviation"] {
+    color: #2874AE;
 }
 
 .comment {
-  color: #808080;
+    color: #808080;
 }
 
 /* TOC */
 
-#toc h2{
-  letter-spacing: 0;
-  font-size: 1.333em;
+#toc h2 {
+    letter-spacing: 0;
+    font-size: 1.333em;
 }
 
 /* Index */
@@ -164,10 +203,18 @@ tr.infrulemiddle hr {
     width: 60%;
 }
 
-.booktitle { font-size : 140%  }
-.authors { font-size : 90%;
-	         line-height: 115%;  }
-.moreauthors { font-size : 60%  }
+.booktitle {
+    font-size: 140%
+}
+
+.authors {
+    font-size: 90%;
+    line-height: 115%;
+}
+
+.moreauthors {
+    font-size: 60%
+}
 
 #index #entrance {
     text-align: center;
@@ -182,16 +229,16 @@ ul.doclist {
     margin-bottom: 0em;
 }
 
-#toc > * {
+#toc>* {
     clear: both;
 }
 
-#toc > a {
+#toc>a {
     display: block;
     float: left;
     margin-top: 1em;
 }
 
-#toc a h2{
+#toc a h2 {
     display: inline;
 }
