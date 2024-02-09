@@ -1,4 +1,4 @@
-(lang dune 3.0)
+(lang dune 3.8)
 
 (name uiml)
 
@@ -7,19 +7,23 @@
 (source
  (github hferee/UIML))
 
-(authors "Hugo Férée & Ian Shillito")
+(authors "Hugo Férée"
+         "Iris van der Giessen"
+         "Sam van Gool"
+         "Ian Shillito")
 
 (maintainers "Hugo Férée")
 
-(license MIT)
+(license CecILL)
 
-(documentation https://url/to/documentation)
+(homepage https://hferee.github.io/)
+(documentation https://hferee.github.io/UIML/toc.html)
 
-(using coq 0.3)
+(using coq 0.8)
 
 (package
  (name uiml)
- (synopsis "Propositional quantifiers for modal logics formalized")
+ (synopsis "Propositional quantifiers for modal logics formalised")
  (description "")
  (allow_empty)
  (depends ocaml dune coq-color coq-stdpp js_of_ocaml angstrom)
