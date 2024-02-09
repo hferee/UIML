@@ -39,13 +39,13 @@ let rec test_formula (n: int) =
   if n = 1 then Implies(Implies(var 1, var 0), var 0) else Bot *)
 *)
 
-<<<<<<< HEAD
+
 (* let example1 = "x0 | (x1 & x2)" *)
 (* let example2 = "x2 -> (x2 -> #)" *)
-(* let _ = print_endline (string_of_formula (eval " (~x1 | □⊥ ) ")) *)
+
 (* let _ = print_endline (string_of_formula (simplify true (gl_UI O (eval example1))))
 let _ = print_endline (string_of_formula (simplify true (eval example2))) *)
-=======
+
 (*
 let _ = print_endline(string_of_formula (eval "□□□¬□#"))
 *)
@@ -53,9 +53,8 @@ let _ = print_endline(string_of_formula (eval "□□□¬□#"))
 let catch_e f = try f() with 
   ParseError -> "Parse Error"
 | e -> "Error: " ^ Printexc.to_string e
->>>>>>> b69c88419e60686b00a5109b85e71aa7cf090154
+
 (* export functions to js *)
-let simplify _ f = f
 
 let _ =
   Js.export "UIML"
