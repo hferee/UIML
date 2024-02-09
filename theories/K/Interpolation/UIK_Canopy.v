@@ -166,7 +166,7 @@ Qed.
   Lemma is_Prime_dec : forall l, (is_Prime l) + (is_Prime l -> False).
   Proof.
   unfold is_Prime. induction l ; simpl ; auto.
-  left. intros. inversion H. destruct IHl. destruct a.
+  left. intros. inversion H. destruct IHl. destruct a as [n| | |].
   1,2,4: left ; intros ; destruct H ; auto. right. left ; exists n ; auto.
   left ; exists a ; auto. right. intro.
   assert ((Imp a1 a2 = Imp a1 a2) \/ In (Imp a1 a2) l). left ; auto. apply H in H0.
@@ -183,7 +183,7 @@ Qed.
 
   Lemma inv_prems_id_critical : forall s, inv_prems s = [] -> critical_Seq s.
   Proof.
-  intros. destruct s. unfold critical_Seq. intros A H0. destruct A.
+  intros. destruct s. unfold critical_Seq. intros A H0. destruct A as [n| | |].
   right ; left ; exists n ; auto. right ; auto.
   2: left ; exists A ; auto. exfalso. simpl in H0.
   apply in_app_or in H0 ; destruct H0.

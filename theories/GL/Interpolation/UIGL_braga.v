@@ -13,7 +13,7 @@
 
   Require Import List Extraction.
   Require Import Lia.
-
+  Require Import String.
   Require Import GLS_export.
 
   Require Import UIGL_Def_measure.
@@ -122,7 +122,7 @@ Arguments imap {X} {Y} _ {D} _ {l}.
 
   Section GN.
 
-  Variables (p : nat)                                                         (* The variable we exclude from the interpolant. *)
+  Variables (p : string)                                                         (* The variable we exclude from the interpolant. *)
             (F : Seq -> MPropF -> Prop)                            (* We will instantiate F with GUI (to have mutal recursion). *)
             (Ffun : forall x l m, F x l -> F x m -> l = m).       (* Require that F is a function. *)
 
@@ -195,7 +195,7 @@ Arguments imap {X} {Y} _ {D} _ {l}.
 
   (* Second I define the graph of the function UI. *)
 
-  Variables (p : nat).     (* The variable we exclude from the interpolant. *)
+  Variables (p : string).     (* The variable we exclude from the interpolant. *)
 
   Unset Elimination Schemes.
 
@@ -352,7 +352,7 @@ Qed.
        apply GN_less ; auto.
   Qed.
 
-  Variables (p : nat).      (* Propositional variable we consider. *)
+  Variables (p : string).      (* Propositional variable we consider. *)
 
   Definition N s0 s := proj1_sig (N_pwc p s0 s).
 

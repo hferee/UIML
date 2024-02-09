@@ -70,7 +70,7 @@ Section Arithmetic.
 
   (* Restricted list of propositional variables. *)
 
-  Definition restr_list_prop (p : nat)  (l : list MPropF) := remove eq_dec_form (# p) (list_prop_LF l).
+  Definition restr_list_prop p  (l : list MPropF) := remove eq_dec_form (# p) (list_prop_LF l).
 
   End Logic_Abrv.
 

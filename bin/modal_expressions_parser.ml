@@ -2,6 +2,19 @@ open Angstrom
 open UIML.Formulas
 open UIML.Datatypes
 
+(* from compcert ! *)
+let camlstring_of_coqstring (s: char list) =
+  let r = Bytes.create (List.length s) in
+  let rec fill pos = function
+  | [] -> r
+  | c :: s -> Bytes.set r pos c; fill (pos + 1) s
+  in Bytes.to_string (fill 0 s)
+
+let coqstring_of_camlstring s =
+  let rec cstring accu pos =
+    if pos < 0 then accu else cstring (s.[pos] :: accu) (pos - 1)
+  in cstring [] (String.length s - 1)
+
 let is_space =
   function | ' ' | '\t' | '\n' -> true | _ -> false
 
@@ -27,13 +40,11 @@ let impl = spaces *> ((char '\xE2' *> char '\x86' *> char '\x92') <|> (char '-' 
 let bot = spaces *> ((char '\xE2' *> char '\x8A' *> char '\xA5') <|> char '#') *> spaces *> return (Bot)
 let top = spaces *> ((char '\xE2' *> char '\x8A' *> char '\xA4') <|> char 'T') *> spaces *> return (Implies(Bot,Bot))
 
-(* temporary fix *)
-let rec nat_of_int (n: int) =
-  if n <= 0 then O
-  else S (nat_of_int (n-1))
 
-let integer =
-  char 'x' *> take_while1 (function '0' .. '9' -> true | _ -> false) >>| fun x -> Var (nat_of_int (int_of_string x))
+let letter = function | 'a' .. 'z' | 'A' .. 'Z' -> true | _ -> false
+let letter_or_digit = function | 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' -> true | _ -> false
+
+let identifier = lift2 (^) (take_while1 letter) (take_while letter_or_digit) >>| fun x -> Var (coqstring_of_camlstring x)
 
 (* chain of left-associative operations *)
 let chainl1 e op =
@@ -59,7 +70,7 @@ let chainmod (e : 'a t) (op : 'a t -> 'a t) : 'a t =
 *)
 let expr : form t =
   fix (fun expr ->
-    let factor = parens expr <|> integer <|> bot <|> top in
+    let factor = parens expr <|> identifier <|> bot <|> top in
     let modality = chainmod factor modal  in
     let term   = chainl1 modality conj in
     let disjunctions = spaces *> chainl1 term disj <* spaces in

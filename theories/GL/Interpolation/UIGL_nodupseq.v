@@ -256,7 +256,7 @@ Qed.
 
 Theorem nodup_top_boxes : forall l, nodup eq_dec_form (top_boxes l) = top_boxes (nodup eq_dec_form l).
 Proof.
-induction l ; intuition ; simpl. destruct a ; simpl ; auto.
+induction l ; intuition ; simpl. destruct a as [n | | |]; simpl ; auto.
 destruct (in_dec eq_dec_form # n l) ; auto. destruct (in_dec eq_dec_form ⊥ l) ; auto.
 destruct (in_dec eq_dec_form (a1 --> a2) l) ; auto.
 destruct (in_dec eq_dec_form (Box a) l) ; destruct (in_dec eq_dec_form (Box a) (top_boxes l)) ; auto.
@@ -268,7 +268,7 @@ Qed.
 
 Theorem nodup_XBoxed_list : forall l, nodup eq_dec_form (XBoxed_list (nodup eq_dec_form l)) = nodup eq_dec_form (XBoxed_list l).
 Proof.
-induction l ; intuition ; simpl. destruct a ; simpl ; auto.
+induction l ; intuition ; simpl. destruct a  as [n | | |]; simpl ; auto.
 - destruct (eq_dec_form # n # n). destruct (in_dec eq_dec_form # n l).
   destruct (in_dec eq_dec_form # n (XBoxed_list l)) ; simpl ; auto. exfalso. apply n0.
   apply list_preserv_XBoxed_list ; auto. destruct (in_dec eq_dec_form # n) ; auto ; simpl.

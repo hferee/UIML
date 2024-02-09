@@ -126,7 +126,7 @@ Lemma nobox_gen_ext_top_boxes_identity : forall l0 l1, nobox_gen_ext l0 l1 ->
 Proof.
 intros l0 l1 X. induction X.
 - intros. reflexivity.
-- intro. simpl. destruct x.
+- intro. simpl. destruct x as [n | | | ].
   * exfalso. pose (H (# n)). assert (In # n (# n :: l)). apply in_eq. apply e in H0.
     destruct H0. inversion H0.
   * exfalso. pose (H (⊥)). assert (In (⊥) (⊥ :: l)). apply in_eq. apply e in H0.
@@ -435,7 +435,7 @@ Lemma In_pos_top_imps_split_l : forall l (A : MPropF) n, In (A, S n) (pos_top_im
 Proof.
 induction l.
 - intros. simpl. exfalso. simpl in H. destruct H.
-- intros. simpl in H. destruct a.
+- intros. simpl in H. destruct a as [n0 | | | ].
   * apply In_InT_pair in H. apply InT_map_iff in H. destruct H as ([m n1] & e & i).
     simpl in e. inversion e. subst. destruct n. exfalso.
     apply InT_In in i. apply In_pos_top_imps_0_False in i. assumption.
@@ -569,7 +569,7 @@ Lemma ImpR_help01 : forall prem s l, InT prem (prems_Imp_R l s) ->
 Proof.
 intros prem s. destruct s. destruct prem. induction l3 ; intros X.
 - simpl in X. inversion X.
-- destruct a as [m n]. destruct m.
+- destruct a as [m n]. destruct m as [m | | | ].
   * simpl in X. destruct n.
     + pose (IHl3 X). destruct s as (x & x0 & x1 & x2 & x3 & x4 & x5 & p).
         decompose record p. exists x. exists x0. exists x1.
@@ -805,7 +805,7 @@ Lemma ImpL_help01 : forall prems s l, InT prems (prems_Imp_L l s) ->
 Proof.
 intros prems s. destruct s. induction l1 ; intros X.
 - simpl in X. inversion X.
-- simpl (fst (l, l0)). destruct a. destruct m.
+- simpl (fst (l, l0)). destruct a as [m n]. destruct m as [n0 | | | ].
   * simpl in X. destruct n.
     + pose (s := IHl1 X). repeat destruct s. exists x. exists x0. exists x1.
       exists x2. exists x3. exists x4. exists x5. exists x6. exists x7.
@@ -963,7 +963,7 @@ Lemma GLR_help02 : forall Γ Δ0 Δ1 BΓ A l, GLRRule [(XBoxed_list BΓ ++ [Box 
 Proof.
 induction l ; intros.
 - inversion H0.
-- simpl. destruct a.
+- simpl. destruct a as [n | | | ].
   * assert (InT (Box A) (# n :: l)). apply in_splitT in H0. destruct H0. destruct s. rewrite e.
     apply InT_or_app. right. apply InT_eq. inversion H1. inversion H3. apply InT_In in H3.
     pose (IHl X H X0 H3). assumption.

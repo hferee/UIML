@@ -4,7 +4,7 @@ Require Import List.
 Export ListNotations.
 Require Import PeanoNat.
 Require Import Lia.
-
+Require Import String.
 Require Import general_export.
 
 Require Import GLS_export.
@@ -24,10 +24,10 @@ Require Import UIGL_UI_prelims.
   (* The formula defined by the function UI satisfies all the properties of
       uniform interpolation. *)
 
-  Theorem UI_One : forall s (p q : nat), In (Var q) (propvar_subform (UI p (fst s, snd s))) ->
+  Theorem UI_One : forall s p q, In (Var q) (propvar_subform (UI p (fst s, snd s))) ->
                                                       ((q <> p) * (In (Var q) (propvar_subform_list (fst s ++ snd s)))).
   Proof.
-  pose (LexSeq_ind (fun s => forall (p q : nat), In (Var q) (propvar_subform (UI p (fst s, snd s))) ->
+  pose (LexSeq_ind (fun s => forall p q, In (Var q) (propvar_subform (UI p (fst s, snd s))) ->
                                                       ((q <> p) * (In (Var q) (propvar_subform_list (fst s ++ snd s)))))).
   apply p. clear p.
   intros s0 H p q H0. rewrite propvar_subform_list_app.
@@ -61,7 +61,7 @@ Require Import UIGL_UI_prelims.
        destruct H0. destruct H0. apply in_map_iff in H0. destruct H0. destruct H0 ; subst. simpl in H1.
        rewrite <- app_nil_end in H1. unfold restr_list_prop in H2. apply in_remove in H2. destruct H2.
        pose (In_list_prop_LF _ _ H0). destruct p0. destruct s. subst. simpl in H1. destruct H1. inversion H1. subst.
-       destruct (eq_dec_nat q p). exfalso ; apply H2 ; subst ; auto. split ; auto. apply in_or_app ; left.
+       destruct (string_dec q p). exfalso ; apply H2 ; subst ; auto. split ; auto. apply in_or_app ; left.
        apply list_prop_LF_propvar_subform_list in H0 ; auto. inversion H1.
 
        apply in_app_or in H0 ; destruct H0. apply propvar_subform_list_disj in H0. apply propvar_subform_list_witness in H0.
@@ -123,7 +123,7 @@ Require Import UIGL_UI_prelims.
        destruct H0. destruct H0. apply In_InT in H0. apply InT_map_iff in H0. destruct H0. destruct p0 ; subst. simpl in H1.
        rewrite <- app_nil_end in H1. unfold restr_list_prop in i. apply InT_In in i. apply in_remove in i. destruct i.
        pose (In_list_prop_LF _ _ H0). destruct p0. destruct s. subst. simpl in H1. destruct H1. inversion H1. subst.
-       destruct (eq_dec_nat q p). exfalso ; apply H4 ; subst ; auto. split ; auto. apply in_or_app ; left.
+       destruct (string_dec q p). exfalso ; apply H4 ; subst ; auto. split ; auto. apply in_or_app ; left.
        apply list_prop_LF_propvar_subform_list in H0 ; auto. apply propvar_subform_list_Canopy with (A:=# q) in H2 ; auto.
        simpl in H2. rewrite <- app_nil_end in H2.
        assert (J30: In # q (propvar_subform_list (XBoxed_list (top_boxes l)))). apply propvar_subform_list_nodup ; auto.

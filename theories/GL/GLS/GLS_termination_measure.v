@@ -338,7 +338,7 @@ Lemma in_top_boxes : forall l A, (In A (top_boxes l)) -> (existsT2 B l1 l2, (A =
 Proof.
 induction l.
 - intros. simpl in H. inversion H.
-- intros. destruct a.
+- intros. destruct a as [n | | |].
   * simpl in H. apply IHl in H. destruct H. destruct s. destruct s. destruct p. subst.
     exists x. exists ([# n] ++ x0). exists x1. auto.
   * simpl in H. apply IHl in H. destruct H. destruct s. destruct s. destruct p. subst.
@@ -358,7 +358,7 @@ Proof.
 induction l1.
 - intros. simpl in H. destruct l2 ; inversion H.
 - induction l2.
-  * intros. rewrite app_nil_l in H. destruct a.
+  * intros. rewrite app_nil_l in H. destruct a as [n | | |].
     + pose (IHl1 [] l3 A). simpl in s. apply s in H. destruct H. destruct s0. exists ([# n] ++ x).
       exists x0. subst. auto.
     + pose (IHl1 [] l3 A). simpl in s. apply s in H. destruct H. destruct s0. exists ([⊥] ++ x).
@@ -366,7 +366,7 @@ induction l1.
     + pose (IHl1 [] l3 A). simpl in s. apply s in H. destruct H. destruct s0. exists ([a1 --> a2] ++ x).
       exists x0. subst. auto.
     + inversion H. exists []. exists l1. auto.
-  * intros. destruct a.
+  * intros. destruct a as [n | | |].
     + simpl in H. pose (IHl1 (a0 :: l2) l3 A). simpl in s. apply s in H. destruct H. destruct s0. exists ([# n] ++ x).
       exists x0. subst. auto.
     + simpl in H. pose (IHl1 (a0 :: l2) l3 A). simpl in s. apply s in H. destruct H. destruct s0. exists ([⊥] ++ x).

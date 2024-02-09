@@ -24,7 +24,7 @@ Lemma in_top_boxes : forall l A, (In A (top_boxes l)) -> (existsT2 B l1 l2, (A =
 Proof.
 induction l.
 - intros. simpl in H. inversion H.
-- intros. destruct a.
+- intros. destruct a as [n| | |].
   * simpl in H. apply IHl in H. destruct H. destruct s. destruct s. destruct p. subst.
     exists x. exists ([# n] ++ x0). exists x1. auto.
   * simpl in H. apply IHl in H. destruct H. destruct s. destruct s. destruct p. subst.
@@ -40,7 +40,7 @@ Qed.
 
 Lemma dec_is_PropVar : forall (A : MPropF), (existsT2 P, A = # P) + ((existsT2 P, A = # P) -> False).
 Proof.
-induction A.
+induction A as [n| | |].
 - left. exists n. reflexivity.
 - right. intro. inversion H. inversion H0.
 - right. intro. inversion H. inversion H0.
@@ -140,7 +140,7 @@ Qed.
 
 Lemma dec_is_imp : forall (A : MPropF), (existsT2 B C, A = Imp B C) + ((existsT2 B C, A = Imp B C) -> False).
 Proof.
-destruct A.
+destruct A as [n| | |].
 - right. intro. destruct H. destruct s. inversion e.
 - right. intro. destruct H. destruct s. inversion e.
 - left. exists A1. exists A2. reflexivity.

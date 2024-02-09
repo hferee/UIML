@@ -131,7 +131,7 @@ Lemma ImpL_help01 : forall prems s l, InT prems (prems_Imp_L l s) ->
 Proof.
 intros prems s. destruct s. induction l1 ; intros X.
 - simpl in X. inversion X.
-- simpl (fst (l, l0)). destruct a. destruct m.
+- simpl (fst (l, l0)). destruct a as [m n]. destruct m as [n0| | |].
   * simpl in X. destruct n.
     + pose (s := IHl1 X). repeat destruct s. exists x. exists x0. exists x1.
       exists x2. exists x3. exists x4. exists x5. exists x6. exists x7.

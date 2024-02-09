@@ -22,9 +22,9 @@ Require Import UIGL_UI_inter.
 
   Section UIPTwo.
 
-  Theorem UI_Two : forall (s : Seq), forall (p : nat), GLS_prv ((UI p s) :: fst s, snd s).
+  Theorem UI_Two : forall (s : Seq), forall p, GLS_prv ((UI p s) :: fst s, snd s).
   Proof.
-  pose (LexSeq_ind (fun s => forall (p : nat), GLS_prv (UI p s :: fst s, snd s))).
+  pose (LexSeq_ind (fun s => forall p, GLS_prv (UI p s :: fst s, snd s))).
   apply g. clear g. intros.
   destruct (empty_seq_dec s0).
   (* s is the empty sequent. *)

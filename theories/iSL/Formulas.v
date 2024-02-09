@@ -4,11 +4,13 @@ This file defines propositional formulas, the proof that there are countably man
 
 
 (** Theory of countability from Iris *)
-From stdpp Require Import countable.
+From stdpp Require Import countable strings.
 
+
+Local Open Scope string_scope.
 
 (** * Definitions and notations. *)
-Definition variable := nat.
+Definition variable := string.
 
 Inductive form : Type :=
 | Var : variable -> form
@@ -45,27 +47,28 @@ Global Coercion Var : variable >-> form.
 Global Instance form_top : base.Top form := ⊤.
 
 (** Formulas have decidable equality. *)
+Global Instance string_dec : EqDecision string := string_dec.
 Global Instance form_eq_dec : EqDecision form.
-Proof. solve_decision. Defined.
+Proof. solve_decision . Defined.
 
 Section CountablyManyFormulas.
 (** * Countability of the set of formulas *)
 (** We prove that there are countably many formulas by exhibiting an injection
   into general trees over nat for countability. *)
-Local Fixpoint form_to_gen_tree (φ : form) : gen_tree nat :=
+Local Fixpoint form_to_gen_tree (φ : form) : gen_tree (option string) :=
 match φ with
-| ⊥ => GenLeaf 0
-| Var v => GenLeaf (1 + v)
+| ⊥ => GenLeaf  None
+| Var v => GenLeaf (Some v)
 | φ ∧ ψ => GenNode 0 [form_to_gen_tree φ ; form_to_gen_tree ψ]
 | φ ∨ ψ => GenNode 1 [form_to_gen_tree φ ; form_to_gen_tree ψ]
 | φ →  ψ => GenNode 2 [form_to_gen_tree φ ; form_to_gen_tree ψ]
 | □ φ => GenNode 3 [form_to_gen_tree φ]
 end.
 
-Local Fixpoint gen_tree_to_form (t : gen_tree nat) : option form :=
+Local Fixpoint gen_tree_to_form (t : gen_tree (option string)) : option form :=
 match t with
-| GenLeaf 0 => Some ⊥
-| GenLeaf (S n) => Some (Var n)
+| GenLeaf None => Some ⊥
+| GenLeaf (Some v) => Some (Var v)
 | GenNode 0 [t1 ; t2] =>
     gen_tree_to_form t1 ≫= fun φ => gen_tree_to_form t2 ≫= fun ψ =>
       Some (φ ∧ ψ)
@@ -81,7 +84,7 @@ end.
 
 Global Instance form_count : Countable form.
 Proof.
-  apply inj_countable with (f := form_to_gen_tree) (g := gen_tree_to_form).
+  eapply inj_countable with (f := form_to_gen_tree) (g := gen_tree_to_form).
   intro φ; induction φ; simpl; trivial; now rewrite IHφ1, IHφ2 || rewrite  IHφ.
 Defined.
 

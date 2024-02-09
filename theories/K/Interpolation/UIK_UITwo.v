@@ -16,11 +16,11 @@ Require Import UIK_UI_prelims.
 
   Section UIPTwo.
 
-  Theorem UI_Two : forall (s : Seq), forall (p : nat), KS_prv ((UI p s) :: fst s, snd s).
+  Theorem UI_Two : forall (s : Seq), forall p, KS_prv ((UI p s) :: fst s, snd s).
   Proof.
   intro s. remember (measure s) as n. revert Heqn. revert s. revert n.
-  pose (strong_inductionT (fun (x:nat) =>
-  forall  (s : Seq), x = measure s -> forall p : nat, KS_prv (UI p s :: fst s, snd s))).
+  pose (strong_inductionT (fun x =>
+  forall  (s : Seq), x = measure s -> forall p, KS_prv (UI p s :: fst s, snd s))).
   apply k. intros n IH. clear k. intros.
   destruct (empty_seq_dec s).
   (* s is the empty sequent. *)

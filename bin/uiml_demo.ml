@@ -4,12 +4,16 @@ open UIML.Formulas
 open Js_of_ocaml
 open Modal_expressions_parser
 
-let rec int_of_nat = function
-| O -> 0
-| S n -> 1 + int_of_nat n
+(* from compcert !*)
+let camlstring_of_coqstring (s: char list) =
+  let r = Bytes.create (List.length s) in
+  let rec fill pos = function
+  | [] -> r
+  | c :: s -> Bytes.set r pos c; fill (pos + 1) s
+  in Bytes.to_string (fill 0 s)
 
 let rec string_of_formula ?(classical = false) = function
-| Var v -> "x" ^ string_of_int (int_of_nat v)
+| Var v -> camlstring_of_coqstring v
 | Bot -> "⊥"
 | Implies(Bot, Bot) -> "⊤"
 | Implies(Box(Implies(f, Bot)),Bot) when classical -> "⋄ " ^ bracket f
@@ -56,13 +60,14 @@ let catch_e f = try f() with
 
 (* export functions to js *)
 
+let v : variable = coqstring_of_camlstring "p"
 let _ =
   Js.export "UIML"
     (object%js
-       method islA s = catch_e (fun () -> string_of_formula (isl_A O (eval s)))
-       method islE s = catch_e (fun () -> string_of_formula (isl_E O (eval s)))
-       method k s = catch_e (fun () -> string_of_formula ~classical: true (k_UI O (eval s)))
-       method gl s = catch_e (fun () -> string_of_formula ~classical: true (gl_UI O (eval s)))
+       method islA s = catch_e (fun () -> string_of_formula (isl_A v (eval s)))
+       method islE s = catch_e (fun () -> string_of_formula (isl_E v (eval s)))
+       method k s = catch_e (fun () -> string_of_formula ~classical: true (k_UI v (eval s)))
+       method gl s = catch_e (fun () -> string_of_formula ~classical: true (gl_UI v (eval s)))
        method parse s = catch_e (fun () -> string_of_formula (eval s))
      end);;
 

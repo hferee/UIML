@@ -13,6 +13,7 @@
 
   Require Import List Extraction.
   Require Import Lia.
+  Require Import String.
 
   Require Import KS_export.
 
@@ -122,7 +123,7 @@ Arguments imap {X} {Y} _ {D} _ {l}.
 
   (* I define the graph of the function UI. *)
 
-  Variables (p : nat).     (* The variable we exclude from the interpolant. *)
+  Variables (p : string).     (* The variable we exclude from the interpolant. *)
 
   Unset Elimination Schemes.
 

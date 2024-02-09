@@ -3,7 +3,7 @@ Cd "extraction".
 
 Require Import GL.Interpolation.UIGL_braga.
 Require Import GLS_export.
-Require Import Coq.extraction.ExtrOcamlBasic.
+Require Import ExtrOcamlBasic ExtrOcamlString.
 
 
 Require Import K.Interpolation.UIK_braga.
@@ -32,8 +32,8 @@ end.
 Definition gl_UI p s := form_of_MPropF (proj1_sig (GL.Interpolation.UIGL_braga.GUI_tot p ([],[MPropF_of_form s]))).
 Definition k_UI p s := form_of_MPropF(proj1_sig (K.Interpolation.UIK_braga.GUI_tot p ([],[MPropF_of_form s]))).
 
-Definition isl_E  (n : nat) f :=Ef n f.
-Definition isl_A (n : nat) f := Af n f.
+Definition isl_E  v f :=Ef v f.
+Definition isl_A v f := Af v f.
 
 Separate Extraction gl_UI k_UI isl_E isl_A.
 

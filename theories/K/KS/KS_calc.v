@@ -16,7 +16,7 @@ Definition Seq := (prod (list MPropF) (list MPropF)).
    it in caclulus in a definition appearing later. *)
 
 Inductive IdPRule : rlsT Seq :=
-  | IdPRule_I : forall (P : nat) (Γ0 Γ1 Δ0 Δ1 : list MPropF),
+  | IdPRule_I : forall P (Γ0 Γ1 Δ0 Δ1 : list MPropF),
           IdPRule [] (Γ0 ++ # P :: Γ1 , Δ0 ++ # P :: Δ1)
 .
 
@@ -62,7 +62,7 @@ Proof.
 assert (DersNilF: dersrec KS_rules  (fun _ : rel (list (MPropF)) => False) []).
 apply dersrec_nil.
 
-induction A.
+induction A as [n| | |].
 - intros. assert (IdPRule [] (l0 ++ # n :: l1, l2 ++ # n :: l3)). apply IdPRule_I. apply IdP in H.
   pose (derI (rules:=KS_rules) (prems:=fun _ : rel (list (MPropF)) => False) (ps:=[])
   (l0 ++ # n :: l1, l2 ++ # n :: l3) H DersNilF). assumption.

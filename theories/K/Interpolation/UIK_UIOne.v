@@ -4,6 +4,7 @@ Require Import List.
 Export ListNotations.
 Require Import PeanoNat.
 Require Import Lia.
+Require Import String.
 
 Require Import general_export.
 
@@ -20,13 +21,13 @@ Require Import UIK_UI_prelims.
   (* The formula defined by the function UI satisfies all the properties of
       uniform interpolation. *)
 
-  Theorem UI_One : forall s (p q : nat), In (# q) (propvar_subform (UI p (fst s, snd s))) ->
+  Theorem UI_One : forall s p q, In (# q) (propvar_subform (UI p (fst s, snd s))) ->
                                                       ((q <> p) * (In (# q) (propvar_subform_list (fst s ++ snd s)))).
   Proof.
   intro s. remember (measure s) as n. revert Heqn. revert s. revert n.
   pose (strong_inductionT (fun (x:nat) => forall (s : list MPropF * list MPropF),
 x = measure s ->
-forall p q : nat, In # q (propvar_subform (UI p (fst s, snd s))) -> (q <> p) * In # q (propvar_subform_list (fst s ++ snd s)))).
+forall p q, In # q (propvar_subform (UI p (fst s, snd s))) -> (q <> p) * In # q (propvar_subform_list (fst s ++ snd s)))).
   apply p. intros n IH. clear p.
   intros. rewrite propvar_subform_list_app.
   destruct (empty_seq_dec s).
@@ -60,7 +61,7 @@ forall p q : nat, In # q (propvar_subform (UI p (fst s, snd s))) -> (q <> p) * I
        destruct H0. destruct H.  apply in_map_iff in H. destruct H. destruct H ; subst. simpl in H0.
        rewrite <- app_nil_end in H0. unfold restr_list_prop in H1. apply in_remove in H1. destruct H1.
        pose (In_list_prop_LF _ _ H). destruct p0. destruct s. subst. simpl in H0. destruct H0. inversion H0. subst.
-       destruct (Nat.eq_dec q p). exfalso ; apply H1 ; subst ; auto. split ; auto. apply in_or_app ; left.
+       destruct (string_dec q p). exfalso ; apply H1 ; subst ; auto. split ; auto. apply in_or_app ; left.
        apply list_prop_LF_propvar_subform_list in H ; auto. inversion H0.
 
        apply in_app_or in H0 ; destruct H0. apply propvar_subform_list_disj in H. apply propvar_subform_list_witness in H.

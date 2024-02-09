@@ -2,6 +2,7 @@ Require Import List.
 Export ListNotations.
 Require Import PeanoNat.
 Require Import Lia.
+Require Import String.
 
 Require Import general_export.
 
@@ -142,12 +143,12 @@ Require Import UIK_braga.
     repeat rewrite n_imp_subformLF_dist_app ; simpl ; repeat rewrite n_imp_subformLF_dist_app. lia.
   Qed.
 
-  Lemma propvar_subform_list_restr_list_prop : forall l (p q : nat), In # q (propvar_subform_list (restr_list_prop p l)) ->
+  Lemma propvar_subform_list_restr_list_prop : forall l p q, In # q (propvar_subform_list (restr_list_prop p l)) ->
                         ((q <> p) * (In # q (propvar_subform_list l))).
   Proof.
-  induction l ; simpl ; intros ; auto. unfold restr_list_prop in H. destruct a ; simpl ; simpl in H ; auto.
+  induction l ; simpl ; intros ; auto. unfold restr_list_prop in H. destruct a as [n | | |]; simpl ; simpl in H ; auto.
   destruct (eq_dec_form (# p) (# n)) ; subst. apply IHl in H. destruct H ; auto.
-  simpl in H. destruct H ; subst ; auto. split ; auto. rewrite H in n0. destruct (Nat.eq_dec p q) ; auto.
+  simpl in H. destruct H ; subst ; auto. split ; auto. rewrite H in n0. destruct (string_dec p q) ; subst; auto.
   all: apply IHl in H ; destruct H ; auto.
   all: split ; auto. all: apply in_or_app ; auto.
  Qed.
@@ -155,7 +156,7 @@ Require Import UIK_braga.
   Lemma In_list_prop_LF: forall l A, In A (list_prop_LF l) -> ((existsT2 q, A = # q) * In A l).
   Proof.
   induction l ; simpl ; intros ; auto. inversion H. apply In_InT in H. apply InT_app_or in H.
-  destruct H. destruct a ; simpl in i ; inversion i ; subst ; auto. split ; [exists n ; auto | auto]. inversion H0.
+  destruct H. destruct a as [n | | |]; simpl in i ; inversion i ; subst ; auto. split ; [exists n ; auto | auto]. inversion H0.
   apply InT_In in i ; apply IHl in i ; auto. destruct i ; split ; auto.
   Qed.
 

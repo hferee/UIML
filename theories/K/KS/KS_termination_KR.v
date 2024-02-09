@@ -63,7 +63,7 @@ Lemma KR_help02 : forall Γ Δ0 Δ1 BΓ A l, KRRule [(unboxed_list BΓ, [A])] (�
 Proof.
 induction l ; intros.
 - inversion H0.
-- simpl. destruct a.
+- simpl. destruct a as [n| | |].
   * assert (InT (Box A) (# n :: l)). apply in_splitT in H0. destruct H0. destruct s. rewrite e.
     apply InT_or_app. right. apply InT_eq. inversion H1. inversion H3. apply InT_In in H3.
     pose (IHl X H X0 H3). assumption.

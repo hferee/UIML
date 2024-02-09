@@ -1,6 +1,6 @@
 Require Import List.
 Export ListNotations.
-Require Import PeanoNat.
+Require Import PeanoNat String.
 
 Require Import general_export.
 
@@ -11,7 +11,7 @@ Set Implicit Arguments.
 (* First, let us define the propositional formulas we use here. *)
 
 Inductive MPropF : Type :=
- | Var : nat -> MPropF
+ | Var : string -> MPropF
  | Bot : MPropF
  | Imp : MPropF -> MPropF -> MPropF
  | Box : MPropF -> MPropF
@@ -50,7 +50,7 @@ match l with
   | h :: t => (size h) + (size_LF t)
 end.
 
-Fixpoint subst (σ : nat -> MPropF) (φ : MPropF) : MPropF :=
+Fixpoint subst (σ : string -> MPropF) (φ : MPropF) : MPropF :=
 match φ with
 | Var p => (σ p)
 | Bot => Bot

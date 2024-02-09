@@ -113,7 +113,7 @@ Lemma nobox_gen_ext_top_boxes_identity : forall l0 l1, nobox_gen_ext l0 l1 ->
 Proof.
 intros l0 l1 X. induction X.
 - intros. reflexivity.
-- intro. simpl. destruct x.
+- intro. simpl. destruct x as [n | | | ].
   * exfalso. pose (H (# n)). assert (In # n (# n :: l)). apply in_eq. apply e in H0.
     destruct H0. inversion H0.
   * exfalso. pose (H (Bot)). assert (In (Bot) (Bot :: l)). apply in_eq. apply e in H0.

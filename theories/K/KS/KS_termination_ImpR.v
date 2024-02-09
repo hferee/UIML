@@ -91,7 +91,7 @@ Lemma In_pos_top_imps_split_l : forall l (A : MPropF) n, In (A, S n) (pos_top_im
 Proof.
 induction l.
 - intros. simpl. exfalso. simpl in H. destruct H.
-- intros. simpl in H. destruct a.
+- intros. simpl in H. destruct a as [n0| | |].
   * apply In_InT_pair in H. apply InT_map_iff in H. destruct H as ([m n1] & e & i).
     simpl in e. inversion e. subst. destruct n. exfalso.
     apply InT_In in i. apply In_pos_top_imps_0_False in i. assumption.
@@ -225,7 +225,7 @@ Lemma ImpR_help01 : forall prem s l, InT prem (prems_Imp_R l s) ->
 Proof.
 intros prem s. destruct s. destruct prem. induction l3 ; intros X.
 - simpl in X. inversion X.
-- destruct a as [m n]. destruct m.
+- destruct a as [m n]. destruct m  as [n0| | |].
   * simpl in X. destruct n.
     + pose (IHl3 X). destruct s as (x & x0 & x1 & x2 & x3 & x4 & x5 & p).
         decompose record p. exists x. exists x0. exists x1.

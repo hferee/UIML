@@ -15,7 +15,7 @@ Require Import UIK_UI_prelims.
 
   Section UIPThree.
 
-  Theorem UI_Three : forall s (p : nat) X0 Y0,
+  Theorem UI_Three : forall s p X0 Y0,
                                     (In (Var p) (propvar_subform_list (X0 ++ Y0)) -> False) ->
                                     KS_prv (fst s ++ X0, snd s ++ Y0) ->
                                     KS_prv (X0, (UI p s) :: Y0).

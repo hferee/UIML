@@ -2,6 +2,7 @@ Require Import List.
 Export ListNotations.
 Require Import PeanoNat.
 Require Import Lia.
+Require Import String.
 
 Require Import general_export.
 
@@ -143,12 +144,12 @@ Require Import UIGL_Canopy_nodupseq_perm.
     repeat rewrite n_imp_subformLF_dist_app ; simpl ; repeat rewrite n_imp_subformLF_dist_app. lia.
   Qed.
 
-  Lemma propvar_subform_list_restr_list_prop : forall l (p q : nat), In # q (propvar_subform_list (restr_list_prop p l)) ->
+  Lemma propvar_subform_list_restr_list_prop : forall l (p q : string), In # q (propvar_subform_list (restr_list_prop p l)) ->
                         ((q <> p) * (In # q (propvar_subform_list l))).
   Proof.
-  induction l ; simpl ; intros ; auto. unfold restr_list_prop in H. destruct a ; simpl ; simpl in H ; auto.
+  induction l ; simpl ; intros ; auto. unfold restr_list_prop in H. destruct a as [n | | |]; simpl ; simpl in H ; auto.
   destruct (eq_dec_form (# p) (# n)) ; subst. apply IHl in H. destruct H ; auto.
-  simpl in H. destruct H ; subst ; auto. split ; auto. rewrite H in n0. destruct (eq_dec_nat p q) ; auto.
+  simpl in H. destruct H ; subst ; auto. split ; auto. rewrite H in n0. destruct (string_dec p q) ; subst; auto.
   all: apply IHl in H ; destruct H ; auto.
   all: split ; auto. all: apply in_or_app ; auto.
  Qed.
@@ -156,7 +157,7 @@ Require Import UIGL_Canopy_nodupseq_perm.
   Lemma In_list_prop_LF: forall l A, In A (list_prop_LF l) -> ((existsT2 q, A = # q) * In A l).
   Proof.
   induction l ; simpl ; intros ; auto. inversion H. apply In_InT in H. apply InT_app_or in H.
-  destruct H. destruct a ; simpl in i ; inversion i ; subst ; auto. split ; [exists n ; auto | auto]. inversion H0.
+  destruct H. destruct a as [n | | |]; simpl in i ; inversion i ; subst ; auto. split ; [exists n ; auto | auto]. inversion H0.
   apply InT_In in i ; apply IHl in i ; auto. destruct i ; split ; auto.
   Qed.
 
@@ -356,7 +357,7 @@ Require Import UIGL_Canopy_nodupseq_perm.
 
   Lemma top_boxes_nodup : forall l, incl (top_boxes l) (top_boxes (nodup eq_dec_form l)).
   Proof.
-  induction l ; intro ; intros ; auto. destruct a ; simpl ; simpl in H ; auto ; simpl ; subst.
+  induction l ; intro ; intros ; auto. destruct a as [n | | |]; simpl ; simpl in H ; auto ; simpl ; subst.
   destruct (in_dec eq_dec_form # n l) ; auto. destruct (in_dec eq_dec_form Bot l) ; auto.
   destruct (in_dec eq_dec_form (a1 --> a2) l) ; auto. destruct (in_dec eq_dec_form (Box a) l) ; simpl ; auto.
   destruct H ; subst ; auto. apply IHl. apply is_box_in_top_boxes ; auto. exists a ; auto. destruct H ; subst ; auto.
@@ -365,7 +366,7 @@ Require Import UIGL_Canopy_nodupseq_perm.
   Lemma subform_boxesLF_nodup : forall l a, In a (subform_boxesLF l) <-> In a (subform_boxesLF (nodup eq_dec_form l)).
   Proof.
   induction l ; simpl ; intros ; auto. intuition. split.
-  - destruct a ; simpl ; auto ; intros.
+  - destruct a as [n | | |]; simpl ; auto ; intros.
     destruct (in_dec eq_dec_form # n l) ; apply IHl ; auto. destruct (in_dec eq_dec_form Bot l) ; apply IHl ; auto.
     destruct (in_dec eq_dec_form (a1 --> a2) l) ; auto. apply in_app_or in H. destruct H.
     apply IHl. apply In_incl_subform_boxes with (A:=a1 --> a2) ; auto. apply IHl.
@@ -383,7 +384,7 @@ Require Import UIGL_Canopy_nodupseq_perm.
     apply In_remove_list_In_list_not_In_remove_list in H ; auto. destruct H.
     apply not_removed_remove_list ; auto.
     apply IHl ; auto.
-  - destruct a ; simpl ; auto ; intros.
+  - destruct a as [n | | |]; simpl ; auto ; intros.
     destruct (in_dec eq_dec_form # n l) ; apply IHl ; auto. destruct (in_dec eq_dec_form Bot l) ; apply IHl ; auto.
     destruct (in_dec eq_dec_form (a1 --> a2) l) ; auto. destruct (in_dec eq_dec_form a0 (subform_boxesF a1 ++ remove_list (subform_boxesF a1) (subform_boxesF a2))) ; auto.
     apply in_or_app ; auto. apply in_or_app ; right.
