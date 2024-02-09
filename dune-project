@@ -7,12 +7,18 @@
 (source
  (github hferee/UIML))
 
-(authors "Hugo Férée & Iris van der Giessen & Sam van Gool & Ian Shillito & ")
+(authors "Hugo Férée"
+         "Iris van der Giessen"
+         "Sam van Gool"
+         "Ian Shillito")
 
 (maintainers "Hugo Férée")
 
 (license CecILL)
 
+(source https://github.com/hferee/UIML)
+(bug_reports https://github.com/hferee/UIML/issues)
+(homepage https://hferee.github.io/)
 (documentation https://hferee.github.io/UIML/toc.html)
 
 (using coq 0.8)
