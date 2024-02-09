@@ -36,7 +36,10 @@ let rec test_formula (n: int) =
   if n = 1 then Implies(Implies(var 1, var 0), var 0) else Bot *)
 *)
 
-let _ = print_endline (string_of_formula (eval " (~x1 | □⊥ ) "))
+
+let _ = print_endline(string_of_formula (eval "□□□¬□#"))
+
+
 
 (* export functions to js *)
 let _ =
@@ -48,4 +51,5 @@ let _ =
        method gl s = string_of_formula (gl_UI O (eval s))
        method parse s = string_of_formula (eval s)
 
-     end)
+     end);;
+

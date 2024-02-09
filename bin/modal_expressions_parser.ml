@@ -17,6 +17,8 @@ let neg p = ((char '~') <|> (char '\xC2' *> char '\xAC')) *> spaces *> p >>| (fu
 let disj = spaces *> ((char '\xE2' *> char '\x88' *> char '\xA8') <|> char '|') *> spaces *>  return (fun x y -> Or(x, y))
 let conj = spaces *> ((char '\xE2' *> char '\x88' *> char '\xA7') <|> char '&') *> spaces *> return (fun x y -> And (x, y))
 
+let modal (p : form t) : form t = (((char '[' *> char ']') <|> (char '\xE2' *> char '\x96' *> char '\xA1')) *> spaces *> p >>| (fun x -> Box x))
+        <|> (((char '~') <|> (char '\xC2' *> char '\xAC')) *> spaces *> p >>| (fun x -> Implies(x, Bot)))
 let impl = spaces *> ((char '\xE2' *> char '\x86' *> char '\x92') <|> (char '-' *> char '>')) *> spaces *> return (fun x y -> Implies(x, y))
 
 (* this is ⊥ *)
@@ -39,7 +41,14 @@ let chainl1 e op =
   let chainr1 e op =
     let rec go acc =
       (lift2 (fun f x -> f acc x) op (e >>= go)) <|> return acc in
-    e >>= go  
+    e >>= go
+
+let chainmod (e : 'a t) (op : 'a t -> 'a t) : 'a t =
+  fix (fun x -> op x <|> e)
+
+  (*
+  let rec go (acc : 'a) = lift (fun f -> f acc) op  *> (e >>= go) <|> return acc in e >>= go
+  *)
     (*
   p ‘chainr1‘ op =
   p ‘bind‘ \x ->
@@ -48,7 +57,7 @@ let chainl1 e op =
 let expr : form t =
   fix (fun expr ->
     let factor = parens expr <|> integer <|> bot_u in
-    let modality = box factor <|> neg factor <|> factor in
+    let modality = chainmod factor modal  in
     let term   = chainl1 modality conj in
     let disjunctions = spaces *> chainl1 term disj <* spaces in
     spaces *> chainr1 disjunctions impl <* spaces
