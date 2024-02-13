@@ -1,7 +1,7 @@
 Require Import List.
 Export ListNotations.
 Require Import Lia.
-Require Import PeanoNat.
+Require Import PeanoNat Arith.
 
 Require Import KS_calc.
 Require Import KS_dec.
@@ -271,14 +271,7 @@ Qed.
 Theorem KS_termin_base : forall n s, (n = measure s) ->
    existsT2 (DMax : KS_drv s), (@is_mhd s DMax).
 Proof.
-(* Setting up the strong inductions on each. *)
-pose (strong_inductionT (fun (x:nat) => forall (s : Seq),
-(x = measure s) ->
-(existsT2 DMax : derrec KS_rules
-(fun _ : Seq => True) s, is_mhd DMax))).
-apply s. intros n IH. clear s.
-
-(* Now we can do the pen and paper proof. *)
+induction n as [n IH] using (well_founded_induction_type lt_wf).
 assert (dersrecnil: dersrec KS_rules (fun _ => True) nil).
 apply dersrec_nil.
 intros. pose (dec_KS_rules s). destruct s0.

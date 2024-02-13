@@ -2,6 +2,7 @@ Require Import List.
 Export ListNotations.
 Require Import PeanoNat.
 Require Import Lia.
+Require Import Arith.
 
 Require Import GLS_calcs.
 Require Import GLS_dec.
@@ -215,18 +216,7 @@ Theorem GLS_wkn_L : forall (k : nat) s
           existsT2 (D1 : GLS_prv sw),
           derrec_height D1 <= k)).
 Proof.
-(* Setting up the strong induction on the height. *)
-pose (strong_inductionT (fun (x:nat) => forall (s : Seq)
-  (D0 : derrec GLS_rules (fun _ : Seq => False) s),
-x = derrec_height D0 ->
-(forall sw A,
-wkn_L A s sw ->
-(existsT2
-  D1 : derrec GLS_rules
-         (fun _ : Seq => False) sw,
-  derrec_height D1 <= x)))).
-apply s. intros n IH. clear s.
-(* Now we do the actual proof-theoretical work. *)
+induction k as [n IH] using (well_founded_induction_type lt_wf).
 intros s0 D0. remember D0 as D0'. destruct D0.
 (* D0 is a leaf *)
 - intros hei sw A wkn. inversion f.
@@ -371,18 +361,7 @@ Theorem GLS_wkn_R : forall (k : nat) s
           existsT2 (D1 : GLS_prv sw),
           derrec_height D1 <= k)).
 Proof.
-(* Setting up the strong induction on the height. *)
-pose (strong_inductionT (fun (x:nat) => forall (s : Seq)
-  (D0 : derrec GLS_rules (fun _ : Seq => False) s),
-x = derrec_height D0 ->
-(forall sw A,
-wkn_R A s sw ->
-(existsT2
-  D1 : derrec GLS_rules
-         (fun _ : Seq => False) sw,
-  derrec_height D1 <= x)))).
-apply s. intros n IH. clear s.
-(* Now we do the actual proof-theoretical work. *)
+induction k as [n IH] using (well_founded_induction_type lt_wf).
 intros s0 D0. remember D0 as D0'. destruct D0.
 (* D0 is a leaf *)
 - intros hei sw A wkn. inversion f.

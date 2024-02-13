@@ -1,6 +1,6 @@
 Require Import List.
 Export ListNotations.
-Require Import PeanoNat.
+Require Import PeanoNat Arith.
 Require Import Lia.
 
 Require Import GLS_calcs.
@@ -22,22 +22,9 @@ Theorem GLS_cut_adm_main : forall n A s Γ0 Γ1 Δ0 Δ1,
 Proof.
 (* The proof is by induction on, first, size of the cut formula and on, second, the mhd
    of the sequent-conclusion. *)
-(* We set up the strong induction on n properly first. *)
-pose (d:=strong_inductionT (fun (x:nat) => forall A s Γ0 Γ1 Δ0 Δ1,
-                      x = size A ->
-                      (s = (Γ0 ++ Γ1, Δ0 ++ Δ1)) ->
-                      ((GLS_prv (Γ0 ++ Γ1, Δ0 ++ A :: Δ1)) ->
-                      (GLS_prv (Γ0 ++ A :: Γ1, Δ0 ++ Δ1)) ->
-                      (GLS_prv s)))).
-apply d. clear d. intros n PIH. intros A s ; revert s A.
-pose (d:=less_thanS_strong_inductionT (fun (s:Seq) => forall A Γ0 Γ1 Δ0 Δ1,
-                      n = size A ->
-                      (s = (Γ0 ++ Γ1, Δ0 ++ Δ1)) ->
-                      ((GLS_prv (Γ0 ++ Γ1, Δ0 ++ A :: Δ1)) ->
-                      (GLS_prv (Γ0 ++ A :: Γ1, Δ0 ++ Δ1)) ->
-                      (GLS_prv s)))).
-apply d. clear d. intros s SIH.
-
+induction n as [n PIH] using (well_founded_induction_type lt_wf).
+intros A s ; revert s A.
+refine (less_thanS_strong_inductionT _ _); intros s SIH.
 intros A Γ0 Γ1 Δ0 Δ1 size E D0 D1. inversion D0. inversion H.
 inversion D1. inversion H0.
 

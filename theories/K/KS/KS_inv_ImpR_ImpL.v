@@ -1,7 +1,7 @@
 Require Import List.
 Export ListNotations.
 Require Import Lia.
-Require Import PeanoNat.
+Require Import PeanoNat Arith.
 
 Require Import KS_calc.
 Require Import KS_exch.
@@ -59,19 +59,7 @@ Theorem ImpR_ImpL_hpinv : forall (k : nat) concl
 Proof.
 assert (DersNilF: dersrec (KS_rules) (fun _ : Seq => False) []).
 apply dersrec_nil.
-(* Setting up the strong induction on the height. *)
-pose (strong_inductionT (fun (x:nat) => forall (concl : Seq)
-  (D0 : derrec (KS_rules) (fun _ : Seq => False) concl),
-x = derrec_height D0 ->
-((forall prem, ((ImpRRule [prem] concl) ->
-          existsT2 (D1 : KS_prv prem),
-          derrec_height D1 <= x))) *
-          ((forall prem1 prem2, ((ImpLRule [prem1; prem2] concl) ->
-          existsT2 (D1 : KS_prv prem1)
-                   (D2 : KS_prv prem2),
-          (derrec_height D1 <= x) * (derrec_height D2 <= x)))))).
-apply p. intros n IH. clear p.
-(* Now we do the actual proof-theoretical work. *)
+induction k as [n IH] using (well_founded_induction_type lt_wf).
 intros s D0. remember D0 as D0'. destruct D0.
 (* D0 is a leaf *)
 - destruct f.

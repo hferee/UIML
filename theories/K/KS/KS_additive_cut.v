@@ -1,7 +1,7 @@
 Require Import List.
 Export ListNotations.
 Require Import Lia.
-Require Import PeanoNat.
+Require Import PeanoNat Arith.
 
 Require Import KS_calc.
 Require Import KS_termination_measure.
@@ -21,27 +21,8 @@ Theorem KS_cut_adm_main : forall n k A s Γ0 Γ1 Δ0 Δ1,
                       (KS_prv (Γ0 ++ A :: Γ1, Δ0 ++ Δ1)) ->
                       (KS_prv s).
 Proof.
-(* The proof is by induction on, first, size of the cut formula and on, second, the mhd
-   of the sequent-conclusion. *)
-(* We set up the strong induction on n properly first. *)
-pose (d:=strong_inductionT (fun (x:nat) => forall k A s Γ0 Γ1 Δ0 Δ1,
-                      x = size A ->
-                      (k = mhd s) ->
-                      (s = (Γ0 ++ Γ1, Δ0 ++ Δ1)) ->
-                      ((KS_prv (Γ0 ++ Γ1, Δ0 ++ A :: Δ1)) ->
-                      (KS_prv (Γ0 ++ A :: Γ1, Δ0 ++ Δ1)) ->
-                      (KS_prv s)))).
-apply d. clear d. intros n PIH.
-pose (d:=strong_inductionT (fun (x:nat) => forall A s Γ0 Γ1 Δ0 Δ1,
-                      n = size A ->
-                      (x = mhd s) ->
-                      (s = (Γ0 ++ Γ1, Δ0 ++ Δ1)) ->
-                      ((KS_prv (Γ0 ++ Γ1, Δ0 ++ A :: Δ1)) ->
-                      (KS_prv (Γ0 ++ A :: Γ1, Δ0 ++ Δ1)) ->
-                      (KS_prv s)))).
-apply d. clear d. intros k SIH.
-
-(* Now we do the actual proof-theoretical work. *)
+induction n as [n PIH] using (well_founded_induction_type lt_wf).
+induction k as [k SIH] using (well_founded_induction_type lt_wf).
 assert (DersNilF: dersrec KS_rules (fun _ : Seq => False) []).
 apply dersrec_nil.
 assert (DersNilT: dersrec KS_rules (fun _ : Seq => True) []).
@@ -53,7 +34,7 @@ inversion D1. inversion H0.
 inversion X ; subst.
 
 (* Left rule is IdP *)
-- inversion H1. subst. apply list_split_form in H3. repeat destruct H3.
+- inversion H1. subst. apply list_split_form in H3. destruct H3.
   * destruct s.
     + repeat destruct p. subst. inversion X1.
     (* Right rule is IdP *)

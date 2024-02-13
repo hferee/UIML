@@ -1,6 +1,6 @@
 Require Import List.
 Export ListNotations.
-Require Import PeanoNat.
+Require Import PeanoNat Arith.
 Require Import Lia.
 
 Require Import general_export.
@@ -45,11 +45,7 @@ Theorem PermutationTS_prv_hpadm : forall s (D: GLS_prv s),
           forall sp, PermutationTS s sp -> existsT2 (D0: GLS_prv sp), derrec_height D0 <= derrec_height D.
 Proof.
 intros s D. remember (derrec_height D) as n. revert Heqn. revert D. revert s. revert n.
-(* Setting up the strong induction on the height. *)
-pose (strong_inductionT (fun (x:nat) => forall (s : Seq) (D : GLS_prv s),
-x = derrec_height D -> forall sp : Seq, PermutationTS s sp -> existsT2 D0 : GLS_prv sp, derrec_height D0 <= x)).
-apply s. clear s. intros n IH.
-(* Now we do the actual proof-theoretical work. *)
+induction n as [n IH] using (well_founded_induction_type lt_wf).
 intros s0 D0. destruct D0.
 - intros. inversion f.
 - intros hei sp Perm. simpl in hei.

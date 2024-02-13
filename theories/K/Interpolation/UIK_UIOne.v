@@ -2,7 +2,7 @@
 
 Require Import List.
 Export ListNotations.
-Require Import PeanoNat.
+Require Import PeanoNat Arith.
 Require Import Lia.
 Require Import String.
 
@@ -25,14 +25,11 @@ Require Import UIK_UI_prelims.
                                                       ((q <> p) * (In (# q) (propvar_subform_list (fst s ++ snd s)))).
   Proof.
   intro s. remember (measure s) as n. revert Heqn. revert s. revert n.
-  pose (strong_inductionT (fun (x:nat) => forall (s : list MPropF * list MPropF),
-x = measure s ->
-forall p q, In # q (propvar_subform (UI p (fst s, snd s))) -> (q <> p) * In # q (propvar_subform_list (fst s ++ snd s)))).
-  apply p. intros n IH. clear p.
-  intros. rewrite propvar_subform_list_app.
+  induction n as [n IH] using (well_founded_induction_type lt_wf).
+  intros s Heqn p q H0. rewrite propvar_subform_list_app.
   destruct (empty_seq_dec s).
   (* s is the empty sequent. *)
-  { subst ; simpl in *. assert (GUI p ([],[]) Bot). apply GUI_empty_seq ; auto. apply UI_GUI in H.
+  { subst ; simpl in *. assert (H : GUI p ([],[]) Bot) by (apply GUI_empty_seq ; auto). apply UI_GUI in H.
     rewrite H in *. simpl in H0. inversion H0. }
   (* s is not the empty sequent. *)
   { destruct (critical_Seq_dec s).
@@ -40,11 +37,11 @@ forall p q, In # q (propvar_subform (UI p (fst s, snd s))) -> (q <> p) * In # q 
   - destruct (dec_KS_init_rules s).
     (* s is an initial sequent *)
     + assert (is_init s) ; auto.
-       assert (GUI p s Top). apply GUI_critic_init ; auto. apply UI_GUI in H1.
+       assert (H1 : GUI p s Top) by (apply GUI_critic_init ; auto). apply UI_GUI in H1.
        destruct s. simpl in H0. rewrite H1 in H0. simpl in H0. inversion H0.
     (* s is not an initial sequent *)
     + remember (fst s) as LHS.
-       assert (GUI p s
+       assert (H1 : GUI p s
        (Or (list_disj (restr_list_prop p (snd s)))
        (Or (list_disj (map Neg (restr_list_prop p (fst s))))
        (Or (list_disj (map Box (map (UI p) (KR_prems s))))
@@ -99,17 +96,19 @@ forall p q, In # q (propvar_subform (UI p (fst s, snd s))) -> (q <> p) * In # q 
          apply in_app_or in H0 ; destruct H0 ; auto. right. apply propvar_subform_list_top_boxes ; auto.
          simpl in H0. inversion H0. }
   (* s is not a critical sequent *)
-  - assert (GUI p s (list_conj (map (UI p) (Canopy s)))). apply GUI_not_critic ; auto.
+  - assert (H1 : GUI p s (list_conj (map (UI p) (Canopy s)))). apply GUI_not_critic ; auto.
     apply Gimap_map ; intros ; apply UI_GUI ; auto. apply UI_GUI in H1. destruct s.
     simpl in H0. rewrite H1 in H0. apply propvar_subform_list_conj in H0.
-    apply propvar_subform_list_witness in H0. destruct H0. destruct H0. apply in_map_iff in H0.
-    destruct H0. destruct H0 ; subst. simpl. assert (In # q (propvar_subform (UI p (fst x0, snd x0)))).
-    destruct x0 ; auto. pose (In_InT_seqs _ _ H3). apply Canopy_measure in i. destruct i ; subst.
-    simpl in H. exfalso. apply f. apply In_InT_seqs in H3 ; apply Canopy_critical in H3 ; auto.
+    apply propvar_subform_list_witness in H0. destruct H0 as [s [H0 H3]].
+    apply in_map_iff in H0.
+    destruct H0 as [x0 H0]. destruct H0 as [H0 Hc]; subst. simpl.
+    assert (H2 : In # q (propvar_subform (UI p (fst x0, snd x0)))) by (destruct x0 ; auto).
+    pose (i := In_InT_seqs _ _ Hc). apply Canopy_measure in i. destruct i ; subst.
+    simpl in *. exfalso. apply f. apply In_InT_seqs in Hc ; apply Canopy_critical in Hc ; auto.
     assert (measure x0 = measure x0) ; auto.
-    pose (IH _ l1 _ H0 _ _ H). destruct p0 ; split ; auto.
-    apply propvar_subform_list_Canopy with (A:=# q) in H3 ; auto.
-    simpl in H3 ; rewrite propvar_subform_list_app in H3 ; auto. }
+    pose (IH _ l1 _ H _ _ H2). destruct p0 ; split ; auto.
+    apply propvar_subform_list_Canopy with (A:=# q) in Hc ; auto.
+    simpl in H3 ; rewrite propvar_subform_list_app in Hc ; auto. }
   Qed.
 
   End UIPOne.

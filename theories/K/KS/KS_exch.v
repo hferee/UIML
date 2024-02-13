@@ -1,7 +1,7 @@
 Require Import List.
 Export ListNotations.
 Require Import Lia.
-Require Import PeanoNat.
+Require Import PeanoNat Arith.
 
 Require Import KS_calc.
 Require Export KS_exch_prelims.
@@ -258,17 +258,7 @@ Theorem KS_hpadm_list_exch_R0 : forall (k : nat) s
         (existsT2 (D1 : KS_prv se),
           derrec_height D1 <=k)).
 Proof.
-(* Setting up the strong induction on the height. *)
-pose (strong_inductionT (fun (x:nat) => forall (s : Seq)
-  (D0 : derrec KS_rules  (fun _ : Seq => False) s),
-x = derrec_height D0 ->
-(forall se,
-(list_exch_R s se) ->
-(existsT2
-  D1 : derrec KS_rules 
-         (fun _ : Seq => False) se,
-  derrec_height D1 <= x)))).
-apply s. intros n IH. clear s.
+induction k as [n IH] using (well_founded_induction_type lt_wf).
 (* Now we do the actual proof-theoretical work. *)
 intros s0 D0. remember D0 as D0'. destruct D0.
 (* D0 ip a leaf *)
@@ -344,18 +334,7 @@ Theorem KS_hpadm_list_exch_L0 : forall (k : nat) s
         (existsT2 (D1 : KS_prv se),
           derrec_height D1 <=k)).
 Proof.
-(* Setting up the strong induction on the height. *)
-pose (strong_inductionT (fun (x:nat) => forall (s : Seq)
-  (D0 : derrec KS_rules  (fun _ : Seq => False) s),
-x = derrec_height D0 ->
-(forall se,
-(list_exch_L s se) ->
-(existsT2
-  D1 : derrec KS_rules 
-         (fun _ : Seq => False) se,
-  derrec_height D1 <= x)))).
-apply s. intros n IH. clear s.
-(* Now we do the actual proof-theoretical work. *)
+induction k as [n IH] using (well_founded_induction_type lt_wf).
 intros s0 D0. remember D0 as D0'. destruct D0.
 (* D0 ip a leaf *)
 - inversion f.

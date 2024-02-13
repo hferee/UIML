@@ -1,6 +1,6 @@
 Require Import List.
 Export ListNotations.
-Require Import PeanoNat.
+Require Import PeanoNat Arith.
 Require Import Lia.
 
 Require Import GLS_calcs.
@@ -671,18 +671,7 @@ Theorem GLS_hpadm_ctr_LR : forall (k : nat) s
           existsT2 (D1 : GLS_prv sc),
           derrec_height D1 <= k)).
 Proof.
-(* Setting up the strong induction on the height. *)
-pose (strong_inductionT (fun (x:nat) => forall (s : Seq)
-  (D0 : derrec GLS_rules (fun _ : Seq => False) s),
-x = derrec_height D0 ->
-(forall sc A,
-((@ctr_L A s sc) + (@ctr_R A s sc)) ->
-(existsT2
-  D1 : derrec GLS_rules
-         (fun _ : Seq => False) sc,
-  derrec_height D1 <= x)))).
-apply s. intros n IH. clear s.
-(* Now we do the actual proof-theoretical work. *)
+induction k as [n IH] using (well_founded_induction_type lt_wf).
 intros s D0. remember D0 as D0'. destruct D0.
 (* D0 ip a leaf *)
 - intros hei sc A ctr. inversion f.

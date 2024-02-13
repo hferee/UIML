@@ -2,7 +2,7 @@
 
 Require Import List.
 Export ListNotations.
-Require Import PeanoNat.
+Require Import PeanoNat Arith.
 Require Import Lia.
 
 Require Import general_export.
@@ -36,10 +36,7 @@ Require Import UIGL_UIDiam_N.
   generalize dependent Heqscomp. remember (derrec_height D) as n. generalize dependent Heqn.
   generalize dependent Y0. generalize dependent X0. generalize dependent D.
   generalize dependent scomp. generalize dependent s. generalize dependent n.
-  pose (d:=strong_inductionT (fun (x:nat) => forall (s : list MPropF * list MPropF) (scomp : list MPropF * list MPropF) (D : GLS_prv scomp) (X0 Y0 : list MPropF),
-                x = derrec_height D ->
-                scomp = (fst s ++ X0, snd s ++ Y0) -> (In # p (propvar_subform_list (X0 ++ Y0)) -> False) -> GLS_prv (X0, UI p s :: Y0))).
-  apply d. clear d. intros n PIH.
+  induction n as [n PIH] using (well_founded_induction_type lt_wf).
   pose (d:=LexSeq_ind (fun (s:Seq) => forall (scomp : list MPropF * list MPropF) (D : GLS_prv scomp) (X0 Y0 : list MPropF),
                 n = derrec_height D ->
                 scomp = (fst s ++ X0, snd s ++ Y0) -> (In # p (propvar_subform_list (X0 ++ Y0)) -> False) -> GLS_prv (X0, UI p s :: Y0))).

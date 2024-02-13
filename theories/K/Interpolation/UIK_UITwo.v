@@ -1,6 +1,6 @@
 Require Import List.
 Export ListNotations.
-Require Import PeanoNat.
+Require Import PeanoNat Arith.
 Require Import Lia.
 
 Require Import general_export.
@@ -19,9 +19,8 @@ Require Import UIK_UI_prelims.
   Theorem UI_Two : forall (s : Seq), forall p, KS_prv ((UI p s) :: fst s, snd s).
   Proof.
   intro s. remember (measure s) as n. revert Heqn. revert s. revert n.
-  pose (strong_inductionT (fun x =>
-  forall  (s : Seq), x = measure s -> forall p, KS_prv (UI p s :: fst s, snd s))).
-  apply k. intros n IH. clear k. intros.
+  induction n as [n IH] using (well_founded_induction_type lt_wf).
+  intros.
   destruct (empty_seq_dec s).
   (* s is the empty sequent. *)
   { subst ; simpl in *. assert (GUI p ([],[]) Bot). apply GUI_empty_seq ; auto. apply UI_GUI in H.
@@ -37,12 +36,13 @@ Require Import UIK_UI_prelims.
       destruct s. simpl. simpl in X.
       assert (J0: derrec_height X = derrec_height X). auto.
       assert (J1: wkn_L (UI p (l, l0)) (l, l0) (UI p (l, l0) :: l, l0)).
-      assert ((l, l0) = ([] ++ l, l0)). auto. rewrite H0.
-      assert ((UI p ([] ++ l, l0) :: l, l0) = ([] ++ UI p ([] ++ l, l0) :: l, l0)). auto. rewrite H1. apply wkn_LI.
+      replace (l, l0) with ([] ++ l, l0) by auto.
+      replace (UI p ([] ++ l, l0) :: l, l0) with ([] ++ UI p ([] ++ l, l0) :: l, l0) by auto.
+      apply wkn_LI.
       pose (KS_wkn_L _ _ X J0 _ _ J1). destruct s. auto.
     (* s is not an initial sequent *)
     +  assert (P1: KS_prv (list_disj (map Neg (restr_list_prop p (fst s))) :: fst s, snd s)).
-        apply list_disj_L. intros. apply InT_map_iff in H0. destruct H0. destruct p0. subst. unfold Neg.
+        apply list_disj_L. intros A H0. apply InT_map_iff in H0. destruct H0. destruct p0. subst. unfold Neg.
         apply derI with (ps:=[([] ++ fst s, [] ++ x :: snd s);([] ++ Bot :: fst s, [] ++ snd s)]).
         assert ((x --> Bot :: fst s, snd s) = ([] ++ x --> Bot :: fst s, [] ++ snd s)). auto. rewrite H. apply ImpL. apply ImpLRule_I.
         apply dlCons. 2: apply dlCons. 3: apply dlNil. unfold restr_list_prop in i.
@@ -51,12 +51,12 @@ Require Import UIK_UI_prelims.
         rewrite H. apply Id_all_form. apply derI with (ps:=[]). apply BotL. apply BotLRule_I. apply dlNil.
 
          assert (P2: KS_prv (list_disj (restr_list_prop p (snd s)) :: fst s, snd s)).
-         apply list_disj_L. intros. unfold restr_list_prop in H0. apply InT_In in H0. apply In_remove_In_list in H0.
-         apply In_list_prop_LF in H0. destruct H0. apply In_InT in i. apply InT_split in i. destruct i. destruct s1.
-         rewrite e. assert (A :: fst s = [] ++ A :: fst s). auto. rewrite H0. apply Id_all_form.
+         apply list_disj_L. intros A H0. unfold restr_list_prop in H0. apply InT_In in H0. apply In_remove_In_list in H0.
+         apply In_list_prop_LF in H0. destruct H0 as [s0 i]. apply In_InT in i. apply InT_split in i. destruct i. destruct s1.
+         rewrite e. replace (A :: fst s) with ([] ++ A :: fst s) by auto. apply Id_all_form.
 
          assert (P3: KS_prv (list_disj (map Box (map (UI p) (KR_prems s))) :: fst s, snd s)).
-         apply list_disj_L. intros. apply InT_map_iff in H0. destruct H0. destruct p0. subst. apply InT_map_iff in i.
+         apply list_disj_L. intros A H0. apply InT_map_iff in H0. destruct H0. destruct p0. subst. apply InT_map_iff in i.
          destruct i. destruct p0 ; subst. unfold KR_prems in i. destruct (finite_KR_premises_of_S s).
          simpl in i. apply InT_flatten_list_InT_elem in i. destruct i. destruct p1. apply p0 in i0.
          inversion i0 ; subst. inversion i ; subst. simpl. remember (UI p (unboxed_list BΓ, [A])) as Interp.
@@ -82,7 +82,7 @@ Require Import UIK_UI_prelims.
              assert (J30: measure (unboxed_list (top_boxes (m :: l)), []%list) = measure (unboxed_list (top_boxes (m :: l)), []%list)) ; auto.
              subst. pose (IH _ J0 _ J30 p). simpl in k. auto. }
 
-         assert (GUI p s
+         assert (H0: GUI p s
          (Or (list_disj (restr_list_prop p (snd s)))
          (Or (list_disj (map Neg (restr_list_prop p (fst s))))
          (Or (list_disj (map Box (map (UI p) (KR_prems s))))
@@ -95,7 +95,7 @@ Require Import UIK_UI_prelims.
     apply UI_GUI ; auto.
     pose (@GUI_inv_not_critic p s (UI p s) (map (UI p) (Canopy s)) J0 f J1). rewrite <- e.
     assert (J2: forall s1, InT s1 (Canopy s) -> KS_prv (UI p s1 :: fst s1, snd s1)).
-    intros. apply IH with (k:= measure s1) ; auto. pose (Canopy_measure _ _ H0). destruct s0 ; subst ; auto. exfalso.
+    intros s1 H0. apply IH with (y:= measure s1) ; auto. pose (Canopy_measure _ _ H0). destruct s0 ; subst ; auto. exfalso.
     apply f. apply Canopy_critical in H0 ; auto.
     assert (J3 : forall s1 : Seq, InT s1 (Canopy s) -> KS_prv (list_conj (map (UI p) (Canopy s)) :: fst s1, snd s1)).
     intros. apply list_conj_wkn_L with (A:=UI p s1) ; auto. apply InT_mapI. exists s1 ; auto.

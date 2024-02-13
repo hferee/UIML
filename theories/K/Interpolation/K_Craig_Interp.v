@@ -3,7 +3,7 @@
 
 Require Import List.
 Export ListNotations.
-Require Import PeanoNat.
+Require Import PeanoNat Arith.
 Require Import Lia.
 
 Require Import KS_export.
@@ -73,9 +73,8 @@ intros. remember (Γ0 ++ Γ1, Δ0 ++ Δ1) as s. revert Heqs.
 generalize dependent Γ0. generalize dependent Γ1. generalize dependent Δ0. generalize dependent Δ1.
 remember (derrec_height X) as n. revert Heqn. generalize dependent X. generalize dependent s.
 generalize dependent n.
-
 (* Using strong induction. *)
-pose (strong_inductionT (fun (x:nat) => forall (s : list MPropF * list MPropF) (X : KS_prv s),
+pose ((well_founded_induction_type lt_wf) (fun (x:nat) => forall (s : list MPropF * list MPropF) (X : KS_prv s),
 x = derrec_height X ->
 forall Δ1 Δ0 Γ1 Γ0 : list MPropF,
 s = (Γ0 ++ Γ1, Δ0 ++ Δ1) ->
@@ -84,7 +83,6 @@ existsT2 I : MPropF,
                                                                                                             In (Var p) (propvar_subform_list (Γ1 ++ Δ1))) * KS_prv (Γ0, I :: Δ0) *
   KS_prv (I :: Γ1, Δ1))).
 apply s. clear s.
-
 (* Start of the intuitive proof. *)
 unfold KS_prv. intros n IHn s D. subst. remember D as D'. destruct D ; intros.
 (* D0 is a leaf *)
