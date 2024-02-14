@@ -59,8 +59,8 @@ let _ =
     (object%js
        method islA s = catch_e (fun () -> string_of_formula (isl_A v (eval s)))
        method islE s = catch_e (fun () -> string_of_formula (isl_E v (eval s)))
-       method k s = catch_e (fun () -> string_of_formula ~classical: true (k_UI v (eval s)))
-       method gl s = catch_e (fun () -> string_of_formula ~classical: true (gl_UI v (eval s)))
+       method k s = catch_e (fun () -> string_of_formula ~classical:true (k_UI v (eval s)))
+       method gl s = catch_e (fun () -> string_of_formula ~classical:true (gl_UI v (eval s)))
        method parse s = catch_e (fun () -> string_of_formula (eval s))
      end);;
 

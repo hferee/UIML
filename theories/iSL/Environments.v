@@ -20,6 +20,8 @@ Require Import CoLoR.Util.Multiset.MultisetCore.
 (** Our propositional formulas, including their countability. *)
 Require Export ISL.Formulas.
 
+Require Import Lazy.
+
 (** An environment is defined as a finite multiset of formulas
 (in the sense of the stdpp library).
 This requires decidable equality and countability of the underlying set. *)
@@ -174,33 +176,36 @@ Definition irreducible (Γ : env) :=
 
 (** We use binary conjunction and disjunction operations which produce simpler equivalent formulas,
    in particular  by taking ⊥ and ⊤ into account *)
-Definition make_conj x y := match x with
+(* conjunction with lazy second argument *)
+Definition lazy_conj (x : form) (y : Lazy form) : form := match x with
 | ⊥ => ⊥
-|  (⊥→ ⊥)  => y
-| _ => match y with
+|  (⊥→ ⊥)  => force y
+| _ => match force y with
     | ⊥ => ⊥
     | (⊥→ ⊥)  => x
-    | _ =>  if decide (x = y) then x else x ∧ y
+    | _ =>  let  y' := force y in if decide (x = y') then x else x ∧ y'
     end
 end.
 
-Infix "⊼" := make_conj (at level 60).
+Infix "⊼" := lazy_conj (at level 60).
 
-Lemma make_conj_spec x y :
-  {x = ⊥ ∧ x ⊼ y = ⊥} +
-  {x = ⊤ ∧ x  ⊼ y = y} +
-  {y = ⊥ ∧ x ⊼ y = ⊥}+
-  {y = ⊤ ∧ x ⊼ y = x} +
-  {x = y ∧ x ⊼ y = x} +
-  {x ⊼ y = (x ∧ y)}.
+Lemma lazy_conj_spec (x : form) (y : Lazy form):
+  {x = ⊥ ∧ (x ⊼ y) =⊥} +
+  {x = ⊤ ∧ (x  ⊼ y) = force y} +
+  {force y = ⊥ ∧ (x ⊼ y) = ⊥}+
+  {force y = ⊤ ∧ (x ⊼ y) = x} +
+  {x =force y ∧  (x ⊼ y) = x} +
+  {(x ⊼ y) = (x ∧ force y)}.
 Proof.
-unfold make_conj.
-repeat (match goal with |- context  [match ?x with | _  => _ end] => destruct x end; try tauto).
-Qed.
+unfold lazy_conj.
+remember (force y) as y' eqn:Hy.
+repeat (match goal with |- context  [match ?x with | _  => _ end] => destruct x end; 
+try rewrite <- Hx; try rewrite <- Hy; try tauto).
+Qed. (* TODO: too long *)
 
-Lemma occurs_in_make_conj v x y : occurs_in v (x ⊼ y) -> occurs_in v x \/ occurs_in v y.
+Lemma occurs_in_lazy_conj v x y : occurs_in v (x ⊼ y) -> occurs_in v x \/ occurs_in v (force y).
 Proof.
-destruct (make_conj_spec x y) as [[[[[Hm|Hm]|Hm]|Hm]|Hm]|Hm]; try tauto.
+destruct (lazy_conj_spec x y) as [[[[[Hm|Hm]|Hm]|Hm]|Hm]|Hm]; try tauto.
 6:{ rewrite Hm. simpl. tauto. }
 all:(destruct Hm as [Heq Hm]; rewrite Hm; simpl; tauto).
 Qed.
@@ -266,25 +271,24 @@ apply occurs_in_make_impl in H. tauto.
 Qed.
 
 (** To be noted: we remove duplicates first *)
-Definition conjunction l := foldl make_conj (⊥→ ⊥) (nodup form_eq_dec l).
+Definition conjunction l := foldl lazy_conj (⊥→ ⊥) l.
 Notation "⋀" := conjunction.
 
 Definition disjunction l := foldl make_disj ⊥ (nodup form_eq_dec l).
 Notation "⋁" := disjunction.
 
-Lemma variables_conjunction x l : occurs_in x (⋀ l) -> exists φ, φ ∈ l /\ occurs_in x φ.
+Lemma variables_conjunction x l : occurs_in x (⋀ l) -> exists φ, φ ∈ l /\ occurs_in x (force φ).
 Proof.
 unfold conjunction.
-assert (Hcut : forall ψ, occurs_in x (foldl make_conj ψ (nodup form_eq_dec l))
-  -> occurs_in x ψ \/ (∃ φ : form, (φ ∈ l ∧ occurs_in x φ)%type)).
+assert (Hcut : forall ψ, occurs_in x (foldl lazy_conj ψ l)
+  -> occurs_in x ψ \/ (∃ φ, (φ ∈ l ∧ occurs_in x (force φ))%type)).
 {
 induction l; simpl.
 - tauto.
 - intros ψ Hocc.
-  case in_dec in Hocc; apply IHl in Hocc; simpl in Hocc;
+  apply IHl in Hocc; simpl in Hocc;
   destruct Hocc as [Hx|(φ&Hin&Hx)]; try tauto.
-  + right. exists φ. split; auto with *.
-  + apply occurs_in_make_conj in Hx; destruct Hx as [Hx|Hx]; auto with *.
+  + apply occurs_in_lazy_conj in Hx; destruct Hx as [Hx|Hx]; auto with *.
       right. exists a. auto with *.
   + right. exists φ. split; auto with *.
 }
@@ -348,12 +352,28 @@ induction Γ'; simpl; intros HΓ' Hin.
     apply elem_of_cons in Hin. tauto.
 Qed.
 
+Lemma lazy_in_in_map {A : Type} {HD : forall a b : A, Decision (a = b)}
+  Γ (f : forall φ, (φ ∈ Γ) -> Lazy A) ψ :
+  ψ ∈ (in_map Γ f) -> {ψ0 & {Hin | force ψ = force (f ψ0 Hin)}}.
+Proof.
+unfold in_map.
+assert(Hcut : forall Γ' (HΓ' : Γ' ⊆ elements Γ), ψ ∈ in_map_aux Γ f Γ' HΓ'
+  → {ψ0 & {Hin : ψ0 ∈ Γ | force ψ = force (f ψ0 Hin)}}); [|apply Hcut].
+induction Γ'; simpl; intros HΓ' Hin.
+- contradict Hin. auto. now rewrite elem_of_nil.
+- match goal with | H : ψ ∈ ?a :: (in_map_aux _ _ _ ?HΓ'') |- _ =>
+  case (decide (force ψ = force a)); [| pose (myHΓ' := HΓ'')] end.
+  + intro Heq; subst. exists a. eexists. apply Heq.
+  + intro Hneq. apply (IHΓ' myHΓ').
+      apply elem_of_cons in Hin. destruct Hin as [Hf|Hin]; subst; tauto.
+Qed.
+
 Local Definition in_subset {Γ : env} {Γ'} (Hi : Γ' ⊆ elements Γ) {ψ0} (Hin : ψ0 ∈ Γ') : ψ0 ∈ Γ.
 Proof. apply gmultiset_elem_of_elements,Hi, Hin. Defined.
 
 (* converse *)
 (* we require proof irrelevance for the mapped function *)
-Lemma in_map_in {A : Type} {HD : forall a b : A, Decision (a = b)}
+Lemma in_map_in {A : Type}
   {Γ} {f : forall φ, (φ ∈ Γ) -> A} {ψ0} (Hin : ψ0 ∈ Γ):
   {Hin' | f ψ0 Hin' ∈ (in_map Γ f)}.
 Proof.

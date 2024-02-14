@@ -1,7 +1,7 @@
 Require Import ISL.Sequents.
 Require Import ISL.SequentProps ISL.Order.
 Require Import Coq.Program.Equality. (* for dependent induction *)
-
+Require Import Lazy.
 (** * Overview: Propositional Quantifiers
 
 The main theorem proved in this file was first proved as Theorem 1 in:
@@ -39,7 +39,7 @@ Obligation Tactic := intros; order_tac.
 (** note the use of  "lazy" conjunctions, disjunctions and implications *)
 Program Definition e_rule {Δ : env} {ϕ : form}
   (EA0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form * form)
-  (θ: form) (Hin : θ ∈ Δ) : form :=
+  (θ: form) (Hin : θ ∈ Δ) : Lazy form := lazy
 let E Δ H := fst (EA0 (Δ, ϕ) H) in
 let A pe0 H := snd (EA0 pe0 H) in
 let Δ'  := Δ ∖ {[θ]} in
@@ -47,7 +47,7 @@ match θ with
 | Bot => ⊥  (* E0 *)
 | Var q =>
     if decide (p = q) then ⊤ (* default *)
-    else E Δ' _ ⊼ q (* E1 *)
+    else E Δ' _ ⊼ lazy q (* E1 *)
 (* E2 *)
 | δ₁ ∧ δ₂ => E ((Δ'•δ₁)•δ₂) _
 (* E3 *)
@@ -91,13 +91,13 @@ match θ with
 (* A3 *)
 | δ₁ ∨ δ₂ =>
       (E (Δ'•δ₁) _ ⇢ A (Δ'•δ₁, ϕ) _)
-  ⊼ (E (Δ'•δ₂) _ ⇢ A (Δ'•δ₂, ϕ) _)
+  ⊼ lazy (E (Δ'•δ₂) _ ⇢ A (Δ'•δ₂, ϕ) _)
 | Var q → δ =>
     if decide (p = q)
     then
       if decide (Var p ∈ Δ) then A (Δ'•δ, ϕ) _ (* A5 *)
       else ⊥
-    else q ⊼ A (Δ'•δ, ϕ) _ (* A4 *)
+    else q ⊼ lazy A (Δ'•δ, ϕ) _ (* A4 *)
 (* A6 *)
 | (δ₁ ∧ δ₂)→ δ₃ =>
   A (Δ'•(δ₁ → (δ₂ → δ₃)), ϕ) _
@@ -107,7 +107,7 @@ match θ with
 (* A8 *)
 | ((δ₁→ δ₂)→ δ₃) =>
   (E (Δ'•(δ₂ → δ₃)) _ ⇢ A (Δ'•(δ₂ → δ₃), (δ₁ → δ₂)) _)
-  ⊼ A (Δ'•δ₃, ϕ) _
+  ⊼ lazy A (Δ'•δ₃, ϕ) _
 | Bot => ⊥
 | Bot → _ => ⊥
 | □δ => ⊥
@@ -127,7 +127,7 @@ match ϕ with
     then ⊥
     else Var q (* A9 *)
 (* A11 *)
-| ϕ₁ ∧ ϕ₂ => A (Δ, ϕ₁) _ ⊼ A (Δ, ϕ₂) _
+| ϕ₁ ∧ ϕ₂ => A (Δ, ϕ₁) _ ⊼ lazy A (Δ, ϕ₂) _
 (* A12 *)
 | ϕ₁ ∨ ϕ₂ => A (Δ, ϕ₁) _ ⊻ A (Δ, ϕ₂) _
 (* A13 *)
@@ -157,7 +157,7 @@ Lemma e_rule_cong Δ ϕ θ (Hin : θ ∈ Δ) EA1 EA2:
   @e_rule Δ ϕ EA1 θ Hin = @e_rule Δ ϕ EA2 θ Hin.
 Proof.
   intro Heq.
-  destruct θ; simpl; try (destruct θ1); repeat (destruct decide);
+  destruct θ; simpl;try (destruct θ1); unfold e_rule; repeat (destruct decide);
   f_equal; repeat erewrite Heq; trivial.
 Qed.
 
@@ -222,12 +222,12 @@ Lemma e_rule_vars (Δ : env) (θ : form) (Hin : θ ∈ Δ) (ϕ : form)
   (HEA0 : ∀ pe Hpe, 
       (occurs_in x (fst (EA0 pe Hpe)) -> x ≠ p ∧ ∃ θ, θ ∈ pe.1 /\ occurs_in x θ) /\
       (occurs_in x (snd (EA0 pe Hpe)) -> x ≠ p ∧ (occurs_in x pe.2 \/ ∃ θ, θ ∈ pe.1 /\ occurs_in x θ))) :
-occurs_in x (e_rule EA0 θ Hin) -> x ≠ p ∧ ∃ θ, θ ∈ Δ /\ occurs_in x θ.
+occurs_in x (force (e_rule EA0 θ Hin)) -> x ≠ p ∧ ∃ θ, θ ∈ Δ /\ occurs_in x θ.
 Proof.
 destruct θ; unfold e_rule.
 - case decide.
   + simpl. intros Heq HF; subst. tauto.
-  + simpl. intros Hneq Hocc. apply occurs_in_make_conj in Hocc.
+  + simpl. intros Hneq Hocc. apply occurs_in_lazy_conj in Hocc.
       destruct Hocc as [Hocc|Heq]; vars_tac. subst; tauto.
 - simpl. tauto.
 - vars_tac.
@@ -260,7 +260,7 @@ destruct θ; unfold a_rule_env.
   + intros Hneq Hocc. vars_tac.
 - simpl. tauto.
 - intro Hocc. vars_tac.
-- intros Hocc. apply occurs_in_make_conj in Hocc.
+- intros Hocc. apply occurs_in_lazy_conj in Hocc.
   destruct Hocc as [Hocc|Hocc];
   apply occurs_in_make_impl in Hocc; vars_tac; vars_tac.
 - destruct θ1; try solve[vars_tac].
@@ -268,15 +268,15 @@ destruct θ; unfold a_rule_env.
     * intro; subst. case decide.
       -- intros Hp Hocc. vars_tac.
       -- simpl; tauto.
-    * intros Hneq Hocc. apply occurs_in_make_conj in Hocc.
+    * intros Hneq Hocc. apply occurs_in_lazy_conj in Hocc.
        destruct Hocc as [Heq | Hocc]; vars_tac. subst; tauto.
-  + intros Hocc. apply occurs_in_make_conj in Hocc.
+  + intros Hocc. apply occurs_in_lazy_conj in Hocc.
       destruct Hocc as [Hocc|Hocc].
       * apply occurs_in_make_impl in Hocc; vars_tac; vars_tac.
       * vars_tac.
-  + intros Hocc.  try apply occurs_in_make_conj in Hocc.
+  + intros Hocc.  try apply occurs_in_lazy_conj in Hocc.
       destruct Hocc as [Hocc|Hocc].
-      * try apply occurs_in_make_conj in Hocc; vars_tac; vars_tac.
+      * try apply occurs_in_lazy_conj in Hocc; vars_tac; vars_tac.
       * vars_tac.
 - simpl; tauto.
 Qed.
@@ -292,7 +292,7 @@ Proof.
 destruct ϕ.
 - simpl. case decide; simpl; intros; subst; intuition; auto.
 - tauto.
-- simpl. intros Hocc; apply occurs_in_make_conj in Hocc as [Hocc|Hocc]; vars_tac.
+- simpl. intros Hocc; apply occurs_in_lazy_conj in Hocc as [Hocc|Hocc]; vars_tac.
 - simpl. intros Hocc; apply occurs_in_make_disj in Hocc as  [Hocc|Hocc]; vars_tac.
 - simpl. intro Hocc. apply occurs_in_make_impl in Hocc. destruct Hocc; vars_tac; vars_tac.
 - intro Hocc. replace (occurs_in x (□ ϕ)) with (occurs_in x ϕ) by trivial.
@@ -313,7 +313,7 @@ rewrite E_eq, A_eq. simpl.
 split.
 (* E *)
 - intros Hocc. apply variables_conjunction in Hocc as (φ&Hin&Hφ).
-  apply in_in_map in Hin as (ψ&Hin&Heq). subst φ.
+  apply lazy_in_in_map in Hin as (ψ&Hin&Heq). rewrite Heq in Hφ.
   apply e_rule_vars in Hφ.
   + trivial.
   + intros; now apply Hind.
@@ -345,7 +345,7 @@ Section EntailmentCorrect.
 
 Hint Extern 5 (?a ≺ ?b) => order_tac : proof.
 Opaque make_disj.
-Opaque make_conj.
+Opaque lazy_conj.
 
 Lemma a_rule_env_spec Δ θ ϕ Hin (EA0 : ∀ pe, (pe ≺· (Δ, ϕ)) → form * form)
   (HEA : forall Δ ϕ Hpe, (Δ ⊢ fst (EA0 (Δ, ϕ) Hpe)) * (Δ• snd(EA0 (Δ, ϕ) Hpe) ⊢ ϕ)) :
@@ -360,7 +360,7 @@ destruct θ; exhibit Hin 1.
   + exch 0...
 - constructor 2.
 - simpl; exch 0. apply AndL. exch 1; exch 0...
-- apply make_conj_sound_L.
+- apply lazy_conj_sound_L.
   exch 0. apply OrL; exch 0.
   + apply AndL. apply make_impl_sound_L. exch 0. apply make_impl_sound_L... (* uses imp_cut *)
   + apply AndL. apply make_impl_sound_L. exch 0. apply make_impl_sound_L. auto with proof.
@@ -374,12 +374,12 @@ destruct θ; exhibit Hin 1.
          exhibit Hin'' 2. exch 0; exch 1. apply ImpLVar.
          exch 1. exch 0. peapply HA. rewrite <- difference_singleton by trivial. reflexivity.
       -- intro; constructor 2.
-    * apply make_conj_sound_L. constructor 4. exch 0. exch 1. exch 0. apply ImpLVar.
+    * apply lazy_conj_sound_L. constructor 4. exch 0. exch 1. exch 0. apply ImpLVar.
       exch 0. apply weakening. exch 0...
   + constructor 2.
   + simpl; exch 0. apply ImpLAnd. apply make_impl_complete_L2. exch 0...
   + simpl; exch 0. apply ImpLOr. exch 1. exch 0...
-  + apply make_conj_sound_L. exch 0. apply ImpLImp; exch 0.
+  + apply lazy_conj_sound_L. exch 0. apply ImpLImp; exch 0.
       * apply AndL. exch 0. apply make_impl_sound_L. exch 0...
       * apply AndL. exch 0. apply weakening, HA.
   + exch 0. exch 0. simpl. apply  AndL. exch 1; exch 0. apply ImpBox.
@@ -407,10 +407,13 @@ unfold E, A in *; simpl in HE, HA.
 simpl in *. clear Hind.
 split. {
 (* E *)
-apply conjunction_R1. intros φ Hin. apply in_in_map in Hin.
-destruct Hin as (ψ&Hin&Heq). subst.
+apply conjunction_R1. intros φ Hin. apply lazy_in_in_map in Hin.
+destruct Hin as (ψ&Hin&Heq). rewrite Heq. clear Heq.
 destruct ψ; unfold e_rule; exhibit Hin 0.
-- case decide; intro; subst; simpl; auto using HE with proof.
+- case decide; intro; subst; simpl. auto using HE with proof.
+  apply lazy_conj_sound_R, AndR.
+  + apply weakening, HE. order_tac.
+  + apply Atom.
 - auto with proof.
 - auto 3 with proof.
 - apply make_disj_sound_R, OrL.
@@ -443,7 +446,7 @@ apply make_disj_sound_L, OrL.
   apply a_rule_env_spec; intros; split ; apply HE || apply HA; order_tac.
 - destruct ϕ; simpl; auto using HE with proof.
   + case decide; intro; subst; [constructor 2|constructor 1].
-  + apply make_conj_sound_L, AndR; apply AndL; auto using HE with proof.
+  + apply lazy_conj_sound_L, AndR; apply AndL; auto using HE with proof.
   + apply ImpR. exch 0. apply make_impl_sound_L, ImpL; auto using HE, HA with proof.
   + foldEA. apply BoxR. box_tac. exch 0. apply make_impl_sound_L, ImpL.
       * apply weakening, HE. order_tac.
@@ -478,11 +481,11 @@ destruct φ'1; repeat rewrite (Hind _ φ) by (trivial; order_tac); trivial.
 Qed.
 
 Lemma E_left {Γ} {θ} {Δ} {φ φ'} (Hin : φ ∈ Δ) :
-(Γ•e_rule (λ pe (_ : pe ≺· (Δ, φ')),  EA pe)  φ Hin) ⊢ θ ->
-Γ•E (Δ, φ') ⊢ θ.
+(Γ • force (e_rule (λ pe (_ : pe ≺· (Δ, φ')),  EA pe)  φ Hin)) ⊢ θ ->
+Γ • E (Δ, φ') ⊢ θ.
 Proof.
 intro Hp. rewrite E_eq.
-destruct (@in_map_in _ _ _  (e_rule (λ pe (_ : pe ≺· (Δ, φ')), EA pe)) _ Hin) as [Hin' Hrule].
+destruct (@in_map_in _ _ (e_rule (λ pe (_ : pe ≺· (Δ, φ')), EA pe)) _ Hin) as [Hin' Hrule].
 eapply conjunction_L.
 - apply Hrule.
 - exact Hp.
@@ -492,7 +495,7 @@ Lemma A_right {Γ} {Δ} {φ φ'} (Hin : φ ∈ Δ) :
 Γ ⊢ a_rule_env (λ pe (_ : pe ≺· (Δ, φ')), EA pe) φ Hin ->
 Γ ⊢ A (Δ, φ').
 Proof. intro Hp. rewrite A_eq.
-destruct (@in_map_in _ _ _  (a_rule_env (λ pe (_ : pe ≺· (Δ, φ')), EA pe)) _ Hin) as [Hin' Hrule].
+destruct (@in_map_in _ _ (a_rule_env (λ pe (_ : pe ≺· (Δ, φ')), EA pe)) _ Hin) as [Hin' Hrule].
 eapply make_disj_sound_R, OrR1, disjunction_R.
 - exact Hrule.
 - exact Hp.
@@ -520,7 +523,6 @@ induction Δ as [|ψ Δ IH] using gmultiset_rec.
                     apply Permutation_refl', gmultiset_elements_singleton.
             ++ simpl. ms.
 Qed.
-
 
 Proposition pq_correct Γ Δ ϕ: (∀ φ0, φ0 ∈ Γ -> ¬ occurs_in p φ0) -> (Γ ⊎ Δ ⊢ ϕ) ->
   (¬ occurs_in p ϕ -> Γ•E (Δ, ϕ) ⊢ ϕ) *
@@ -586,7 +588,7 @@ end; simpl.
 - Atac'. case decide; intro; subst; [exfalso; now apply (Hnin _ Hin0)|]; auto with proof.
 - split; Etac; case decide; intro; subst; try tauto; auto with proof.
   + Atac. repeat rewrite decide_True by trivial. auto with proof.
-  + fold E. apply make_conj_sound_L, AndL. Atac. repeat rewrite decide_False by trivial.
+  + fold E. apply lazy_conj_sound_L, AndL. Atac. repeat rewrite decide_False by trivial.
     Atac'. rewrite decide_False by trivial. apply Atom.
 (* ExFalso *)
 - auto 2 with proof.
@@ -598,7 +600,7 @@ end; simpl.
   split.
   + intro Hocc. simpl in Hocc.
     apply AndR; erewrite E_irr; apply IHHp2 || apply IHHp1; tauto.
-  + Atac'. apply make_conj_sound_R, AndR; erewrite E_irr; eassumption.
+  + Atac'. apply lazy_conj_sound_R, AndR; erewrite E_irr; eassumption.
 (* AndL *)
 - exch 0. apply AndL. exch 1; exch 0. apply IHHp; trivial. occ. equiv_tac.
 - exch 0. apply AndL. exch 1; exch 0. apply IHHp; trivial. occ. equiv_tac.
@@ -626,7 +628,7 @@ end; simpl.
 - split.
   + Etac. apply make_disj_sound_L, OrL; [apply IHHp1| apply IHHp2]; trivial;
       rewrite Heq', union_difference_R by trivial; ms.
-  + Atac. apply weakening. apply make_conj_sound_R,AndR, make_impl_sound_R.
+  + Atac. apply weakening. apply lazy_conj_sound_R,AndR, make_impl_sound_R.
     * apply make_impl_sound_R, ImpR. apply IHHp1; [tauto|equiv_tac].
     * apply ImpR. apply IHHp2; [tauto|equiv_tac].
 (* ImpR *)
@@ -653,11 +655,11 @@ end; simpl.
       (* subcase 3: p0 ∈ Δ ; (p0 → φ) ∈ Γ *)
       split; [Etac|Atac]; case decide; intro; subst.
       -- tauto.
-      -- exhibit Hin0 1. apply make_conj_sound_L, AndL. exch 1; exch 0. apply ImpLVar. exch 1. exch 0.
+      -- exhibit Hin0 1. apply lazy_conj_sound_L, AndL. exch 1; exch 0. apply ImpLVar. exch 1. exch 0.
          apply IHHp; [occ|equiv_tac|trivial].
       -- tauto.
       -- exhibit Hin0 1. Etac. rewrite decide_False by trivial.
-         apply make_conj_sound_L, AndL. exch 1; exch 0. apply ImpLVar.
+         apply lazy_conj_sound_L, AndL. exch 1; exch 0. apply ImpLVar.
          exch 1; exch 0. apply IHHp. occ. equiv_tac.
   + intro.
     assert(Hin : (Var p0 → φ) ∈ (Γ0•Var p0•(p0 → φ))) by ms.
@@ -673,7 +675,7 @@ end; simpl.
          rewrite Heq', union_difference_R, <- union_difference_L by trivial; ms.
       -- Etac. case_decide; [auto with *|].
          apply make_impl_sound_L, ImpLVar. Atac. repeat case_decide; auto 2 with proof; [tauto| tauto|].
-         apply make_conj_sound_R, AndR; auto 2 with proof. apply IHHp; [occ|].
+         apply lazy_conj_sound_R, AndR; auto 2 with proof. apply IHHp; [occ|].
          rewrite Heq', union_difference_R, <- union_difference_L by trivial; ms.
     * assert(Hin': Var p0 ∈ Γ ⊎ Δ) by (rewrite <- Heq; ms).
       apply gmultiset_elem_of_disj_union in Hin'.
@@ -700,11 +702,11 @@ end; simpl.
           apply in_difference. discriminate. trivial.
          } (* not pretty *)
          split; Etac; rewrite decide_False by trivial;
-         apply make_conj_sound_L, AndL; exch 0; Etac; case decide; intro; try tauto.
+         apply lazy_conj_sound_L, AndL; exch 0; Etac; case decide; intro; try tauto.
          ++ apply make_impl_sound_L, ImpLVar. apply IHHp; trivial. occ.
          ++ Atac. case decide; intro; try tauto.
             apply make_impl_sound_L, ImpLVar. Atac; case decide; intro; try tauto.
-            apply make_conj_sound_R, AndR; auto 2 with proof.
+            apply lazy_conj_sound_R, AndR; auto 2 with proof.
             apply IHHp; trivial. occ.
 (* ImpLAnd *)
 - exch 0. apply ImpLAnd. exch 0. apply IHHp; trivial; [occ|equiv_tac].
@@ -736,7 +738,7 @@ end; simpl.
     * apply weakening. apply ImpR. foldEA.
        rewrite (E_irr (φ1 → φ2)). apply IHHp1; [occ|equiv_tac].
     * apply IHHp2; [occ|equiv_tac| trivial].
-  + Atac. apply make_conj_sound_R, AndR.
+  + Atac. apply lazy_conj_sound_R, AndR.
     * apply weakening. apply make_impl_sound_R, ImpR. foldEA.
       rewrite (E_irr (φ1 → φ2)). apply IHHp1; [occ|equiv_tac].
     * Etac. simpl. apply make_impl_sound_L2', ImpLImp.

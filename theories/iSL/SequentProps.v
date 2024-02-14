@@ -848,7 +848,7 @@ Global Hint Resolve imp_cut : proof.
 
 (** * Correctness of optimizations 
 
-To make the definitions of the propositional quantifiers that we extract from the Coq definition more readable, we introduced functions "make_impl", "make_conj" and "make_disj" in Environments.v which perform obvious simplifications such as reducing φ ∧ ⊥ to ⊥ and φ ∨ ⊥ to φ. The following results show that the definitions of these functions are correct, in the sense that it does not make a difference for provability of a sequent whether one uses the literal conjunction, disjunction, and implication, or its optimized version. *)
+To make the definitions of the propositional quantifiers that we extract from the Coq definition more readable, we introduced functions "make_impl", "lazy_conj" and "make_disj" in Environments.v which perform obvious simplifications such as reducing φ ∧ ⊥ to ⊥ and φ ∨ ⊥ to φ. The following results show that the definitions of these functions are correct, in the sense that it does not make a difference for provability of a sequent whether one uses the literal conjunction, disjunction, and implication, or its optimized version. *)
 
 Lemma make_impl_sound_L Γ φ ψ θ: Γ•(φ → ψ) ⊢ θ -> Γ•(φ ⇢ ψ) ⊢ θ.
 Proof.
@@ -942,40 +942,42 @@ destruct  (make_disj_spec φ ψ) as [[[[[Hm|Hm]|Hm]|Hm]|Hm]|Hm].
 all : destruct Hm as (Heq&Hm); rewrite Hm; subst; eauto 2 with proof.
 Qed.
 
-Lemma make_conj_sound_L Γ φ ψ θ : Γ•φ ∧ψ ⊢ θ -> Γ•make_conj φ ψ ⊢ θ.
+Import Lazy. (* TODO: move up *)
+
+Lemma lazy_conj_sound_L Γ φ ψ θ : Γ•φ ∧force ψ ⊢ θ -> Γ•lazy_conj φ ψ ⊢ θ.
 Proof.
 intro Hd. apply AndL_rev in Hd.
-destruct (make_conj_spec φ ψ) as  [[[[[Hm|Hm]|Hm]|Hm]|Hm]|Hm].
+destruct (lazy_conj_spec φ ψ) as  [[[[[Hm|Hm]|Hm]|Hm]|Hm]|Hm].
 6:{ rewrite Hm. now apply AndL. }
 all:(destruct Hm as [Heq Hm]; rewrite Hm; subst; auto with proof).
 - eapply TopL_rev. exch 0. exact Hd.
-- eapply TopL_rev. exact Hd.
+- eapply TopL_rev. rewrite Heq in Hd. exact Hd.
 Qed.
 
-Global Hint Resolve make_conj_sound_L : proof.
+Global Hint Resolve lazy_conj_sound_L : proof.
 
-Lemma make_conj_complete_L Γ φ ψ θ : Γ•make_conj φ ψ ⊢ θ -> Γ•φ ∧ψ ⊢ θ.
+Lemma lazy_conj_complete_L Γ φ ψ θ : Γ•lazy_conj φ ψ ⊢ θ -> Γ•φ ∧(force ψ) ⊢ θ.
 Proof.
-destruct (make_conj_spec φ ψ) as  [[[[[Hm|Hm]|Hm]|Hm]|Hm]|Hm].
+destruct (lazy_conj_spec φ ψ) as  [[[[[Hm|Hm]|Hm]|Hm]|Hm]|Hm].
 6:{ now rewrite Hm. }
-all:(destruct Hm as [Heq Hm]; rewrite Hm; subst; auto with proof).
+all:(destruct Hm as [Heq Hm]; rewrite Hm; try rewrite Heq; subst; auto with proof).
 Qed.
 
-Lemma make_conj_sound_R Γ φ ψ : Γ  ⊢ φ ∧ψ -> Γ ⊢ make_conj φ ψ.
+Lemma lazy_conj_sound_R Γ φ ψ : Γ  ⊢ φ ∧(force ψ) -> Γ ⊢ lazy_conj φ ψ.
 Proof.
 intro Hd. apply AndR_rev in Hd.
-destruct (make_conj_spec φ ψ) as  [[[[[Hm|Hm]|Hm]|Hm]|Hm]|Hm].
+destruct (lazy_conj_spec φ ψ) as  [[[[[Hm|Hm]|Hm]|Hm]|Hm]|Hm].
 6:{ rewrite Hm. apply AndR; tauto. }
-all:(destruct Hm as [Heq Hm]; rewrite Hm; subst; tauto).
+all:(destruct Hm as [Heq Hm]; rewrite Hm; try rewrite <- Heq; subst; tauto).
 Qed.
 
-Global Hint Resolve make_conj_sound_R : proof.
+Global Hint Resolve lazy_conj_sound_R : proof.
 
-Lemma make_conj_complete_R Γ φ ψ : Γ  ⊢ make_conj φ ψ -> Γ  ⊢ φ ∧ψ.
+Lemma lazy_conj_complete_R Γ φ ψ : Γ  ⊢ lazy_conj φ ψ -> Γ  ⊢ φ ∧ force ψ.
 Proof.
-destruct (make_conj_spec φ ψ) as  [[[[[Hm|Hm]|Hm]|Hm]|Hm]|Hm].
+destruct (lazy_conj_spec φ ψ) as  [[[[[Hm|Hm]|Hm]|Hm]|Hm]|Hm].
 6:{ now rewrite Hm. }
-all:(destruct Hm as [Heq Hm]; rewrite Hm; subst; auto with proof). 
+all:(destruct Hm as [Heq Hm]; rewrite Hm; rewrite Heq; subst; auto with proof). 
 Qed.
 
 Lemma OrR_idemp Γ ψ : Γ ⊢ ψ ∨ ψ -> Γ ⊢ ψ.
@@ -1039,57 +1041,54 @@ Qed.
 
 (** ** Generalized AndR *)
 
-Lemma conjunction_R1 Γ Δ : (forall φ, φ ∈ Δ -> Γ  ⊢ φ) -> (Γ  ⊢ ⋀ Δ).
+Lemma conjunction_R1 Γ Δ : (forall φ, φ ∈ Δ -> Γ  ⊢ force φ) -> (Γ  ⊢ ⋀ Δ).
 Proof.
 intro Hprov. unfold conjunction.
-assert(Hcut : forall θ, Γ ⊢ θ -> Γ ⊢ foldl make_conj θ (nodup form_eq_dec Δ)).
+assert(Hcut : forall θ, Γ ⊢ θ -> Γ ⊢ foldl lazy_conj θ Δ).
 {
   induction Δ; intros θ Hθ; simpl; trivial.
-  case in_dec; intro; auto with *.
   apply IHΔ.
   - intros; apply Hprov. now right.
-  - apply make_conj_sound_R, AndR; trivial. apply Hprov. now left.
+  - apply lazy_conj_sound_R, AndR; trivial. apply Hprov. now left.
 }
 apply Hcut. apply ImpR, ExFalso.
 Qed.
 
 (** ** Generalized invertibility of AndR *)
 
-Lemma conjunction_R2 Γ Δ : (Γ  ⊢ ⋀ Δ) -> (forall φ, φ ∈ Δ -> Γ  ⊢ φ).
+Lemma conjunction_R2 Γ Δ : (Γ  ⊢ ⋀ Δ) -> (forall φ, φ ∈ Δ -> Γ  ⊢ force φ).
 Proof.
  unfold conjunction.
-assert(Hcut : forall θ, Γ ⊢ foldl make_conj θ (nodup form_eq_dec Δ) -> (Γ ⊢ θ) * (forall φ, φ ∈ Δ -> Γ  ⊢ φ)).
+assert(Hcut : forall θ, Γ ⊢ foldl lazy_conj θ Δ -> (Γ ⊢ θ) * (forall φ, φ ∈ Δ -> Γ  ⊢ force φ)).
 {
   induction Δ; simpl; intros θ Hθ.
   - split; trivial. intros φ Hin; contradict Hin. auto with *.
-  - case in_dec in Hθ; destruct (IHΔ _ Hθ) as (Hθ' & Hi);
-     try (apply make_conj_complete_R in Hθ'; destruct (AndR_rev Hθ')); split; trivial;
+  -  destruct (IHΔ _ Hθ) as (Hθ' & Hi);
+     try (apply lazy_conj_complete_R in Hθ'; destruct (AndR_rev Hθ')); split; trivial.
      intros φ Hin; apply elem_of_cons in Hin;
-     destruct (decide (φ = a)); subst; trivial.
-     + apply Hi.  rewrite elem_of_list_In; tauto.
-     + apply (IHΔ _ Hθ). tauto.
-     + apply (IHΔ _ Hθ). tauto.
+     destruct (decide (force φ = force a)) as [Heq|Hneq].
+     + now rewrite Heq.
+     + apply (IHΔ _ Hθ). destruct Hin; subst; tauto.
 }
 apply Hcut.
 Qed.
 
 (** ** Generalized AndL *)
 
-Lemma conjunction_L Γ Δ φ θ: (φ ∈ Δ) -> (Γ•φ ⊢ θ) -> (Γ•⋀ Δ ⊢ θ).
+Lemma conjunction_L Γ Δ φ θ: (φ ∈ Δ) -> (Γ• force φ ⊢ θ) -> (Γ•⋀ Δ ⊢ θ).
 Proof.
 intros Hin Hprov. unfold conjunction. revert Hin.
-assert(Hcut : forall ψ, ((φ ∈ Δ) + (Γ•ψ ⊢ θ)) -> (Γ•foldl make_conj ψ (nodup form_eq_dec Δ) ⊢ θ)).
+assert(Hcut : forall ψ, ((φ ∈ Δ) + (Γ•ψ ⊢ θ)) -> (Γ•foldl lazy_conj ψ Δ ⊢ θ)).
 {
   induction Δ; simpl; intros ψ [Hin | Hψ].
   - contradict Hin; auto with *.
   - trivial.
-  - case in_dec; intro; apply IHΔ; destruct (decide (φ = a)).
-    + subst. left. now apply elem_of_list_In.
+  -  apply IHΔ; destruct (decide (force φ = force a)) as [Heq|Hneq].
+    + subst. right. apply lazy_conj_sound_L, AndL.
+        exch 0. apply weakening. now rewrite <- Heq.
     + left. auto with *.
-    + subst. right. apply make_conj_sound_L. auto with proof.
-    + left. auto with *.
-  - case in_dec; intro; apply IHΔ; right; trivial.
-     apply make_conj_sound_L. auto with proof.
+  - apply IHΔ; right; trivial.
+    apply lazy_conj_sound_L, AndL, weakening, Hψ.
 }
 intro Hin. apply Hcut. now left.
 Qed.
