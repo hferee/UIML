@@ -123,7 +123,7 @@ let E pe0 H := fst (EA0 pe0 H) in
 let A pe0 H := snd (EA0 pe0 H) in 
 match ϕ with
 | Var q =>
-    if decide (p = q)
+    if decide (p = q) (* TODO : change this to p∈Vars(ϕ) *)
     then ⊥
     else Var q (* A9 *)
 (* A11 *)

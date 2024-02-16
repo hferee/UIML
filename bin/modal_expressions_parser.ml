@@ -25,11 +25,12 @@ let modal (p : form t) : form t = box p <|> neg p <|> diamond p
 let impl = spaces *> ((char '\xE2' *> char '\x86' *> char '\x92') <|> (char '-' *> char '>')) *> spaces *> return (fun x y -> Implies(x, y))
 
 (* this is ⊥ *)
-let bot = spaces *> ((char '\xE2' *> char '\x8A' *> char '\xA5') <|> char '#') *> spaces *> return (Bot)
+let bot = spaces *> ((char '\xE2' *> char '\x8A' *> char '\xA5') <|> char '#'
+                     <|> char 'F') *> spaces *> return (Bot)
 let top = spaces *> ((char '\xE2' *> char '\x8A' *> char '\xA4') <|> char 'T') *> spaces *> return (Implies(Bot,Bot))
 
 
-let letter = function | 'a' .. 'z' | 'A' .. 'Z' -> true | _ -> false
+let letter = function | 'a' .. 'z' -> true | _ -> false
 let letter_or_digit = function | 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' -> true | _ -> false
 
 let identifier = lift2 (^) (take_while1 letter) (take_while letter_or_digit) >>| fun x -> Var (coqstring_of_camlstring x)
