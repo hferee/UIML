@@ -67,13 +67,9 @@ Qed.
 
 Definition sequent := (env * form)%type.
 
-(* slight adaptation to intuitionistic. Check equivalence *)
 Definition forces_sequent `{ValuatedFrame W R kle variable V} (w : W) (s : sequent) := 
   let (Γ, δ) := s in (∀ φ, φ ∈ Γ -> forces w φ) -> (forces w δ).
 Notation "w '⊨s' s" := (forces_sequent w s) (at level 80).
-
-
-(* TODO: prove soundness for iSL *)
 
 Definition sequents_equivalence (S T : list sequent) : Prop := ∀ W `(M : ValuatedFrame W R kle variable V) (w : W), 
   (∀ s, In s S -> forces_sequent w s) <->  (∀ t, In t T -> forces_sequent w t).
@@ -84,8 +80,10 @@ Definition bisimilar (p : variable) {W R V W' R' V'}
 { Z | Z x x' /\ ∀ w w', Z w w' ->
   (∀q, p ≠ q -> (V q w <-> V' q w' )) /\
   (∀ v, kle w v -> exists v', Z v v' /\ kle' w' v') /\
-  (∀ v', kle' w' v' -> exists v, Z v v' /\ kle w v)
-}. (* TODO: should Z preserve R as well?  YES *)
+  (∀ v', kle' w' v' -> exists v, Z v v' /\ kle w v) /\
+   (∀ v, R w v -> exists v', Z v v' /\ R' w' v') /\
+  (∀ v', R' w' v' -> exists v, Z v v' /\ R w v)
+}.
 
 Lemma bisimilarity_spec p ψ `(M : ValuatedFrame W R kle variable V) w `(M' : ValuatedFrame W' R' kle' variable V') w': `(bisimilar p w w') ->
   (~ occurs_in p ψ)  -> (forces w ψ <-> forces w' ψ).
@@ -95,25 +93,27 @@ revert w w'. induction ψ; intros w w' Hb Hvar; simpl in *; try tauto.
   now apply Hv.
 - rewrite (IHψ1 w w'), (IHψ2 w w'); tauto.
 - rewrite (IHψ1 w w'), (IHψ2 w w'); tauto.
-- split.
+- destruct Hb as [Z [Hww' HZ]]; destruct (HZ w w' Hww') as (Hv & HR & HR').
+  split.
   + intros Hi v' Hw'v'.
-      destruct Hb as [Z [Hww' HZ]]; destruct (HZ w w' Hww') as (Hv & HR & HR').
       apply HR' in Hw'v'. destruct Hw'v' as (v & HZv & Hwv).
       assert(Hb' : bisimilar p v v' ) by (exists Z; split; trivial).
       rewrite <- (IHψ1 v v'), <- (IHψ2 v v'); try tauto. now apply Hi.
   + intros Hi v Hwv.
-      destruct Hb as [Z [Hww' HZ]]; destruct (HZ w w' Hww') as (Hv & HR & HR').
       apply HR in Hwv. destruct Hwv as (v' & HZv' & Hw'v').
       assert(Hb' : bisimilar p v v' ) by (exists Z; split; trivial).
       rewrite (IHψ1 v v'), (IHψ2 v v'); try tauto. now apply Hi.
-- split.
+- destruct Hb as [Z [Hww' HZ]]; destruct (HZ w w' Hww') as (Hv & Hkle & Hkle' & HR & HR').
+   split.
   + intros Hi v' Hw'v'.
-      destruct Hb as [Z [Hww' HZ]]; destruct (HZ w w' Hww') as (Hv & HR & HR').
-      (*
-      destruct (HR' _ (strongness _ _ Hw'v')) as (v & HZv & Hwv).
+      destruct (HR' _ Hw'v') as (v & HZv & Hwv).
       assert(Hb' : bisimilar p v v' ) by (exists Z; split; trivial).
-      rewrite <- (IHψ v v'); try tauto. apply Hi. admit. *)
-Admitted.
+      rewrite <- (IHψ v v'); try tauto. now apply Hi.
+  + intros Hi v Hwv.
+      destruct (HR _ Hwv) as (v' & HZv' & Hw'v').
+      assert(Hb' : bisimilar p v v' ) by (exists Z; split; trivial).
+      rewrite (IHψ v v'); try tauto. now apply Hi.
+Qed.
 
 Require Import Coq.Program.Equality.
 
@@ -193,6 +193,14 @@ intro H. dependent induction H;intros W R kle V F w; simpl; intro Hf.
       * apply Hf in Hr. now apply Hr.
 Qed.
 
+Lemma ISL_complete Γ ψ : (forall `(ISLFrame W R kle variable V), forall w, w ⊨s (Γ, ψ))
+ -> Provable Γ ψ.
+Proof.
+intros HS.
+induction ψ.
+- simpl in HS.  simpl.
+
+Qed.
 Local Instance empty_model: ISLFrame () (λ _ _ : (), False) (λ _, (_ : ()), True)
   (λ _ _ : (), True) (Equivalence_PreOrder unit_equivalence).
 Proof. split; auto. intros x y. tauto. intro a. constructor. simpl. tauto. Qed.
