@@ -48,7 +48,7 @@ Require Import UIK_UI_prelims.
        (Diam (UI p (unboxed_list (top_boxes (fst s)), []%list))))))).
        apply GUI_critic_not_init ; auto. apply Gimap_map ; intros. 1-2: apply UI_GUI ; auto.
        destruct s. simpl in *. apply UI_GUI in H1. simpl in HeqLHS. subst. rewrite H1 in H0. simpl in H0.
-       repeat rewrite <- app_nil_end in H0. clear H1.
+       repeat rewrite app_nil_r in H0. clear H1.
        apply in_app_or in H0. destruct H0 as [H0 | H0].
 
        apply propvar_subform_list_disj in H0.
@@ -56,7 +56,7 @@ Require Import UIK_UI_prelims.
 
        apply in_app_or in H0 ; destruct H0 as [H0 | H0]. apply propvar_subform_list_disj in H0. apply propvar_subform_list_witness in H0.
        destruct H0. destruct H.  apply in_map_iff in H. destruct H. destruct H ; subst. simpl in H0.
-       rewrite <- app_nil_end in H0. unfold restr_list_prop in H1. apply in_remove in H1. destruct H1.
+       rewrite app_nil_r in H0. unfold restr_list_prop in H1. apply in_remove in H1. destruct H1.
        pose (In_list_prop_LF _ _ H). destruct p0. destruct s. subst. simpl in H0. destruct H0. inversion H0. subst.
        destruct (string_dec q p). exfalso ; apply H1 ; subst ; auto. split ; auto. apply in_or_app ; left.
        apply list_prop_LF_propvar_subform_list in H ; auto. inversion H0.
@@ -78,7 +78,7 @@ Require Import UIK_UI_prelims.
        rewrite propvar_subform_list_app in i1. apply in_app_or in i1. destruct i1.
        apply in_or_app ; left. apply propvar_subform_list_unboxed_list in H1.
        pose (propvar_subform_list_nobox_gen_ext _ _ X). simpl in i1. apply i1 ; auto.
-       simpl in H1. rewrite <- app_nil_end in H1.
+       simpl in H1. rewrite app_nil_r in H1.
        apply in_or_app ; right ; apply in_or_app ; right ; apply in_or_app ; auto.
 
        destruct l ; subst ; simpl in *.

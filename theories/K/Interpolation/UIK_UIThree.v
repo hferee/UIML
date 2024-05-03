@@ -186,7 +186,7 @@ Require Import UIK_UI_prelims.
          pose (KS_hpadm_list_exch_L _ x0 _ J4). destruct s. simpl in PIH.
          apply app2_find_hole in H3. destruct H3.
          repeat destruct s ; destruct p0 ; subst.
-         assert (J5: derrec_height x1 < S (dersrec_height d)). rewrite <- e. apply Arith_prebase.le_lt_n_Sm.
+         assert (J5: derrec_height x1 < S (dersrec_height d)). rewrite <- e. apply PeanoNat.le_lt_n_Sm.
          apply (Nat.le_trans _ _ _ l0 l).
          assert (J6: derrec_height x1 = derrec_height x1). auto.
          assert (J7: (fst k ++ A :: X0, snd k ++ B :: Δ1) = (fst k ++ A:: X0, snd k ++ B :: Δ1)). auto.
@@ -203,8 +203,8 @@ Require Import UIK_UI_prelims.
          apply derI with (ps:=[([] ++ A :: X0, [UI p k] ++ B :: Δ1)]). apply ImpR.
          assert ((X0, UI p k :: A --> B :: Δ1) = ([] ++ X0, [UI p k] ++ A --> B :: Δ1)). auto. rewrite H0.
          apply ImpRRule_I. apply dlCons ; [ simpl ; auto | apply dlNil].
-         destruct x2 ; simpl in e1 ; subst. rewrite <- app_nil_end in e0 ; subst.
-         assert (J5: derrec_height x1 < S (dersrec_height d)). rewrite <- e. apply Arith_prebase.le_lt_n_Sm.
+         destruct x2 ; simpl in e1 ; subst. rewrite app_nil_r in e0 ; subst.
+         assert (J5: derrec_height x1 < S (dersrec_height d)). rewrite <- e. apply PeanoNat.le_lt_n_Sm.
          apply (Nat.le_trans _ _ _ l0 l).
          assert (J6: derrec_height x1 = derrec_height x1). auto.
          assert (J7: (fst k ++ A :: X0, snd k ++ B :: Δ1) = (fst k ++ A:: X0, snd k ++ B :: Δ1)). auto.
@@ -224,7 +224,7 @@ Require Import UIK_UI_prelims.
          exfalso. destruct k ; simpl in e0 ; subst. unfold critical_Seq in c ; unfold is_Prime in c ; simpl in c.
          assert (In m (l1 ++ Δ0 ++ m :: x2)). apply in_or_app ; right ; apply in_or_app ; right ; apply in_eq.
          apply c in H0. inversion e1 ; subst. destruct H0 ; destruct H0 ; inversion H0 ; inversion H1.
-         assert (J5: derrec_height x1 < S (dersrec_height d)). rewrite <- e. apply Arith_prebase.le_lt_n_Sm.
+         assert (J5: derrec_height x1 < S (dersrec_height d)). rewrite <- e. apply PeanoNat.le_lt_n_Sm.
          apply (Nat.le_trans _ _ _ l0 l).
          assert (J6: derrec_height x1 = derrec_height x1). auto.
          assert (J7: (fst k ++ A :: X0, (snd k ++ x2) ++ B :: Δ1) = (fst k ++ A:: X0, snd k ++ x2 ++ B :: Δ1)).
@@ -299,7 +299,7 @@ Require Import UIK_UI_prelims.
          pose (KS_hpadm_list_exch_R _ x1 _ J4). destruct s.
          apply app2_find_hole in H2. destruct H2.
          repeat destruct s ; destruct p0 ; subst.
-         assert (J5: derrec_height x2 < S (dersrec_height d)). rewrite e. apply Arith_prebase.le_lt_n_Sm.
+         assert (J5: derrec_height x2 < S (dersrec_height d)). rewrite e. apply PeanoNat.le_lt_n_Sm.
          apply Nat.max_le_iff. left ; apply (Nat.le_trans _ _ _ l0 l).
          assert (J6: derrec_height x2 = derrec_height x2). auto.
          assert (J7: (fst k ++ Γ1, snd k ++ A :: Y0) = (fst k ++ Γ1, snd k ++ A :: Y0)). auto.
@@ -327,8 +327,8 @@ Require Import UIK_UI_prelims.
          apply derI with (ps:=[([] ++ Γ1, [UI p k] ++ A :: Y0);([] ++ B :: Γ1, [UI p k] ++ Y0)]). apply ImpL.
          assert ((A --> B :: Γ1, UI p k :: Y0) = ([] ++ A --> B :: Γ1, [UI p k] ++ Y0)). auto. rewrite H0.
          apply ImpLRule_I. apply dlCons. auto. apply dlCons. auto. apply dlNil.
-         destruct x3 ; simpl in e1 ; subst. rewrite <- app_nil_end in e0 ; subst.
-         assert (J5: derrec_height x2 < S (dersrec_height d)). rewrite e. apply Arith_prebase.le_lt_n_Sm.
+         destruct x3 ; simpl in e1 ; subst. rewrite app_nil_r in e0 ; subst.
+         assert (J5: derrec_height x2 < S (dersrec_height d)). rewrite e. apply PeanoNat.le_lt_n_Sm.
          apply Nat.max_le_iff. left ; apply (Nat.le_trans _ _ _ l0 l).
          assert (J6: derrec_height x2 = derrec_height x2). auto.
          assert (J7: (fst k ++ Γ1, snd k ++ A :: Y0) = (fst k ++ Γ1, snd k ++ A :: Y0)). auto.
@@ -359,7 +359,7 @@ Require Import UIK_UI_prelims.
          exfalso. destruct k ; simpl in e0 ; subst. unfold critical_Seq in c ; unfold is_Prime in c ; simpl in c.
          assert (In m ((Γ0 ++ m :: x3) ++ l2)). repeat rewrite <- app_assoc. apply in_or_app ; right ; apply in_or_app ; left ; apply in_eq.
          apply c in H0. inversion e1 ; subst. destruct H0 ; destruct H0 ; inversion H0 ; inversion H1.
-         assert (J5: derrec_height x2 < S (dersrec_height d)). rewrite e. apply Arith_prebase.le_lt_n_Sm.
+         assert (J5: derrec_height x2 < S (dersrec_height d)). rewrite e. apply PeanoNat.le_lt_n_Sm.
          apply Nat.max_le_iff. left ; apply (Nat.le_trans _ _ _ l0 l).
          assert (J6: derrec_height x2 = derrec_height x2). auto.
          assert (J7: ((fst k ++ x3) ++ Γ1, snd k ++ A :: Y0) = (fst k ++ x3 ++ Γ1, snd k ++ A :: Y0)).
@@ -464,7 +464,7 @@ Require Import UIK_UI_prelims.
               simpl ; rewrite unbox_app_distrib. repeat rewrite <- app_assoc ; auto.
               assert (J8: (In # p (propvar_subform_list ((unboxed_list x1) ++ [A])) -> False)).
               intro. apply propvar. repeat rewrite propvar_subform_list_app.
-              repeat rewrite propvar_subform_list_app in H0. simpl in H0. repeat rewrite <- app_nil_end in H0. simpl.
+              repeat rewrite propvar_subform_list_app in H0. simpl in H0. repeat rewrite app_nil_r in H0. simpl.
               repeat rewrite <- app_assoc in H0. apply in_app_or in H0 ; destruct H0.
               apply in_or_app ; left. apply propvar_subform_list_unboxed_list in H0.
               apply propvar_subform_list_nobox_gen_ext with (l0:=x1); auto.
@@ -472,7 +472,7 @@ Require Import UIK_UI_prelims.
               pose (PIH _ J5 _ _ _ _ _ J6 J7 J8).
               apply derI with (ps:=[(X0 ++ Box (Neg (UI p (unboxed_list (top_boxes (fst k)), []%list))) :: [], [] ++ Bot :: Box A :: Δ1)]).
               apply ImpR. assert ((X0, Diam (UI p (unboxed_list (top_boxes (fst k)), []%list)) :: Box A :: Δ1) =
-              (X0 ++ [], [] ++ Diam (UI p (unboxed_list (top_boxes (fst k)), []%list)) :: Box A :: Δ1)). rewrite <- app_nil_end. auto. rewrite H0.
+              (X0 ++ [], [] ++ Diam (UI p (unboxed_list (top_boxes (fst k)), []%list)) :: Box A :: Δ1)). rewrite app_nil_r. auto. rewrite H0.
               apply ImpRRule_I. apply dlCons. 2: apply dlNil.
               apply derI with (ps:=[(unboxed_list (x1 ++ [Box (Neg (UI p (unboxed_list (top_boxes (fst k)), []%list)))]) , [A])]).
               apply KR. assert (([] ++ Bot :: Box A :: Δ1) = [Bot] ++ Box A :: Δ1). auto. rewrite H0. apply KRRule_I ; auto.
@@ -482,13 +482,13 @@ Require Import UIK_UI_prelims.
               apply derI with (ps:=[(unboxed_list x1, [] ++ (UI p (unboxed_list (top_boxes (fst k)), []%list)) :: [A]);
               (unboxed_list x1 ++ Bot :: [], [] ++ [A])]). apply ImpL.
               pose (ImpLRule_I (UI p (unboxed_list (top_boxes (fst k)), []%list)) Bot (unboxed_list x1) [] [] [A]). simpl ; simpl in i.
-              rewrite <- app_nil_end in i. auto. apply dlCons. 2: apply dlCons.
+              rewrite app_nil_r in i. auto. apply dlCons. 2: apply dlCons.
               3: apply dlNil. 2: apply derI with (ps:=[]) ; [apply BotL ; apply BotLRule_I | apply dlNil].
               simpl. assert ((top_boxes (fst k)) = x0). symmetry. apply nobox_gen_ext_top_boxes_identity ; auto.
               intro. intros. apply H1 ; apply in_or_app ; auto. rewrite H0. auto.
           -- destruct x2 ; simpl in e2 ; subst.
               (* If Box A is in Y0 (bis). *)
-              +++ rewrite <- app_nil_end in e1 ; subst.
+              +++ rewrite app_nil_r in e1 ; subst.
                   pose (OrR (X0,Box A :: Δ1)). simpl in k1. apply k1. clear k1.
                   apply KS_hpadm_wkn_R with (A:=list_disj (restr_list_prop p (snd k))) (s:=(X0,
                   Or (list_disj (map Neg (restr_list_prop p (fst k))))(Or (list_disj (map Box (map (UI p) (KR_prems k)))) (Diam (UI p (unboxed_list (top_boxes (fst k)), []%list))))
@@ -510,7 +510,7 @@ Require Import UIK_UI_prelims.
                   simpl ; rewrite unbox_app_distrib. repeat rewrite <- app_assoc ; auto.
                   assert (J8: (In # p (propvar_subform_list (unboxed_list x1 ++ [A])) -> False)).
                   intro. apply propvar. repeat rewrite propvar_subform_list_app.
-                  repeat rewrite propvar_subform_list_app in H0. simpl in H0. repeat rewrite <- app_nil_end in H0. simpl.
+                  repeat rewrite propvar_subform_list_app in H0. simpl in H0. repeat rewrite app_nil_r in H0. simpl.
                   repeat rewrite <- app_assoc in H0. apply in_app_or in H0 ; destruct H0.
                   apply in_or_app ; left. apply propvar_subform_list_unboxed_list in H0.
                   apply propvar_subform_list_nobox_gen_ext with (l0:=x1); auto.
@@ -518,7 +518,7 @@ Require Import UIK_UI_prelims.
                   pose (PIH _ J5 _ _ _ _ _ J6 J7 J8).
                   apply derI with (ps:=[(X0 ++ Box (Neg (UI p (unboxed_list (top_boxes (fst k)), []%list))) :: [], [] ++ Bot :: Box A :: Δ1)]).
                   apply ImpR. assert ((X0, Diam (UI p (unboxed_list (top_boxes (fst k)), []%list)) :: Box A :: Δ1) =
-                  (X0 ++ [], [] ++ Diam (UI p (unboxed_list (top_boxes (fst k)), []%list)) :: Box A :: Δ1)). rewrite <- app_nil_end. auto. rewrite H0.
+                  (X0 ++ [], [] ++ Diam (UI p (unboxed_list (top_boxes (fst k)), []%list)) :: Box A :: Δ1)). rewrite app_nil_r. auto. rewrite H0.
                   apply ImpRRule_I. apply dlCons. 2: apply dlNil.
                   apply derI with (ps:=[(unboxed_list (x1 ++ [Box (Neg (UI p (unboxed_list (top_boxes (fst k)), []%list)))]), [A])]).
                   apply KR. assert (([] ++ Bot :: Box A :: Δ1) = [Bot] ++ Box A :: Δ1). auto. rewrite H0. apply KRRule_I ; auto.
@@ -528,7 +528,7 @@ Require Import UIK_UI_prelims.
                   apply derI with (ps:=[(unboxed_list x1, [] ++ (UI p (unboxed_list (top_boxes (fst k)), []%list)) :: [A]);
                   (unboxed_list x1 ++ Bot :: [], [] ++ [A])]). apply ImpL.
                   pose (ImpLRule_I (UI p (unboxed_list (top_boxes (fst k)), []%list)) Bot (unboxed_list x1) [] [] [A]). simpl ; simpl in i.
-                  rewrite <- app_nil_end in i. auto. apply dlCons. 2: apply dlCons.
+                  rewrite app_nil_r in i. auto. apply dlCons. 2: apply dlCons.
                   3: apply dlNil. 2: apply derI with (ps:=[]) ; [apply BotL ; apply BotLRule_I | apply dlNil].
                   simpl. assert ((top_boxes (fst k)) = x0). symmetry. apply nobox_gen_ext_top_boxes_identity ; auto.
                   intro. intros. apply H1 ; apply in_or_app ; auto. rewrite H0. auto.
@@ -541,7 +541,7 @@ Require Import UIK_UI_prelims.
                   simpl. rewrite unbox_app_distrib. repeat rewrite <- app_assoc ; auto.
                   assert (J8: (In # p (propvar_subform_list ((unboxed_list x1 ++ [])))) -> False).
                   intro. apply propvar. repeat rewrite propvar_subform_list_app.
-                  repeat rewrite propvar_subform_list_app in H0. simpl in H0. repeat rewrite <- app_nil_end in H0. simpl.
+                  repeat rewrite propvar_subform_list_app in H0. simpl in H0. repeat rewrite app_nil_r in H0. simpl.
                   repeat rewrite <- app_assoc in H0. apply in_or_app ; left. apply propvar_subform_list_unboxed_list in H0.
                   apply propvar_subform_list_nobox_gen_ext with (l0:=x1); auto.
                   pose (PIH _ J5 _ _ _ _ _ J6 J7 J8).
@@ -596,7 +596,7 @@ Require Import UIK_UI_prelims.
               simpl ; rewrite unbox_app_distrib. repeat rewrite <- app_assoc ; auto.
               assert (J8: (In # p (propvar_subform_list ((unboxed_list x1) ++ [A])) -> False)).
               intro. apply propvar. repeat rewrite propvar_subform_list_app.
-              repeat rewrite propvar_subform_list_app in H0. simpl in H0. repeat rewrite <- app_nil_end in H0. simpl.
+              repeat rewrite propvar_subform_list_app in H0. simpl in H0. repeat rewrite app_nil_r in H0. simpl.
               repeat rewrite <- app_assoc in H0. apply in_app_or in H0 ; destruct H0.
               apply in_or_app ; left. apply propvar_subform_list_unboxed_list in H0.
               apply propvar_subform_list_nobox_gen_ext with (l0:=x1); auto.
@@ -604,7 +604,7 @@ Require Import UIK_UI_prelims.
               pose (PIH _ J5 _ _ _ _ _ J6 J7 J8).
               apply derI with (ps:=[(X0 ++ Box (Neg (UI p (unboxed_list (top_boxes (fst k)), []%list))) :: [], [] ++ Bot :: x2 ++ Box A :: Δ1)]).
               apply ImpR. assert ((X0, Diam (UI p (unboxed_list (top_boxes (fst k)), []%list)) :: x2 ++ Box A :: Δ1) =
-              (X0 ++ [], [] ++ Diam (UI p (unboxed_list (top_boxes (fst k)), []%list)) :: x2 ++ Box A :: Δ1)). rewrite <- app_nil_end. auto. rewrite H0.
+              (X0 ++ [], [] ++ Diam (UI p (unboxed_list (top_boxes (fst k)), []%list)) :: x2 ++ Box A :: Δ1)). rewrite app_nil_r. auto. rewrite H0.
               apply ImpRRule_I. apply dlCons. 2: apply dlNil.
               apply derI with (ps:=[(unboxed_list (x1 ++ [Box (Neg (UI p (unboxed_list (top_boxes (fst k)), []%list)))]), [A])]).
               apply KR. assert (([] ++ Bot :: x2 ++ Box A :: Δ1) = (Bot :: x2) ++ Box A :: Δ1). auto. rewrite H0. apply KRRule_I ; auto.
@@ -614,7 +614,7 @@ Require Import UIK_UI_prelims.
               apply derI with (ps:=[(unboxed_list x1, [] ++ (UI p (unboxed_list (top_boxes (fst k)), []%list)) :: [A]);
               (unboxed_list x1 ++ Bot :: [], [] ++ [A])]). apply ImpL.
               pose (ImpLRule_I (UI p (unboxed_list (top_boxes (fst k)), []%list)) Bot (unboxed_list x1) [] [] [A]). simpl ; simpl in i.
-              rewrite <- app_nil_end in i. auto. apply dlCons. 2: apply dlCons.
+              rewrite app_nil_r in i. auto. apply dlCons. 2: apply dlCons.
               3: apply dlNil. 2: apply derI with (ps:=[]) ; [apply BotL ; apply BotLRule_I | apply dlNil].
               simpl. assert ((top_boxes (fst k)) = x0). symmetry. apply nobox_gen_ext_top_boxes_identity ; auto.
               intro. intros. apply H1 ; apply in_or_app ; auto. rewrite H0. auto.

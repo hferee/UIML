@@ -559,7 +559,7 @@ inversion X ; subst.
           (unboxed_list x1 ++ unboxed_list l ++ [] ++ [A0] ++ [], [A])).
           apply list_exch_LI.
           assert (J20: unboxed_list x1 ++ A0 :: unboxed_list l =
-          unboxed_list x1 ++ [A0] ++ [] ++ unboxed_list l ++ []). simpl. rewrite <- app_nil_end ; auto.
+          unboxed_list x1 ++ [A0] ++ [] ++ unboxed_list l ++ []). simpl. rewrite app_nil_r ; auto.
           rewrite J20 in X8. clear J20.
           pose (d:=KS_adm_list_exch_L _ X8 _ J5). simpl in d. assert (x1 ++ l = x ++ x0).
           apply nobox_gen_ext_injective with (l:=(Γ0 ++ Γ1)) ; try assumption.
@@ -567,7 +567,7 @@ inversion X ; subst.
           auto. right. apply in_cons. assumption. apply univ_gen_ext_combine ; assumption.
           rewrite app_assoc in d. rewrite <- unbox_app_distrib in d.
           rewrite H in d. clear J5. clear X8.
-          assert (unboxed_list (x ++ x0) = unboxed_list (x ++ x0) ++ []). rewrite <- app_nil_end.
+          assert (unboxed_list (x ++ x0) = unboxed_list (x ++ x0) ++ []). rewrite app_nil_r.
           auto. rewrite H0 in x2. clear H0.
           assert (J6: size A0 < size (Box A0)). simpl. lia.
           assert (J7: size A0 = size A0). reflexivity.

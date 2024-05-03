@@ -288,10 +288,10 @@
 
         (* (XBoxed_list (top_boxes (XBoxed_list (top_boxes (fst s)))), []%list) is also critical. *)
         assert (critical_Seq (nodupseq (XBoxed_list (top_boxes (XBoxed_list (top_boxes (fst s)))), []%list))).
-        intros A HA ; simpl ; simpl in HA. rewrite <- app_nil_end in HA. apply nodup_In in HA.
+        intros A HA ; simpl ; simpl in HA. rewrite app_nil_r in HA. apply nodup_In in HA.
         pose (In_XBoxed_list _ _ HA). destruct o. left.
         apply in_top_boxes in H4. destruct H4. destruct s0. destruct s0. destruct p0. exists x0 ; auto.
-        destruct H4. destruct H4. subst. apply c. simpl. rewrite <- app_nil_end. apply XBoxed_list_In.
+        destruct H4. destruct H4. subst. apply c. simpl. rewrite app_nil_r. apply XBoxed_list_In.
         apply nolessub_In. intro. apply f0. rewrite <- ub_nodupseq. auto. auto.
         pose (critical_Seq_InT_Canopy _ H4). apply Id_InT_Canopy in i. rewrite i ; simpl.
 
@@ -653,6 +653,6 @@
        pose (@GLS_prv_list_wkn_L [UI p x3] [] [UI p x2] g3 [Box (UI p x3); Box (UI p x2)]). simpl in g4.
        auto.
 
-      epose (GLS_prv_list_wkn_L [_] [] _ _). rewrite <- app_nil_end in g1 ; simpl in g1. apply g1.
-      Unshelve. apply GUI_fun. rewrite <- app_nil_end ; auto. } }
+      epose (GLS_prv_list_wkn_L [_] [] _ _). rewrite app_nil_r in g1 ; simpl in g1. apply g1.
+      Unshelve. apply GUI_fun. rewrite app_nil_r ; auto. } }
   Qed.

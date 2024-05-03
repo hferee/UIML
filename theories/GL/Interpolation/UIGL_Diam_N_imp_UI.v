@@ -47,9 +47,9 @@
   2: apply derI with (ps:=[]) ; [apply BotL ; epose (BotLRule_I [conj1] _ _) ; simpl in b ; apply b | apply dlNil].
   pose (@GLS_prv_list_wkn_L [conj1] [] [conj2]). simpl in g.
   pose (@GLS_prv_list_wkn_R (conj1 :: Box (conj2 --> ⊥) :: XBoxed_list (top_boxes X) ++ [Box (conj1 --> ⊥)]) [conj2] []). simpl in g0.
-  epose (g0 _ [Bot]). rewrite <- app_nil_end in g1. apply g1. Unshelve. clear g0.
+  epose (g0 _ [Bot]). rewrite app_nil_r in g1. apply g1. Unshelve. clear g0.
   epose (g _ (Box (conj2 --> ⊥) :: XBoxed_list (top_boxes X) ++ [Box (conj1 --> ⊥)])).
-  rewrite <- app_nil_end in g0. apply g0. Unshelve. clear g.
+  rewrite app_nil_r in g0. apply g0. Unshelve. clear g.
   apply ImpR_inv with (concl:=([], [conj1 --> conj2])). subst.
   apply rec_UI_imp ; auto.
   epose (ImpRRule_I _ _ [] [] [] []). simpl in i. apply i.

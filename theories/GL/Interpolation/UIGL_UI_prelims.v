@@ -72,14 +72,14 @@ Require Import UIGL_Canopy_nodupseq_perm.
   Lemma propvar_subform_list_conj : forall l A,
             In A (propvar_subform (list_conj l)) -> In A (propvar_subform_list l).
   Proof.
-  induction l ; simpl ; intros ; auto. repeat rewrite <- app_nil_end in H.
+  induction l ; simpl ; intros ; auto. repeat rewrite app_nil_r in H.
   apply in_app_or in H. apply in_or_app. destruct H ; auto.
   Qed.
 
   Lemma propvar_subform_list_disj : forall l A,
             In A (propvar_subform (list_disj l)) -> In A (propvar_subform_list l).
   Proof.
-  induction l ; simpl ; intros ; auto. repeat rewrite <- app_nil_end in H.
+  induction l ; simpl ; intros ; auto. repeat rewrite app_nil_r in H.
   apply in_app_or in H. apply in_or_app. destruct H ; auto.
   Qed.
 
@@ -270,7 +270,7 @@ Require Import UIGL_Canopy_nodupseq_perm.
                   (In (Box A) (top_boxes (XBoxed_list (top_boxes l))) -> False).
   Proof.
   intros. unfold usable_boxes in H. simpl in H. unfold subform_boxesS in H. simpl in H.
-  repeat rewrite remove_list_of_nil in H. repeat rewrite <- app_nil_end in H.
+  repeat rewrite remove_list_of_nil in H. repeat rewrite app_nil_r in H.
   apply remove_list_decr_in in H ; auto. destruct H. destruct H.
   pose (in_top_boxes _ _ H). destruct s. destruct s. destruct s. destruct p. subst. exists x0 ; auto.
   1-2: apply NoDup_subform_boxesLF.
@@ -337,13 +337,13 @@ Require Import UIGL_Canopy_nodupseq_perm.
   rewrite H0. apply ImpRRule_I. apply dlCons. 2: apply dlNil.
   assert (J0: derrec_height X0 = derrec_height X0) ; auto.
   assert (J1: wkn_L (Box (A --> ⊥)) (A :: XBoxed_list BΓ, []%list) (A :: XBoxed_list BΓ++ [Box (A --> ⊥)], []%list)).
-  assert (A :: XBoxed_list BΓ =  (A :: XBoxed_list BΓ) ++ []). rewrite <- app_nil_end. auto. rewrite H0.
+  assert (A :: XBoxed_list BΓ =  (A :: XBoxed_list BΓ) ++ []). rewrite app_nil_r. auto. rewrite H0.
   assert (A :: XBoxed_list BΓ ++ [Box (A --> ⊥)] =  (A :: XBoxed_list BΓ) ++ Box (A --> ⊥) :: []). auto. rewrite H1.
   apply wkn_LI. pose (GLS_wkn_L X0 J0 J1). destruct s.
   assert (J2: derrec_height x = derrec_height x) ; auto.
   assert (J3: wkn_R ⊥ (A :: XBoxed_list BΓ ++ [Box (A --> ⊥)], []%list) (A :: XBoxed_list BΓ ++ [Box (A --> ⊥)], [⊥])).
   assert ((A :: XBoxed_list BΓ ++ [Box (A --> ⊥)], @nil MPropF) =  (A :: XBoxed_list BΓ ++ [Box (A --> ⊥)], [] ++ [])).
-  rewrite <- app_nil_end. auto. rewrite H0.
+  rewrite app_nil_r. auto. rewrite H0.
   assert ((A :: XBoxed_list BΓ ++ [Box (A --> ⊥)], [⊥]) =  (A :: XBoxed_list BΓ ++ [Box (A --> ⊥)], [] ++ ⊥ :: [])). auto. rewrite H1.
   apply wkn_RI. pose (GLS_wkn_R x J2 J3). destruct s. simpl. auto.
   Qed.
@@ -413,7 +413,7 @@ Require Import UIGL_Canopy_nodupseq_perm.
   assert (J2: NoDup (subform_boxesS (l, l0))). apply NoDup_subform_boxesS.
   assert (J3: incl (subform_boxesS (nodupseq (XBoxed_list (top_boxes l), []%list))) (subform_boxesS (l, l0))).
   intro ; intros. unfold subform_boxesS. simpl. unfold subform_boxesS in H. simpl in H.
-  rewrite remove_list_of_nil in H. rewrite <- app_nil_end in H. apply in_or_app ; left.
+  rewrite remove_list_of_nil in H. rewrite app_nil_r in H. apply in_or_app ; left.
   assert (J02: In a (subform_boxesLF (XBoxed_list (top_boxes l)))). apply subform_boxesLF_nodup ; auto.
   apply XBoxed_list_same_subform_boxes with (l:=(top_boxes l)) in J02.
   apply subform_boxesLF_top_boxes ; auto.
