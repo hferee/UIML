@@ -206,7 +206,7 @@ Require Import UIGL_UIDiam_N.
          apply derI with (ps:=[([] ++ A :: X0, [UI p k] ++ B :: Δ1)]). apply ImpR.
          assert ((X0, UI p k :: A --> B :: Δ1) = ([] ++ X0, [UI p k] ++ A --> B :: Δ1)). auto. rewrite H0.
          apply ImpRRule_I. apply dlCons ; [ simpl ; auto | apply dlNil].
-         destruct x2 ; simpl in e1 ; subst. rewrite <- app_nil_end in e0 ; subst.
+         destruct x2 ; simpl in e1 ; subst. rewrite app_nil_r in e0 ; subst.
          assert (J5: derrec_height x1 < S (dersrec_height d)). lia.
          assert (J6: derrec_height x1 = derrec_height x1). auto.
          assert (J7: (fst k ++ A :: X0, snd k ++ B :: Δ1) = (fst k ++ A:: X0, snd k ++ B :: Δ1)). auto.
@@ -345,7 +345,7 @@ Require Import UIGL_UIDiam_N.
          apply derI with (ps:=[([] ++ Γ1, [UI p k] ++ A :: Y0);([] ++ B :: Γ1, [UI p k] ++ Y0)]). apply ImpL.
          assert ((A --> B :: Γ1, UI p k :: Y0) = ([] ++ A --> B :: Γ1, [UI p k] ++ Y0)). auto. rewrite H0.
          apply ImpLRule_I. apply dlCons. auto. apply dlCons. auto. apply dlNil.
-         destruct x3 ; simpl in e1 ; subst. rewrite <- app_nil_end in e0 ; subst.
+         destruct x3 ; simpl in e1 ; subst. rewrite app_nil_r in e0 ; subst.
          assert (J5: derrec_height x2 < S (dersrec_height d)). lia.
          assert (J6: derrec_height x2 = derrec_height x2). auto.
          assert (J7: (fst k ++ Γ1, snd k ++ A :: Y0) = (fst k ++ Γ1, snd k ++ A :: Y0)). auto.
@@ -502,7 +502,7 @@ Require Import UIGL_UIDiam_N.
             simpl ; rewrite XBox_app_distrib. repeat rewrite <- app_assoc ; auto.
             assert (J8: (In # p (propvar_subform_list ((XBoxed_list x1 ++ [Box A]) ++ [A])) -> False)).
             intro. apply propvar. repeat rewrite propvar_subform_list_app.
-            repeat rewrite propvar_subform_list_app in H0. simpl in H0. repeat rewrite <- app_nil_end in H0. simpl.
+            repeat rewrite propvar_subform_list_app in H0. simpl in H0. repeat rewrite app_nil_r in H0. simpl.
             repeat rewrite <- app_assoc in H0. apply in_app_or in H0 ; destruct H0.
             apply in_or_app ; left. apply propvar_subform_list_XBoxed_list in H0.
             apply propvar_subform_list_nobox_gen_ext with (l0:=x1); auto.
@@ -510,7 +510,7 @@ Require Import UIGL_UIDiam_N.
             pose (PIH _ J5 _ _ _ _ _ J6 J7 J8).
             apply derI with (ps:=[(X0 ++ Box (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list))) :: [], [] ++ Bot :: Box A :: Δ1)]).
             apply ImpR. assert ((X0, Diam (UI p (XBoxed_list (top_boxes (fst k)), []%list)) :: Box A :: Δ1) =
-            (X0 ++ [], [] ++ Diam (UI p (XBoxed_list (top_boxes (fst k)), []%list)) :: Box A :: Δ1)). rewrite <- app_nil_end. auto. rewrite H0.
+            (X0 ++ [], [] ++ Diam (UI p (XBoxed_list (top_boxes (fst k)), []%list)) :: Box A :: Δ1)). rewrite app_nil_r. auto. rewrite H0.
             apply ImpRRule_I. apply dlCons. 2: apply dlNil.
             apply derI with (ps:=[(XBoxed_list (x1 ++ [Box (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list)))]) ++ [Box A], [A])]).
             apply GLR. assert (([] ++ ⊥ :: Box A :: Δ1) = [⊥] ++ Box A :: Δ1). auto. rewrite H0. apply GLRRule_I ; auto.
@@ -528,7 +528,7 @@ Require Import UIGL_UIDiam_N.
             intro. intros. apply H1 ; apply in_or_app ; auto. rewrite H0. auto.
         -- destruct x2 ; simpl in e2 ; subst.
             (* If Box A is in Y0 (bis). *)
-            +++ rewrite <- app_nil_end in e1 ; subst.
+            +++ rewrite app_nil_r in e1 ; subst.
                 pose (OrR (X0,Box A :: Δ1)). simpl in g0. apply g0. clear g0.
                 apply GLS_prv_wkn_R with (A:=list_disj (restr_list_prop p (snd k))) (s:=(X0,
                 Or (list_disj (map Neg (restr_list_prop p (fst k))))(Or (list_disj (map Box (map (UI p) (GLR_prems (nodupseq k))))) (Diam
@@ -553,7 +553,7 @@ Require Import UIGL_UIDiam_N.
                 simpl ; rewrite XBox_app_distrib. repeat rewrite <- app_assoc ; auto.
                 assert (J8: (In # p (propvar_subform_list ((XBoxed_list x1 ++ [Box A]) ++ [A])) -> False)).
                 intro. apply propvar. repeat rewrite propvar_subform_list_app.
-                repeat rewrite propvar_subform_list_app in H0. simpl in H0. repeat rewrite <- app_nil_end in H0. simpl.
+                repeat rewrite propvar_subform_list_app in H0. simpl in H0. repeat rewrite app_nil_r in H0. simpl.
                 repeat rewrite <- app_assoc in H0. apply in_app_or in H0 ; destruct H0.
                 apply in_or_app ; left. apply propvar_subform_list_XBoxed_list in H0.
                 apply propvar_subform_list_nobox_gen_ext with (l0:=x1); auto.
@@ -561,7 +561,7 @@ Require Import UIGL_UIDiam_N.
                 pose (PIH _ J5 _ _ _ _ _ J6 J7 J8).
                 apply derI with (ps:=[(X0 ++ Box (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list))) :: [], [] ++ Bot :: Box A :: Δ1)]).
                 apply ImpR. assert ((X0, Diam (UI p (XBoxed_list (top_boxes (fst k)), []%list)) :: Box A :: Δ1) =
-                (X0 ++ [], [] ++ Diam (UI p (XBoxed_list (top_boxes (fst k)), []%list)) :: Box A :: Δ1)). rewrite <- app_nil_end. auto. rewrite H0.
+                (X0 ++ [], [] ++ Diam (UI p (XBoxed_list (top_boxes (fst k)), []%list)) :: Box A :: Δ1)). rewrite app_nil_r. auto. rewrite H0.
                 apply ImpRRule_I. apply dlCons. 2: apply dlNil.
                 apply derI with (ps:=[(XBoxed_list (x1 ++ [Box (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list)))]) ++ [Box A], [A])]).
                 apply GLR. assert (([] ++ ⊥ :: Box A :: Δ1) = [⊥] ++ Box A :: Δ1). auto. rewrite H0. apply GLRRule_I ; auto.
@@ -584,7 +584,7 @@ Require Import UIGL_UIDiam_N.
                 assert (XBoxed_list (x0 ++ x1) ++ [Box A] = XBoxed_list x0 ++ [] ++ XBoxed_list x1 ++ [Box A] ++ []). rewrite XBox_app_distrib.
                 repeat rewrite <- app_assoc. auto. rewrite H0.
                 assert ((XBoxed_list x0 ++ [Box A]) ++ XBoxed_list x1 = XBoxed_list x0 ++ [Box A] ++ XBoxed_list x1 ++ [] ++ []).
-                repeat rewrite <- app_assoc. auto. repeat rewrite <- app_nil_end. auto. rewrite H2. apply list_exch_LI.
+                repeat rewrite <- app_assoc. auto. repeat rewrite app_nil_r. auto. rewrite H2. apply list_exch_LI.
                 pose (GLS_hpadm_list_exch_L _ J10 J11). destruct s.
                 pose (incl_hpadm_prv _ ((XBoxed_list (top_boxes (fst (nodupseq k))) ++ [Box A]) ++ XBoxed_list x1, [A]) x3). simpl in s. destruct s.
                 intros B HB. apply in_app_or in HB ; destruct HB. apply in_app_or in H0 ; destruct H0.
@@ -600,7 +600,7 @@ Require Import UIGL_UIDiam_N.
                 simpl. repeat rewrite <- app_assoc ; auto.
                 assert (J8: (In # p (propvar_subform_list ((XBoxed_list x1 ++ [])))) -> False).
                 intro. apply propvar. repeat rewrite propvar_subform_list_app.
-                repeat rewrite propvar_subform_list_app in H0. simpl in H0. repeat rewrite <- app_nil_end in H0. simpl.
+                repeat rewrite propvar_subform_list_app in H0. simpl in H0. repeat rewrite app_nil_r in H0. simpl.
                 repeat rewrite <- app_assoc in H0. apply in_or_app ; left. apply propvar_subform_list_XBoxed_list in H0.
                 apply propvar_subform_list_nobox_gen_ext with (l0:=x1); auto.
                 pose (PIH _ J5 _ _ _ _ _ J6 J7 J8).
@@ -669,7 +669,7 @@ Require Import UIGL_UIDiam_N.
             simpl ; rewrite XBox_app_distrib. repeat rewrite <- app_assoc ; auto.
             assert (J8: (In # p (propvar_subform_list ((XBoxed_list x1 ++ [Box A]) ++ [A])) -> False)).
             intro. apply propvar. repeat rewrite propvar_subform_list_app.
-            repeat rewrite propvar_subform_list_app in H0. simpl in H0. repeat rewrite <- app_nil_end in H0. simpl.
+            repeat rewrite propvar_subform_list_app in H0. simpl in H0. repeat rewrite app_nil_r in H0. simpl.
             repeat rewrite <- app_assoc in H0. apply in_app_or in H0 ; destruct H0.
             apply in_or_app ; left. apply propvar_subform_list_XBoxed_list in H0.
             apply propvar_subform_list_nobox_gen_ext with (l0:=x1); auto.
@@ -677,7 +677,7 @@ Require Import UIGL_UIDiam_N.
             pose (PIH _ J5 _ _ _ _ _ J6 J7 J8).
             apply derI with (ps:=[(X0 ++ Box (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list))) :: [], [] ++ Bot :: x2 ++ Box A :: Δ1)]).
             apply ImpR. assert ((X0, Diam (UI p (XBoxed_list (top_boxes (fst k)), []%list)) :: x2 ++ Box A :: Δ1) =
-            (X0 ++ [], [] ++ Diam (UI p (XBoxed_list (top_boxes (fst k)), []%list)) :: x2 ++ Box A :: Δ1)). rewrite <- app_nil_end. auto. rewrite H0.
+            (X0 ++ [], [] ++ Diam (UI p (XBoxed_list (top_boxes (fst k)), []%list)) :: x2 ++ Box A :: Δ1)). rewrite app_nil_r. auto. rewrite H0.
             apply ImpRRule_I. apply dlCons. 2: apply dlNil.
             apply derI with (ps:=[(XBoxed_list (x1 ++ [Box (Neg (UI p (XBoxed_list (top_boxes (fst k)), []%list)))]) ++ [Box A], [A])]).
             apply GLR. assert (([] ++ ⊥ :: x2 ++ Box A :: Δ1) = (⊥ :: x2) ++ Box A :: Δ1). auto. rewrite H0. apply GLRRule_I ; auto.

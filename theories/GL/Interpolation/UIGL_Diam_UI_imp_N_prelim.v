@@ -242,11 +242,11 @@
               (length (usable_boxes (XBoxed_list (top_boxes (fst s)), []%list)) < length (usable_boxes s) -> False) ->
               incl (subform_boxesS s) (subform_boxesS (XBoxed_list (top_boxes (fst s)), []%list)).
   Proof.
-  intros s H. unfold subform_boxesS ; simpl. intros A H0. rewrite remove_list_of_nil. rewrite <- app_nil_end.
+  intros s H. unfold subform_boxesS ; simpl. intros A H0. rewrite remove_list_of_nil. rewrite app_nil_r.
   apply InT_In. pose (InT_dec (subform_boxesLF (XBoxed_list (top_boxes (fst s)))) A).
   destruct s0 ; auto. exfalso. apply H. destruct s.
   simpl. simpl in f. simpl in H0. simpl in H. unfold usable_boxes. simpl. unfold subform_boxesS. simpl.
-  rewrite remove_list_of_nil. rewrite <- app_nil_end.
+  rewrite remove_list_of_nil. rewrite app_nil_r.
 
   assert (length (remove_list (top_boxes l) (subform_boxesLF (XBoxed_list (top_boxes l)))) <
   length (remove_list (top_boxes l) (subform_boxesLF l ++ remove_list (subform_boxesLF l) (subform_boxesLF l0)))).

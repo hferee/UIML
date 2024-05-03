@@ -165,7 +165,7 @@ unfold KS_prv. intros n IHn s D. subst. remember D as D'. destruct D ; intros.
     assert (Γ0 ++ A :: Γ1 = [] ++ [] ++ Γ0 ++ [A] ++ Γ1). auto. rewrite H.
     assert (A :: Γ0 ++ Γ1 = [] ++ [A] ++ Γ0 ++ [] ++ Γ1). auto. rewrite H3. apply list_exch_LI.
     pose (KS_hpadm_list_exch_L _ x0 _ J4). destruct s.
-    assert (J0: derrec_height x1 < S (dersrec_height d)). rewrite <- e. apply Arith_prebase.le_lt_n_Sm.
+    assert (J0: derrec_height x1 < S (dersrec_height d)). rewrite <- e. apply PeanoNat.le_lt_n_Sm.
     apply (Nat.le_trans _ _ _ l0 l).
     assert (J6: derrec_height x1 = derrec_height x1). auto.
     pose (IHn _ J0 _ _ J6).
@@ -186,7 +186,7 @@ unfold KS_prv. intros n IHn s D. subst. remember D as D'. destruct D ; intros.
         assert ((x3 :: A :: Γ1, B :: Δ3) = ([x3] ++ A :: Γ1, [] ++ B :: Δ3)). auto. rewrite H2. apply ImpRRule_I.
         apply dlCons ; auto. apply dlNil.
     +  destruct x2 ; subst.
-        -- simpl in e1. subst. rewrite <- app_nil_end.
+        -- simpl in e1. subst. rewrite app_nil_r.
             assert (J2: (Γ0 ++ A :: Γ1, Δ2 ++ B :: Δ3) = (Γ0 ++ (A :: Γ1), Δ2 ++ (B :: Δ3))). auto.
             apply s in J2. destruct J2. destruct p. destruct p. exists x2. repeat split ; auto.
             intros. apply p in H. repeat rewrite propvar_subform_list_app in H. simpl in H. repeat rewrite <- app_assoc in H.
@@ -219,7 +219,7 @@ unfold KS_prv. intros n IHn s D. subst. remember D as D'. destruct D ; intros.
             destruct H. repeat rewrite propvar_subform_list_app.
             apply in_app_or in i0. destruct i0. 1-2: apply in_or_app ; auto.
             apply derI with (ps:=[(Γ0 ++ A :: [], (x3 :: Δ2) ++ B :: x2)]). apply ImpR.
-            assert ((Γ0, x3 :: Δ2 ++ A --> B :: x2) = (Γ0 ++ [], (x3 :: Δ2) ++ A --> B :: x2)). rewrite <- app_nil_end. auto.
+            assert ((Γ0, x3 :: Δ2 ++ A --> B :: x2) = (Γ0 ++ [], (x3 :: Δ2) ++ A --> B :: x2)). rewrite app_nil_r. auto.
             rewrite H. apply ImpRRule_I. apply dlCons ; auto. apply dlNil.
     +  assert (J2: (Γ0 ++ A :: Γ1, (Δ0 ++ x2) ++ B :: Δ3) = (Γ0 ++ (A :: Γ1), Δ0 ++ (x2)++ B :: Δ3)). repeat rewrite <- app_assoc. auto.
         apply s in J2. destruct J2. destruct p. destruct p. exists x3. repeat split ; auto.
@@ -253,7 +253,7 @@ unfold KS_prv. intros n IHn s D. subst. remember D as D'. destruct D ; intros.
     assert (existsT2 (x3 : derrec KS_rules (fun _ : Seq => False) (Γ2 ++ B :: Γ3, Δ0 ++ Δ1)), derrec_height x3 <= dersrec_height d).
     rewrite <- H2. exists x0 ; auto. rewrite e. apply Nat.le_max_r. destruct X.
     apply app2_find_hole in H0. destruct H0. repeat destruct s ; destruct p ; subst.
-    +  assert (J11: derrec_height x2 < S (dersrec_height d)). rewrite e. apply Arith_prebase.le_lt_n_Sm.
+    +  assert (J11: derrec_height x2 < S (dersrec_height d)). rewrite e. apply PeanoNat.le_lt_n_Sm.
         apply Nat.max_le_iff. left. apply (Nat.le_trans _ _ _ l0 l).
         assert (J12: derrec_height x2 = derrec_height x2). auto.
         pose (IHn _ J11 _ _ J12).
@@ -265,7 +265,7 @@ unfold KS_prv. intros n IHn s D. subst. remember D as D'. destruct D ; intros.
         assert (J2: (Γ2 ++ B :: Γ3, Δ0 ++ Δ1) = (Γ2 ++ B :: Γ3, Δ0 ++ Δ1)). auto.
         apply s0 in J2. destruct J2. destruct p0. destruct p0.
         exists ((x5 --> (x6 --> Bot)) --> Bot). repeat split.
-        intros. 1,2: simpl in H ; repeat rewrite <- app_nil_end in H ; repeat rewrite propvar_subform_list_app ; simpl ;
+        intros. 1,2: simpl in H ; repeat rewrite app_nil_r in H ; repeat rewrite propvar_subform_list_app ; simpl ;
         repeat rewrite <- app_assoc ; apply in_app_or in H ; destruct H.
         apply p in H ; repeat rewrite propvar_subform_list_app in H ; simpl in H ; destruct H ; auto.
         apply p0 in H ; repeat rewrite propvar_subform_list_app in H ; simpl in H ; repeat rewrite <- app_assoc in H ; destruct H ; auto.
@@ -309,8 +309,8 @@ unfold KS_prv. intros n IHn s D. subst. remember D as D'. destruct D ; intros.
         pose (KS_wkn_L _ _ x7 J17 _ _ J18). destruct s1. auto. apply dlNil. apply dlCons. 2: apply dlNil.
         apply derI with (ps:=[]). apply BotL. apply BotLRule_I. apply dlNil.
     +  destruct x4.
-      --  simpl. repeat rewrite <- app_nil_end. simpl in e1. subst.
-          assert (J11: derrec_height x2 < S (dersrec_height d)). rewrite e. apply Arith_prebase.le_lt_n_Sm.
+      --  simpl. repeat rewrite app_nil_r. simpl in e1. subst.
+          assert (J11: derrec_height x2 < S (dersrec_height d)). rewrite e. apply PeanoNat.le_lt_n_Sm.
           apply Nat.max_le_iff. left. apply (Nat.le_trans _ _ _ l0 l).
           assert (J12: derrec_height x2 = derrec_height x2). auto.
           pose (IHn _ J11 _ _ J12).
@@ -322,7 +322,7 @@ unfold KS_prv. intros n IHn s D. subst. remember D as D'. destruct D ; intros.
           assert (J2: (Γ2 ++ B :: Γ3, Δ0 ++ Δ1) = (Γ2 ++ B :: Γ3, Δ0 ++ Δ1)). auto.
           apply s0 in J2. destruct J2. destruct p0. destruct p0.
           exists ((x4 --> (x5 --> Bot)) --> Bot). repeat split.
-          intros. 1,2: simpl in H ; repeat rewrite <- app_nil_end in H ; repeat rewrite propvar_subform_list_app ; simpl ;
+          intros. 1,2: simpl in H ; repeat rewrite app_nil_r in H ; repeat rewrite propvar_subform_list_app ; simpl ;
           repeat rewrite <- app_assoc ; apply in_app_or in H ; destruct H.
           apply p in H ; repeat rewrite propvar_subform_list_app in H ; simpl in H ; destruct H ; auto.
           apply p0 in H ; repeat rewrite propvar_subform_list_app in H ; simpl in H ; repeat rewrite <- app_assoc in H ; destruct H ; auto.
@@ -373,22 +373,22 @@ unfold KS_prv. intros n IHn s D. subst. remember D as D'. destruct D ; intros.
           apply s in J2. destruct J2. destruct p. destruct p.
           assert (J7: derrec_height x2 = derrec_height x2). auto.
           assert (J8: list_exch_R (Γ2 ++ x4 ++ Γ1, Δ0 ++ A :: Δ1) (Γ2 ++ x4 ++ Γ1, Δ1 ++ A :: Δ0)).
-          assert (Δ0 ++ A :: Δ1 = [] ++ Δ0 ++ [A] ++ Δ1 ++ []). rewrite <- app_nil_end. auto. rewrite H.
-          assert (Δ1 ++ A :: Δ0 = [] ++ Δ1 ++ [A] ++ Δ0 ++ []). rewrite <- app_nil_end. auto. rewrite H0. apply list_exch_RI.
+          assert (Δ0 ++ A :: Δ1 = [] ++ Δ0 ++ [A] ++ Δ1 ++ []). rewrite app_nil_r. auto. rewrite H.
+          assert (Δ1 ++ A :: Δ0 = [] ++ Δ1 ++ [A] ++ Δ0 ++ []). rewrite app_nil_r. auto. rewrite H0. apply list_exch_RI.
           pose (KS_hpadm_list_exch_R _ x2 _ J8). destruct s0.
           assert (J9: derrec_height x6 = derrec_height x6). auto.
           assert (J10: list_exch_L (Γ2 ++ x4 ++ Γ1, Δ1 ++ A :: Δ0) (Γ1 ++ x4 ++ Γ2, Δ1 ++ A :: Δ0)).
-          assert (Γ2 ++ x4 ++ Γ1 = [] ++ Γ2 ++ x4 ++ Γ1 ++ []). rewrite <- app_nil_end. auto. rewrite H.
-          assert (Γ1 ++ x4 ++ Γ2 = [] ++ Γ1 ++ x4 ++ Γ2 ++ []). rewrite <- app_nil_end. auto. rewrite H0. apply list_exch_LI.
+          assert (Γ2 ++ x4 ++ Γ1 = [] ++ Γ2 ++ x4 ++ Γ1 ++ []). rewrite app_nil_r. auto. rewrite H.
+          assert (Γ1 ++ x4 ++ Γ2 = [] ++ Γ1 ++ x4 ++ Γ2 ++ []). rewrite app_nil_r. auto. rewrite H0. apply list_exch_LI.
           pose (KS_hpadm_list_exch_L _ x6 _ J10). destruct s0.
-          assert (J11: derrec_height x7 < S (dersrec_height d)). rewrite e. apply Arith_prebase.le_lt_n_Sm.
+          assert (J11: derrec_height x7 < S (dersrec_height d)). rewrite e. apply PeanoNat.le_lt_n_Sm.
           apply Nat.max_le_iff. left. pose (Nat.le_trans _ _ _ l0 l). pose (Nat.le_trans _ _ _ l2 l4). apply (Nat.le_trans _ _ _ l3 l5).
           assert (J12: derrec_height x7 = derrec_height x7). auto.
           pose (IHn _ J11 _ _ J12).
           assert (J2: (Γ1 ++ x4 ++ Γ2, Δ1 ++ A :: Δ0) = (Γ1 ++ x4 ++ Γ2, Δ1 ++ A :: Δ0)). auto.
           apply s0 in J2. destruct J2. destruct p0. destruct p0.
           exists (x8 --> x5). repeat split.
-          intros. 1,2: simpl in H ; repeat rewrite <- app_nil_end in H ; repeat rewrite propvar_subform_list_app ; simpl ;
+          intros. 1,2: simpl in H ; repeat rewrite app_nil_r in H ; repeat rewrite propvar_subform_list_app ; simpl ;
           repeat rewrite propvar_subform_list_app ; simpl ;repeat rewrite <- app_assoc ; apply in_app_or in H ; destruct H.
           apply p0 in H ; repeat rewrite propvar_subform_list_app in H ; simpl in H ; repeat rewrite <- app_assoc in H ; destruct H ; auto.
           apply in_app_or in i0 ; destruct i0. apply in_or_app ; right ; apply in_or_app ; right ; apply in_or_app ; right ; apply in_or_app ; auto.
@@ -412,8 +412,8 @@ unfold KS_prv. intros n IHn s D. subst. remember D as D'. destruct D ; intros.
           pose (s1 d2 J15 [x5]). simpl in s2. destruct s2.
           assert (J16: derrec_height x9 = derrec_height x9). auto.
           assert (J17: list_exch_L (x8 :: x4 ++ Γ2, A :: x5 :: Δ0) (Γ2 ++ x8 :: x4, A :: x5 :: Δ0)).
-          assert (x8 :: x4 ++ Γ2 = [] ++ (x8 :: x4) ++ [] ++ Γ2 ++ []). rewrite <- app_nil_end. auto. rewrite H.
-          assert (Γ2 ++ x8 :: x4 = [] ++ Γ2 ++ [] ++ (x8 :: x4) ++ []). rewrite <- app_nil_end. auto. rewrite H0. apply list_exch_LI.
+          assert (x8 :: x4 ++ Γ2 = [] ++ (x8 :: x4) ++ [] ++ Γ2 ++ []). rewrite app_nil_r. auto. rewrite H.
+          assert (Γ2 ++ x8 :: x4 = [] ++ Γ2 ++ [] ++ (x8 :: x4) ++ []). rewrite app_nil_r. auto. rewrite H0. apply list_exch_LI.
           pose (KS_hpadm_list_exch_L _ x9 _ J17). destruct s2. auto.
           simpl. repeat rewrite <- app_assoc. simpl.
           assert (J17: derrec_height d1 = derrec_height d1). auto. simpl. apply dlCons. 2: apply dlNil.
@@ -422,7 +422,7 @@ unfold KS_prv. intros n IHn s D. subst. remember D as D'. destruct D ; intros.
           apply derI with (ps:=[([] ++ Γ1, [] ++ x8 :: Δ1);([] ++ x5 :: Γ1, [] ++ Δ1)]).
           assert ((x8 --> x5 :: Γ1, Δ1) = ([] ++ x8 --> x5 :: Γ1, [] ++ Δ1)). auto. rewrite H. apply ImpL. apply ImpLRule_I.
           apply dlCons. simpl ; auto. apply dlCons. simpl ; auto. apply dlNil.
-    +  assert (J11: derrec_height x2 < S (dersrec_height d)). rewrite e. apply Arith_prebase.le_lt_n_Sm.
+    +  assert (J11: derrec_height x2 < S (dersrec_height d)). rewrite e. apply PeanoNat.le_lt_n_Sm.
         apply Nat.max_le_iff. left. apply (Nat.le_trans _ _ _ l0 l).
         assert (J12: derrec_height x2 = derrec_height x2). auto.
         pose (IHn _ J11 _ _ J12).
@@ -434,7 +434,7 @@ unfold KS_prv. intros n IHn s D. subst. remember D as D'. destruct D ; intros.
         assert (J2: ((Γ0 ++ x4) ++ B :: Γ3, Δ0 ++ Δ1) = (Γ0 ++ x4 ++ B :: Γ3, Δ0 ++ Δ1)). repeat rewrite <- app_assoc. auto.
         apply s0 in J2. destruct J2. destruct p0. destruct p0.
         exists ((x5 --> (x6 --> Bot)) --> Bot). repeat split.
-        intros. 1,2: simpl in H ; repeat rewrite <- app_nil_end in H ; repeat rewrite propvar_subform_list_app ; simpl ;
+        intros. 1,2: simpl in H ; repeat rewrite app_nil_r in H ; repeat rewrite propvar_subform_list_app ; simpl ;
         repeat rewrite propvar_subform_list_app ; simpl ;repeat rewrite <- app_assoc ; apply in_app_or in H ; destruct H.
         apply p in H ; repeat rewrite propvar_subform_list_app in H ; simpl in H ; destruct H ; auto.
         apply p0 in H ; repeat rewrite propvar_subform_list_app in H ; simpl in H ; repeat rewrite <- app_assoc in H ; destruct H ; auto.
@@ -496,9 +496,9 @@ unfold KS_prv. intros n IHn s D. subst. remember D as D'. destruct D ; intros.
        rewrite unbox_app_distrib. repeat rewrite <- app_assoc. auto.
        pose (IHn _ J1 _ _ J2 _ _ _ _ J3). destruct s. destruct p. destruct p.
        exists (Box x3). simpl. simpl in p. repeat split.
-       intros. 1,2: simpl in H ; repeat rewrite <- app_nil_end in H ; repeat rewrite propvar_subform_list_app ; simpl ;
+       intros. 1,2: simpl in H ; repeat rewrite app_nil_r in H ; repeat rewrite propvar_subform_list_app ; simpl ;
        repeat rewrite propvar_subform_list_app ; simpl ;repeat rewrite <- app_assoc ;
-       apply p in H ; repeat rewrite propvar_subform_list_app in H ; simpl in H ; repeat rewrite <- app_nil_end in H ; destruct H.
+       apply p in H ; repeat rewrite propvar_subform_list_app in H ; simpl in H ; repeat rewrite app_nil_r in H ; destruct H.
        apply propvar_subform_list_unboxed_list in i. apply in_or_app ; left. apply (propvar_subform_list_nobox_gen_ext u) ; auto.
        repeat rewrite <- app_assoc in i0. apply in_app_or in i0. destruct i0.
        apply in_or_app ; left. apply propvar_subform_list_unboxed_list in H. apply (propvar_subform_list_nobox_gen_ext u0) ; auto.
@@ -511,15 +511,15 @@ unfold KS_prv. intros n IHn s D. subst. remember D as D'. destruct D ; intros.
        intro. intros. inversion H0. exists x3 ; subst ; auto. apply H3. apply in_or_app ; auto.
        apply univ_gen_ext_cons ; auto. apply dlCons. 2: apply dlNil. simpl. auto.
     + destruct x2.
-       --  repeat rewrite <- app_nil_end. simpl in e1. subst. assert (J1: derrec_height x1 < S (dersrec_height d)). lia.
+       --  repeat rewrite app_nil_r. simpl in e1. subst. assert (J1: derrec_height x1 < S (dersrec_height d)). lia.
            assert (J2: derrec_height x1 = derrec_height x1). auto.
            assert (J3: (unboxed_list (x ++ x0), [A]) = ((unboxed_list x) ++ (unboxed_list x0), [] ++ [A])).
            rewrite unbox_app_distrib. repeat rewrite <- app_assoc. auto.
            pose (IHn _ J1 _ _ J2 _ _ _ _ J3). destruct s. destruct p. destruct p.
-           exists (Box x2). simpl. repeat rewrite <- app_nil_end in p. repeat split.
-           intros. 1,2: simpl in H ; repeat rewrite <- app_nil_end in H ; repeat rewrite propvar_subform_list_app ; simpl ;
+           exists (Box x2). simpl. repeat rewrite app_nil_r in p. repeat split.
+           intros. 1,2: simpl in H ; repeat rewrite app_nil_r in H ; repeat rewrite propvar_subform_list_app ; simpl ;
            repeat rewrite propvar_subform_list_app ; simpl ;repeat rewrite <- app_assoc ;
-           apply p in H ; repeat rewrite propvar_subform_list_app in H ; simpl in H ; repeat rewrite <- app_nil_end in H ;
+           apply p in H ; repeat rewrite propvar_subform_list_app in H ; simpl in H ; repeat rewrite app_nil_r in H ;
            destruct H ; repeat rewrite <- app_assoc in i0.
            apply propvar_subform_list_unboxed_list in i. apply in_or_app ; left. apply (propvar_subform_list_nobox_gen_ext u) ; auto.
            repeat rewrite <- app_assoc in i0. apply in_app_or in i0. destruct i0.
@@ -536,19 +536,19 @@ unfold KS_prv. intros n IHn s D. subst. remember D as D'. destruct D ; intros.
               assert (J19: derrec_height x1 = derrec_height x1). auto.
               assert (J20: list_exch_L (unboxed_list (x ++ x0), [A]) (unboxed_list x0 ++ unboxed_list x, [A])).
               assert (unboxed_list (x ++ x0) = [] ++ (unboxed_list x) ++ [] ++ (unboxed_list x0) ++ []).
-              rewrite unbox_app_distrib. simpl. rewrite <- app_nil_end. auto. rewrite H.
+              rewrite unbox_app_distrib. simpl. rewrite app_nil_r. auto. rewrite H.
               assert (unboxed_list x0 ++ unboxed_list x = [] ++ (unboxed_list x0) ++ [] ++ (unboxed_list x) ++ []).
-              simpl. rewrite <- app_nil_end. auto. rewrite H0. apply list_exch_LI.
+              simpl. rewrite app_nil_r. auto. rewrite H0. apply list_exch_LI.
                pose (KS_hpadm_list_exch_L _ x1 _ J20). destruct s.
-               assert (J1: derrec_height x3 < S (dersrec_height d)). rewrite <- e. apply Arith_prebase.le_lt_n_Sm. auto.
+               assert (J1: derrec_height x3 < S (dersrec_height d)). rewrite <- e. apply PeanoNat.le_lt_n_Sm. auto.
                assert (J2: derrec_height x3 = derrec_height x3). auto.
                assert (J3: (unboxed_list x0 ++ unboxed_list x, [A]) = (unboxed_list x0 ++ unboxed_list x, [] ++ [A])).
                repeat rewrite <- app_assoc. auto.
                pose (IHn _ J1 _ _ J2 _ _ _ _ J3). destruct s. destruct p. destruct p.
-               exists ((Box x4) --> Bot). simpl. repeat rewrite <- app_nil_end in p. repeat rewrite <- app_nil_end. repeat split.
-               intros. 1,2: simpl in H ; repeat rewrite <- app_nil_end in H ; repeat rewrite propvar_subform_list_app ; simpl ;
+               exists ((Box x4) --> Bot). simpl. repeat rewrite app_nil_r in p. repeat rewrite app_nil_r. repeat split.
+               intros. 1,2: simpl in H ; repeat rewrite app_nil_r in H ; repeat rewrite propvar_subform_list_app ; simpl ;
                repeat rewrite propvar_subform_list_app ; simpl ;repeat rewrite <- app_assoc ;
-               apply p in H ; repeat rewrite propvar_subform_list_app in H ; simpl in H ; repeat rewrite <- app_nil_end in H ;
+               apply p in H ; repeat rewrite propvar_subform_list_app in H ; simpl in H ; repeat rewrite app_nil_r in H ;
                destruct H ; repeat rewrite <- app_assoc in i0. apply in_app_or in i0. destruct i0.
              apply in_or_app ; left. apply propvar_subform_list_unboxed_list in H. apply (propvar_subform_list_nobox_gen_ext u) ; auto.
              apply in_or_app ; right ; apply in_or_app ; right ; apply in_or_app ; auto.
@@ -572,10 +572,10 @@ unfold KS_prv. intros n IHn s D. subst. remember D as D'. destruct D ; intros.
        assert (J3: (unboxed_list (x ++ x0), [A]) = ((unboxed_list x) ++ (unboxed_list x0), [] ++ [A])).
        rewrite unbox_app_distrib. repeat rewrite <- app_assoc. auto.
        pose (IHn _ J1 _ _ J2 _ _ _ _ J3). destruct s. destruct p. destruct p.
-       exists (Box x3). simpl. repeat rewrite <- app_nil_end in p. repeat split.
-       intros. 1,2: simpl in H ; repeat rewrite <- app_nil_end in H ; repeat rewrite propvar_subform_list_app ; simpl ;
+       exists (Box x3). simpl. repeat rewrite app_nil_r in p. repeat split.
+       intros. 1,2: simpl in H ; repeat rewrite app_nil_r in H ; repeat rewrite propvar_subform_list_app ; simpl ;
        repeat rewrite propvar_subform_list_app ; simpl ;repeat rewrite <- app_assoc ;
-       apply p in H ; repeat rewrite propvar_subform_list_app in H ; simpl in H ; repeat rewrite <- app_nil_end in H ;
+       apply p in H ; repeat rewrite propvar_subform_list_app in H ; simpl in H ; repeat rewrite app_nil_r in H ;
        destruct H ; repeat rewrite <- app_assoc in i0.
        apply propvar_subform_list_unboxed_list in i. apply in_or_app ; left.
        apply (propvar_subform_list_nobox_gen_ext u) ; auto.
@@ -589,10 +589,3 @@ unfold KS_prv. intros n IHn s D. subst. remember D as D'. destruct D ; intros.
        intro. intros. inversion H. exists x3 ; subst ; auto. apply H3. apply in_or_app ; auto.
        apply univ_gen_ext_cons ; auto. apply dlCons. 2: apply dlNil. simpl. auto.
 Qed.
-
-
-
-
-
-
-

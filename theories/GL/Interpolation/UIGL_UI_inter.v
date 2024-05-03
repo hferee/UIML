@@ -87,7 +87,7 @@ Require Import UIGL_UI_prelims.
         assert (J50: GLS_prv ([UI p x0], [UI p x])).
         apply IH ; auto. apply GLR_prems_LexSeq in i ; auto. apply LexSeq_nodupseq in i ; auto.
         intro. assert (is_init (nodupseq s)) ; auto. unfold is_init ; auto. apply H. apply is_init_nodupseq ; auto.
-        epose (GLS_prv_list_wkn_L [UI p x0] [] J50 _). simpl in g ; rewrite <- app_nil_end in g. apply g.
+        epose (GLS_prv_list_wkn_L [UI p x0] [] J50 _). simpl in g ; rewrite app_nil_r in g. apply g.
         eapply GLS_prv_wkn_R with (s:=([Diam (list_conj (map (N p s) (Canopy (nodupseq (XBoxed_list (top_boxes (fst s)), []%list)))))],
         [Diam (list_conj (map (N p sp) (Canopy (nodupseq (XBoxed_list (top_boxes (fst sp)), []%list)))))])) (A:=list_disj (map Box (map (UI p) (GLR_prems (nodupseq sp))))).
         2: epose (wkn_RI (list_disj (map Box (map (UI p) (GLR_prems (nodupseq sp))))) _ [] _) ; simpl in w ; apply w.
@@ -201,10 +201,10 @@ Require Import UIGL_UI_prelims.
             apply is_init_nodupseq in X0 ; auto. pose (GLR_applic_less_usable_boxes i3 H5).
             assert (J30:length (usable_boxes (XBoxed_list (top_boxes (fst s)), []%list)) = length (usable_boxes (nodupseq (XBoxed_list (top_boxes (fst s)), []%list)))).
             apply ub_nodupseq. rewrite <- J30 in l0. pose (ub_nodupseq x0). lia. inversion H6.
-            epose (@GLS_prv_list_wkn_L [_] [] _). rewrite <- app_nil_end in g1 ; simpl in g1. epose (g1 J50 [_;_]). simpl in g2. apply g2. }
+            epose (@GLS_prv_list_wkn_L [_] [] _). rewrite app_nil_r in g1 ; simpl in g1. epose (g1 J50 [_;_]). simpl in g2. apply g2. }
 
-        epose (@GLS_prv_list_wkn_R _ _ []). rewrite <- app_nil_end in g ; simpl in g. pose (g J100 [Bot]). simpl in g0.
-        epose (@GLS_prv_list_wkn_L [_] [] _). rewrite <- app_nil_end in g1 ; simpl in g1. epose (g1 g0 [_;_]). simpl in g2. apply g2.
+        epose (@GLS_prv_list_wkn_R _ _ []). rewrite app_nil_r in g ; simpl in g. pose (g J100 [Bot]). simpl in g0.
+        epose (@GLS_prv_list_wkn_L [_] [] _). rewrite app_nil_r in g1 ; simpl in g1. epose (g1 g0 [_;_]). simpl in g2. apply g2.
   (* Sequents are not critical. *)
   - assert (J0: GUI p s (UI p s)). apply UI_GUI ; auto. assert (J00: GUI p sp (UI p sp)). apply UI_GUI ; auto.
     assert (J1: Gimap (GUI p) (Canopy (nodupseq s)) (map (UI p) (Canopy (nodupseq s)))). apply Gimap_map. intros.
@@ -350,9 +350,9 @@ Require Import UIGL_UI_prelims.
            epose (@GN_inv_noinit_nolessub _ _ _ _ _ g0 H3 J42 J43). rewrite <- e1 ; auto.
            epose (Id_all_form _ [] _ []). simpl in d ; apply d. }
 
-        epose (@GLS_prv_list_wkn_R _ _ _). rewrite <- app_nil_end in g ; simpl in g. pose (g J100 [Bot]). simpl in g0.
-        epose (@GLS_prv_list_wkn_L [_] _ _). rewrite <- app_nil_end in g1 ; simpl in g1. epose (g1 g0 _).
-        simpl in g2 ; rewrite <- app_nil_end in g2. apply g2.
+        epose (@GLS_prv_list_wkn_R _ _ _). rewrite app_nil_r in g ; simpl in g. pose (g J100 [Bot]). simpl in g0.
+        epose (@GLS_prv_list_wkn_L [_] _ _). rewrite app_nil_r in g1 ; simpl in g1. epose (g1 g0 _).
+        simpl in g2 ; rewrite app_nil_r in g2. apply g2.
   (* Sequents are not critical. *)
   - assert (J0: GUI p s (UI p s)). apply UI_GUI ; auto. assert (J00: GUI p (nodupseq s) (UI p (nodupseq s))). apply UI_GUI ; auto.
     assert (J1: Gimap (GUI p) (Canopy (nodupseq s)) (map (UI p) (Canopy (nodupseq s)))). apply Gimap_map. intros.
@@ -491,9 +491,9 @@ Qed.
            epose (@GN_inv_noinit_nolessub _ _  _ _ _ g0 H3 J42 J43). rewrite <- e1 ; auto.
            epose (Id_all_form _ [] _ []). simpl in d ; apply d. }
 
-        epose (@GLS_prv_list_wkn_R _ _ _). rewrite <- app_nil_end in g ; simpl in g. pose (g J100 [Bot]). simpl in g0.
-        epose (@GLS_prv_list_wkn_L [_] _ _). rewrite <- app_nil_end in g1 ; simpl in g1. epose (g1 g0 _).
-        simpl in g2 ; rewrite <- app_nil_end in g2. apply g2.
+        epose (@GLS_prv_list_wkn_R _ _ _). rewrite app_nil_r in g ; simpl in g. pose (g J100 [Bot]). simpl in g0.
+        epose (@GLS_prv_list_wkn_L [_] _ _). rewrite app_nil_r in g1 ; simpl in g1. epose (g1 g0 _).
+        simpl in g2 ; rewrite app_nil_r in g2. apply g2.
   (* Sequents are not critical. *)
   - assert (J0: GUI p s (UI p s)). apply UI_GUI ; auto. assert (J00: GUI p (nodupseq s) (UI p (nodupseq s))). apply UI_GUI ; auto.
     assert (J1: Gimap (GUI p) (Canopy (nodupseq s)) (map (UI p) (Canopy (nodupseq s)))). apply Gimap_map. intros.

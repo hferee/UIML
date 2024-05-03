@@ -201,7 +201,7 @@ Qed.
   unfold inv_prems. apply InT_In.
   apply InT_trans_flatten_list with (bs:=[(l ++ [A1], x ++ A2 :: x0)]). apply InT_eq.
   destruct (finite_ImpRules_premises_of_S (l ++ [], x ++ A1 --> A2 :: x0)).
-  apply p. left. apply ImpRRule_I. rewrite <- app_nil_end in H0.
+  apply p. left. apply ImpRRule_I. rewrite app_nil_r in H0.
   rewrite H in H0. inversion H0.
   Qed.
 
