@@ -413,7 +413,7 @@ Qed.
   Proof.
   induction l ; simpl ; intros ; intuition.
   - exists []. split ; auto. 2: apply Permutation_PermutationT ; apply Permutation_refl. exists [].
-    rewrite <- app_nil_end. split ; auto. apply Permutation_PermutationT ; apply Permutation_refl.
+    rewrite app_nil_r. split ; auto. apply Permutation_PermutationT ; apply Permutation_refl.
     intro ; auto.
   - destruct IHl. destruct p. destruct s. destruct p0. destruct (in_dec eq_dec_form a l) ; simpl ; auto.
     exists x. split ; auto. exists (a :: x0). simpl. split. apply Permutation_PermutationT. apply perm_skip.
@@ -524,7 +524,7 @@ Lemma remove_Permutation : forall l a, In a l -> Permutation (nodup eq_dec_form 
   Proof.
   induction l0 ; simpl ; intros ; intuition.
   - exists []. split ; auto. 2: apply Permutation_PermutationT ; apply Permutation_refl.
-    exists (nodup eq_dec_form l1). rewrite <- app_nil_end. apply Permutation_PermutationT ; apply Permutation_refl.
+    exists (nodup eq_dec_form l1). rewrite app_nil_r. apply Permutation_PermutationT ; apply Permutation_refl.
   - assert (incl l0 l1). intros A HA. apply H. apply in_cons ; auto. destruct (in_dec eq_dec_form a l0).
     apply IHl0 in H0 ; auto. assert (incl l0 (remove eq_dec_form a l1)). intros A HA. apply in_not_touched_remove.
     apply H0 ; auto. intro ; subst ; auto. apply IHl0 in H1. destruct H1. destruct p. destruct s. exists (a::x) ; split.

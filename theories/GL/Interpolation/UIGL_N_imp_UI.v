@@ -161,8 +161,8 @@ Theorem gen_rec_UI_imp : forall s sr p X Y,
           intros A H3. inversion H3 ; subst. eexists ; auto. inversion H2. apply univ_gen_ext_refl.
           apply dlCons. 2: apply dlNil. eapply (UI_nodupseq_gen x1 x0 p _ []).
           unfold nodupseq ; simpl. rewrite e. rewrite e0 ; auto.
-          epose (g0 X0 (Top :: X)). rewrite <- app_nil_end in g2. apply g2.
-          epose (g1 X0 Y). rewrite <- app_nil_end in g2. apply g2.
+          epose (g0 X0 (Top :: X)). rewrite app_nil_r in g2. apply g2.
+          epose (g1 X0 Y). rewrite app_nil_r in g2. apply g2.
   (* If s is not critical. *)
   - assert (J0: GUI p s (UI p s)). apply UI_GUI ; auto.
     assert (J1: Gimap (GUI p) (Canopy (nodupseq s)) (map (UI p) (Canopy (nodupseq s)))). apply Gimap_map. intros.

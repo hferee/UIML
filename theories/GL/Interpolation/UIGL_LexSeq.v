@@ -108,7 +108,7 @@ Require Import UIGL_irred_short.
   assert (J2: NoDup (subform_boxesS (l, l0))). apply NoDup_subform_boxesS.
   assert (J3: incl (subform_boxesS (XBoxed_list (top_boxes l), []%list)) (subform_boxesS (l, l0))).
   intro ; intros. unfold subform_boxesS. simpl. unfold subform_boxesS in H. simpl in H.
-  rewrite remove_list_of_nil in H. rewrite <- app_nil_end in H. apply in_or_app ; left.
+  rewrite remove_list_of_nil in H. rewrite app_nil_r in H. apply in_or_app ; left.
   apply XBoxed_list_same_subform_boxes with (l:=(top_boxes l)) in H.
   apply subform_boxesLF_top_boxes ; auto.
   pose (remove_list_incr_decr2 _ _ (top_boxes l) J1 J2 J3). lia.

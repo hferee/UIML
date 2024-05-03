@@ -71,14 +71,14 @@ Require Import UIK_braga.
   Lemma propvar_subform_list_conj : forall l A,
             In A (propvar_subform (list_conj l)) -> In A (propvar_subform_list l).
   Proof.
-  induction l ; simpl ; intros ; auto. repeat rewrite <- app_nil_end in H.
+  induction l ; simpl ; intros ; auto. repeat rewrite app_nil_r in H.
   apply in_app_or in H. apply in_or_app. destruct H ; auto.
   Qed.
 
   Lemma propvar_subform_list_disj : forall l A,
             In A (propvar_subform (list_disj l)) -> In A (propvar_subform_list l).
   Proof.
-  induction l ; simpl ; intros ; auto. repeat rewrite <- app_nil_end in H.
+  induction l ; simpl ; intros ; auto. repeat rewrite app_nil_r in H.
   apply in_app_or in H. apply in_or_app. destruct H ; auto.
   Qed.
 
@@ -400,7 +400,7 @@ Require Import UIK_braga.
   assert (J0: derrec_height X0 = derrec_height X0) ; auto.
   assert (J3: wkn_R Bot (A :: unboxed_list BΓ, []%list) (A :: unboxed_list BΓ, [Bot])).
   assert ((A :: unboxed_list BΓ, @nil MPropF) =  (A :: unboxed_list BΓ, [] ++ [])).
-  rewrite <- app_nil_end. auto. rewrite H0.
+  rewrite app_nil_r. auto. rewrite H0.
   assert ((A :: unboxed_list BΓ, [Bot]) =  (A :: unboxed_list BΓ, [] ++ Bot :: [])). auto. rewrite H1.
   apply wkn_RI. pose (KS_wkn_R _ _ X0 J0 _ _ J3). destruct s. simpl. auto.
   Qed.

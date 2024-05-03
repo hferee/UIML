@@ -72,7 +72,7 @@ Section flatmap.
   Fact Gflatmap_inv_sg_left x m : Gflatmap [x] m → F x m.
   Proof. 
     intros (y & ? & ? & <-%Gflatmap_inv_left & ->)%Gflatmap_inv_left.
-    now rewrite <- app_nil_end.
+    now rewrite app_nil_r.
   Qed.
 
   Fact Gflatmap_app_inv_left l1 l2 m : 
@@ -82,7 +82,7 @@ Section flatmap.
     induction l1 as [ | x l1 IH1 ] in m |- *; simpl.
     + exists [], m; auto.
     + intros (y & m' & H1 & (m1 & m2 & H2 & H3 & ->)%IH1 & ->)%Gflatmap_inv_left.
-      exists (y++m1), m2; rewrite app_ass; auto.
+      exists (y++m1), m2; rewrite app_assoc; auto.
   Qed.
 
   Fixpoint flatmap l : (∀x, x ∈ l → D x) → sig (Gflatmap l).
