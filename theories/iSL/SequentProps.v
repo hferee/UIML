@@ -1119,3 +1119,4 @@ Lemma strongness φ : ∅ •  φ ⊢ □ φ.
 Proof.
 apply BoxR. box_tac. apply weakening, open_box_L, generalised_axiom.
 Qed.
+
