@@ -4,79 +4,66 @@ Require Import ISL.Environments.
 
 
 Fixpoint simp φ := match φ with
-| φ ∧ ψ => if decide (φ = ⊥) 
-           then ⊥ 
-          else
-            if decide (ψ = ⊥) 
-            then ⊥ 
-            else (simp φ) ∧ (simp ψ)
-| φ ∨ ψ => if decide (φ = ⊥) 
-           then ψ 
-          else
-            if decide (ψ = ⊥) 
-            then φ  
-            else (simp φ) ∨ (simp ψ)
+(*
+| φ1 ∧ (φ2 ∧ φ3) => if decide (φ1  = φ2)
+                          then (simp φ1) ∧ (simp φ3)
+                          else (simp  φ1) ∧ (simp φ2) ∧ (simp φ3)
+*)
+| ⊥ ∧ _ | _ ∧ ⊥   =>  ⊥ 
+| φ ∧ ψ => (simp φ) ∧ (simp ψ) 
+| ⊥ ∨ ψ => simp ψ 
+| φ ∨ ⊥ => simp φ
+| φ ∨ ψ => (simp φ) ∨ (simp ψ) 
 | _ => φ
 end.
 
-Lemma simpl_equiv_and_L Γ φ ψ : 
-  Γ • φ ⊢ simp φ ->
-  Γ • ψ ⊢ simp ψ  ->
+
+Lemma simp_equiv_and_L Γ φ ψ : 
+  (forall f, weight f < weight (φ ∧ ψ) -> Γ • f ⊢ simp f) ->
   Γ • (φ ∧ ψ) ⊢ simp (φ ∧ ψ).
 Proof.
-  intros IHφ IHψ.
-  simpl. 
-  apply AndL.
-  destruct decide.
-  - rewrite e.
-    exch 0. apply ExFalso.
-  - destruct decide.
-    -- rewrite e.
-        apply ExFalso.
-    -- apply AndR.
-       ---  apply weakening.
-            apply IHφ.
-       ---  exch 0. apply weakening. 
-            apply IHψ.
+intros IH.
+
+remember (weight φ) as wφ.
+assert (Hφ : Γ • φ ⊢ simp φ) by (apply (IH φ); simpl; lia).
+
+remember (weight ψ) as wψ.
+assert (Hψ : Γ • ψ ⊢ simp ψ) by (apply (IH ψ); simpl; lia).
+
+destruct φ; destruct ψ; simpl; apply AndL; auto 2 with proof; apply AndR;
+simpl; auto 2 with proof; exch 0; apply weakening; try apply Hψ.
 Qed.
 
-Lemma simpl_equiv_or_L Γ φ ψ : 
-  Γ • φ ⊢ simp φ ->
-  Γ • ψ ⊢ simp ψ  ->
+Lemma simp_equiv_or_L Γ φ ψ : 
+  (forall f, weight f < weight (φ ∨ ψ) -> Γ • f ⊢ simp f) ->
   Γ • (φ ∨ ψ) ⊢ simp (φ ∨ ψ).
 Proof.
-  intros IHφ IHψ.
-  simpl.
-  destruct decide.
-  apply OrL.
-  - rewrite e. apply ExFalso.
-  - apply generalised_axiom.
-  - destruct decide.
-    -- apply OrL.
-       --- apply generalised_axiom.
-       --- rewrite e.
-           apply ExFalso.
-    -- apply OrL.
-        --- apply OrR1.
-            apply IHφ.
-        --- apply OrR2.
-            apply IHψ.
+intros IH.
+
+remember (weight φ) as wφ.
+assert (Hφ : Γ • φ ⊢ simp φ) by (apply (IH φ); simpl; lia).
+
+remember (weight ψ) as wψ.
+assert (Hψ : Γ • ψ ⊢ simp ψ) by (apply (IH ψ); simpl; lia).
+
+destruct φ; auto 2 with proof; destruct ψ; auto 2 with proof; 
+simpl; apply OrL; auto 2 with proof.
 Qed.
 
 
 Theorem simp_equiv_L Γ φ : Γ • φ ⊢ simp φ.
 Proof.
-  induction φ.
-- apply generalised_axiom.
-- apply generalised_axiom.
-- apply (simpl_equiv_and_L Γ φ1  φ2 IHφ1 IHφ2).
-- apply (simpl_equiv_or_L Γ φ1  φ2 IHφ1 IHφ2).
-- apply generalised_axiom.
-- apply generalised_axiom.
+remember (weight φ) as w.
+assert(Hle : weight φ  ≤ w) by lia.
+clear Heqw. revert φ Hle.
+induction w; intros φ Hle; [destruct φ ; simpl in Hle; lia|].
+destruct φ;  try apply generalised_axiom;
+[eapply (simp_equiv_and_L Γ φ1  φ2)| eapply (simp_equiv_or_L Γ φ1  φ2)];
+intros f H; apply IHw; lia.
 Qed.
 
-
-Lemma simpl_equiv_and_R Γ φ ψ : 
+(* TODO
+Lemma simp_equiv_and_R Γ φ ψ : 
   Γ • (simp φ) ⊢ φ ->
   Γ • (simp ψ) ⊢ ψ  ->
   Γ • (simp (φ ∧ ψ)) ⊢ φ ∧ ψ.
@@ -96,7 +83,7 @@ Proof.
 Qed.
 
 
-Lemma simpl_equiv_or_R Γ φ ψ : 
+Lemma simp_equiv_or_R Γ φ ψ : 
   Γ • (simp φ) ⊢ φ ->
   Γ • (simp ψ) ⊢ ψ  ->
   Γ • (simp (φ ∨ ψ)) ⊢ φ ∨ ψ.
@@ -122,9 +109,9 @@ Proof.
   induction φ.
 - apply generalised_axiom.
 - apply generalised_axiom.
-- apply (simpl_equiv_and_R Γ φ1  φ2 IHφ1 IHφ2).
-- apply (simpl_equiv_or_R Γ φ1  φ2 IHφ1 IHφ2).
+- apply (simp_equiv_and_R Γ φ1  φ2 IHφ1 IHφ2).
+- apply (simp_equiv_or_R Γ φ1  φ2 IHφ1 IHφ2).
 - apply generalised_axiom.
 - apply generalised_axiom.
 Qed.
-
+ *)
