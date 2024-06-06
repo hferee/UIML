@@ -18,6 +18,9 @@ Require Export ISL.Formulas.
 This requires decidable equality and countability of the underlying set. *)
 Definition env := @gmultiset form form_eq_dec form_count.
 
+Global Instance singleton : Singleton form env := gmultiset_singleton.
+Global Instance singletonMS : SingletonMS form env := base.singleton.
+
 Global Hint Unfold mult empty singleton union intersection env : mset.
 (* useful notations :
   {[ x ]} : singleton
