@@ -26,7 +26,7 @@
  (synopsis "Propositional quantifiers for modal logics formalised")
  (description "")
  (allow_empty)
- (depends ocaml dune coq-color coq-stdpp js_of_ocaml angstrom)
+ (depends ocaml dune coq-stdpp js_of_ocaml angstrom)
  (tags
   (coq "intuitionistic logic" "proof theory" "propositional quantifiers" "extraction")))
 
