@@ -5,7 +5,7 @@ open Js_of_ocaml
 open Modal_expressions_parser
 open Stringconversion
 
-let string_of_formula ?(classical = false) = 
+let string_of_formula ?(classical = false) =
   let rec string_of_formula =
   function
 | Var v -> camlstring_of_coqstring v
@@ -23,11 +23,11 @@ let string_of_formula ?(classical = false) =
 and bracket e = match e with
 | Implies(Implies(f, Bot), Bot) when classical -> bracket f
 | Implies(Box(Implies(f, Bot)),Bot) when classical -> "⋄ " ^ bracket f
-| Var _ | Bot | Implies(_, Bot) -> string_of_formula e
+| Var _ | Bot | Implies(_, Bot) | Box _ -> string_of_formula e
 | e -> "(" ^ string_of_formula e ^ ")"
   in string_of_formula
 
-let catch_e f = try f() with 
+let catch_e f = try f() with
   ParseError -> "Parse Error"
 | e -> "Error: " ^ Printexc.to_string e
 
