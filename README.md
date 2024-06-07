@@ -13,7 +13,7 @@ A uniform interpolant calculator is available here:
 The calculator parses an input formula and computes the uniform interpolants for the
 various logics listed above.
 
-This calculator was built by extracting the relevant Coq functions to OCaml code, which is then 
+This calculator was built by extracting the relevant Coq functions to OCaml code, which is then
 further compiled to Javascript.
 
 ## Building
@@ -24,7 +24,7 @@ There is a rudimentary install script `install.sh` in this folder.
 
 ### Dependencies
 
-The proof library depends on `coq`, `coq-stdpp` and `coq-color`.
+The proof library depends on `coq` and `coq-stdpp`.
 
 Building the demo further requires `js_of_ocaml` and `angstrom`.
 
