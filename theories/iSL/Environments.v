@@ -1,10 +1,7 @@
 (** * Overview: Environments
 
-  An environment is a multiset of formulas. The main role of this file is to
-  link up the multisets from IRIS's stdpp with the multisets from CoLoR: The
-  stdpp multisets provide useful tactics, while CoLoR proves that
-  well-foundedness of an ordering lifts to the set of multi-sets over that
-  order. *)
+  An environment is a multiset of formulas. We rely on stdpp multisets
+  mostly for their powerful multiset equivalence tactic.*)
 
 
 (** Notion of wellfoundedness *)
@@ -12,10 +9,6 @@ Require Import Coq.Program.Wf.
 
 (** Stdpp implementation of multisets *)
 Require Export stdpp.gmultiset.
-
-(** Proof that ordering on multisets is wellfounded from CoLoR *)
-Require Import CoLoR.Util.Multiset.MultisetOrder.
-Require Import CoLoR.Util.Multiset.MultisetCore.
 
 (** Our propositional formulas, including their countability. *)
 Require Export ISL.Formulas.
@@ -28,90 +21,7 @@ Definition env := @gmultiset form form_eq_dec form_count.
 Global Instance singleton : Singleton form env := gmultiset_singleton.
 Global Instance singletonMS : SingletonMS form env := base.singleton.
 
-(** * Connecting two kinds of multisets *)
-(** We now show that our env is also a multiset in the sense of CoLoR, so that
-we can use the wellfoundedness proof from CoLoR and the multiset tactics and
-notations from stdpp. *)
-Module Export EnvMS <: MultisetCore.
-
-  Module Sid <: RelExtras.Eqset_dec.
-    Module Export Dom. Definition A : Type := form. End Dom.
-    Module Export Eq := Relation.RelExtras.Eqset_def Dom.
-    Definition eqA_dec := form_eq_dec.
-  End Sid.
-  Definition Multiset := env.
-  Definition mult : form -> Multiset -> nat := multiplicity.
-  Definition meq := (≡@{env}).
-  Definition empty := ∅ : env.
-  Definition singleton (x : form) : env := {[ x ]}.
-  Definition union : env -> env -> env := disj_union.
-  Definition intersection : env -> env -> env := intersection.
-  Definition diff : env -> env -> env := difference.
-
-  Lemma mult_eqA_compat M x y : (x = y) -> mult x M = mult y M.
-  Proof. intro; now subst. Qed.
-
-  Lemma meq_multeq M N:
-    M ≡ N -> (forall x, mult x M = mult x N).
-  Proof. intro Heq; multiset_solver. Qed.
-
-  Lemma multeq_meq M N: (forall x, mult x M = mult x N) -> M ≡  N.
-  Proof. multiset_solver. Qed.
-
-  Lemma empty_mult (x : form): mult x (∅ : env) = 0.
-  Proof. multiset_solver. Qed.
-
-  Lemma union_mult M N (x : form) :
-    mult x (M ⊎ N) = (mult x M + mult x N)%nat.
-  Proof. apply multiplicity_disj_union. Qed.
-
-  Lemma diff_mult M N (x : form):
-    mult x (M ∖ N) = (mult x M - mult x N)%nat.
-  Proof. apply multiplicity_difference. Qed.
-
-  Lemma intersection_mult (M N : env) (x : form):
-    mult x (M ∩ N) = min (mult x M) (mult x N).
-  Proof. apply multiplicity_intersection. Qed.
-
-  Lemma singleton_mult_in (x y: form): x = y -> mult x {[y]} = 1.
-    intro Heq. rewrite Heq. unfold mult. apply multiplicity_singleton. Qed.
-
-  Lemma singleton_mult_notin (x y: form): x <> y -> mult x {[y]} = 0.
-  Proof. apply multiplicity_singleton_ne. Qed.
-
-  (* reprove the following principles, proved in stdpp for Prop, but
-     we need them in Type *)
-  Lemma gmultiset_choose_or_empty (X : env) : {x | x ∈ X} + {X = ∅}.
-  Proof.
-    destruct (elements X) as [|x l] eqn:HX; [right|left].
-    - by apply gmultiset_elements_empty_inv.
-    - exists x. rewrite <- (gmultiset_elem_of_elements x X).
-      replace (elements X) with (x :: l). left.
-  Qed.
-
-  Definition mset_ind_type : forall P : env -> Type,
-        P empty -> (forall M a, P M -> P (M ⊎ {[a]})) -> forall M, P M.
-  Proof.
-    intros P Hemp Hinsert X.
-    eapply (Fix gmultiset_wf _ X).
-    Unshelve. clear X. intros X IH.
-    destruct (gmultiset_choose_or_empty X) as [[x Hx]| ->]; try assumption.
-    rewrite (gmultiset_disj_union_difference' x X) by done.
-    rewrite gmultiset_disj_union_comm.
-    apply Hinsert, IH. apply gmultiset_difference_subset;
-     multiset_solver.
-  Defined.
-
-End EnvMS.
-
-Global Hint Unfold mult meq empty singleton union intersection diff env Sid.Eq.A Sid.Dom.A: mset.
-
-(** * A well-founded order and tactic on multi-sets *)
-(** The module MO defines the multi-set ordering on multi-sets,
-    which depends on giving an order on the base set (for us, formulas),
-    and, crucially, contains the wellfoundedness theorem "mord_wf". *)
-Module Export MO := MultisetOrder EnvMS. (* for the well-foundedness *)
-
+Global Hint Unfold mult empty singleton union intersection env : mset.
 (* useful notations :
   {[ x ]} : singleton
       ⊎ : disjoint union
@@ -121,12 +31,10 @@ Module Export MO := MultisetOrder EnvMS. (* for the well-foundedness *)
       ⊂@ : include
 *)
 
+Definition empty := ∅ : env.
 
-Global Hint Unfold base.singletonMS : mset.
-Global Hint Unfold singletonMS : mset.
 Ltac ms :=
-  unfold base.singletonMS;
-  unfold singletonMS; (* necessary, not sure why *)
+  unfold base.singletonMS, singletonMS, base.empty, gmultiset_empty in *;
   autounfold with mset in *;
   autounfold with mset; multiset_solver.
 
@@ -141,11 +49,30 @@ Proof. intros Γ Γ' Heq Δ Δ' Heq'. ms. Qed.
 Global Notation "Γ • φ" := (disj_union Γ (base.singletonMS φ)) (at level 105, φ at level 85, left associativity).
 
 (** * Multiset utilities *)
+
+Lemma multeq_meq (M N: env) : (forall x, multiplicity x M = multiplicity x N) -> M ≡  N.
+  Proof. multiset_solver. Qed.
+
+Lemma diff_mult (M N : env) (x : form):
+  multiplicity x (M ∖ N) = (multiplicity x M - multiplicity x N)%nat.
+Proof. apply multiplicity_difference. Qed.
+
+Lemma union_mult M N (x : form) :
+  multiplicity x (M ⊎ N) = (multiplicity x M + multiplicity x N)%nat.
+Proof. apply multiplicity_disj_union. Qed.
+
+Lemma singleton_mult_in (x y: form): x = y -> multiplicity x {[y]} = 1.
+Proof.
+  intro Heq. rewrite Heq. apply multiplicity_singleton. Qed.
+
+Lemma singleton_mult_notin (x y: form): x <> y -> multiplicity x {[y]} = 0.
+Proof. apply multiplicity_singleton_ne. Qed.
+
 (* Two useful basic facts about multisets containing (or not) certain elements. *)
 Lemma env_replace {Γ : env} φ {ψ : form}:
   (ψ ∈ Γ) -> (Γ • φ) ∖ {[ψ]} ≡ (Γ ∖ {[ψ]} • φ).
 Proof.
-intro Hin; apply multeq_meq. intros θ.
+intro Hin. apply multeq_meq. intros θ.
 rewrite diff_mult, union_mult, union_mult, diff_mult.
 apply PeanoNat.Nat.add_sub_swap.
 case (decide (θ = ψ)); intro; subst.
@@ -419,16 +346,26 @@ Global Hint Resolve in_difference : multiset.
 (* could be used in disj_inv *)
 Lemma env_add_inv (Γ Γ' : env) (φ ψ : form): φ ≠ ψ -> ((Γ • φ) ≡ (Γ' • ψ)) -> (Γ' ≡  ((Γ ∖ {[ψ]}) • φ)).
 Proof.
-intros Hneq Heq.
-rewrite <- env_replace; [rewrite Heq; ms|].
-assert(ψ ∈ (Γ • φ)); [rewrite Heq|]; ms.
+intros Hneq Heq. rewrite <- env_replace.
+- ms.
+- assert(ψ ∈ (Γ • φ)); [rewrite Heq|]; ms.
 Qed.
 
 Lemma env_add_inv' (Γ Γ' : env) (φ : form): (Γ • φ) ≡ Γ' -> (Γ ≡  (Γ' ∖ {[φ]})).
-Proof. intro Heq. rewrite <- Heq. ms. Qed.
+Proof. intro Heq. ms. Qed.
 
 Lemma env_equiv_eq (Γ Γ' :env) : Γ =  Γ' -> Γ ≡  Γ'.
 Proof. intro; subst; trivial. Qed.
+
+(* reprove the following principles, proved in stdpp for Prop, but
+   we need them in Type *)
+Lemma gmultiset_choose_or_empty (X : env) : {x | x ∈ X} + {X = ∅}.
+Proof.
+  destruct (elements X) as [|x l] eqn:HX; [right|left].
+  - by apply gmultiset_elements_empty_inv.
+  - exists x. rewrite <- (gmultiset_elem_of_elements x X).
+    replace (elements X) with (x :: l). left.
+Qed.
 
 (* We need this induction principle in type. *)
 Lemma gmultiset_rec (P : env → Type) :
@@ -452,8 +389,6 @@ rewrite gmultiset_disj_union_difference with (X := {[θ']}).
 Qed.
 
 
-
-
 (* technical lemma : one can constructively find whether an environment contains
    an element satisfying a decidable property *)
 Lemma decide_in (P : form -> Prop) (Γ : env) :
@@ -471,14 +406,17 @@ induction Γ using gmultiset_rec.
 Qed.
 
 Lemma union_difference_L (Γ : env) Δ ϕ: ϕ ∈ Γ -> (Γ ⊎ Δ) ∖ {[ϕ]} ≡ Γ ∖{[ϕ]} ⊎ Δ.
-Proof. intro Hin. rewrite (difference_singleton _ _ Hin). ms. Qed.
+Proof. intro Hin. pose (difference_singleton _ _ Hin). ms. Qed.
 
 Lemma union_difference_R (Γ : env) Δ ϕ: ϕ ∈ Δ -> (Γ ⊎ Δ) ∖ {[ϕ]} ≡ Γ ⊎ (Δ ∖{[ϕ]}).
-Proof. intro Hin. rewrite (difference_singleton _ _ Hin). ms. Qed.
+Proof. intro Hin. pose (difference_singleton _ _ Hin). ms. Qed.
 
 Global Instance equiv_assoc : @Assoc env equiv disj_union.
 Proof. intros x y z. ms. Qed.
 Global Hint Immediate equiv_assoc : proof.
+
+Global Instance proper_difference : Proper ((≡@{env}) ==> eq ==> (≡@{env})) difference.
+Proof. intros Γ Γ' Heq Δ Heq'. ms. Qed.
 
 Definition var_not_in_env p (Γ : env):=  (∀ φ0, φ0 ∈ Γ -> ¬ occurs_in p φ0).
 
@@ -525,7 +463,8 @@ Proof.
 unfold open_boxes.
 assert (HH := gmultiset_elements_singleton φ).
 unfold elements, base.singletonMS, singletonMS, base.singleton, Environments.singleton in *.
-rewrite HH. simpl. ms.
+rewrite HH. simpl. unfold base.singletonMS, disj_union, empty. 
+apply gmultiset_disj_union_right_id.
 Qed.
 
 
@@ -557,13 +496,10 @@ Qed.
 
 Global Hint Rewrite open_boxes_disj_union : proof.
 
-
-Global Instance open_boxes_equiv : Proper (equiv ==> equiv) open_boxes.
-Proof. intros Γ Γ'. ms. Qed.
-
 Lemma open_boxes_remove  Γ φ : φ ∈ Γ -> (≡@{env}) (⊗ (Γ ∖ {[φ]})) ((⊗ Γ) ∖ {[⊙ φ]}).
 Proof.
-intro Hin. rewrite (difference_singleton Γ φ Hin) at 2.
+intro Hin.
+ pose (difference_singleton Γ φ Hin). rewrite e  at 2.
 rewrite open_boxes_add. ms.
 Qed.
 
@@ -576,7 +512,7 @@ end.
 Lemma open_boxes_spec Γ φ : φ ∈ open_boxes Γ -> {φ ∈ Γ ∧ is_box φ = false} + {(□ φ) ∈ Γ}.
 Proof.
 unfold open_boxes. intro Hin. apply elem_of_list_to_set_disj in Hin.
-apply elem_of_list_In in Hin. apply ListUtil.in_map_elim in Hin.
+apply elem_of_list_In in Hin. apply in_map_iff in Hin.
 case (decide ((□ φ) ∈ Γ)).
 - right; trivial.
 - intro Hout. left.
@@ -601,9 +537,7 @@ Qed.
 Lemma In_open_boxes (Γ : env) (φ : form) : (φ ∈ Γ) -> open_box φ ∈ open_boxes Γ.
 Proof.
 intro Hin. apply difference_singleton in Hin.
-eapply (proper_elem_of _ _ eq_refl _ (open_boxes (Γ ∖ {[φ]} • φ))).
-- now apply open_boxes_equiv.
-- rewrite open_boxes_add. auto with *.
+rewrite Hin,  open_boxes_add. auto with *.
 Qed.
 
 Global Hint Resolve In_open_boxes : proof.

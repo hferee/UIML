@@ -37,7 +37,7 @@
 </div>
 
 <div class="doc">
-<a id="lab12"></a><h1 class="section">Overview: Propositional Quantifiers</h1>
+<a id="lab10"></a><h1 class="section">Overview: Propositional Quantifiers</h1>
 
 
 <div class="paragraph"> </div>
@@ -80,7 +80,7 @@ Throughout the construction and proof, we fix a variable p, with respect to
 </div>
 
 <div class="doc">
-<a id="lab13"></a><h1 class="section">Definition of propositional quantifiers.</h1>
+<a id="lab11"></a><h1 class="section">Definition of propositional quantifiers.</h1>
 
 </div>
 <div class="code">
@@ -203,7 +203,11 @@ The implementation of the rules for defining A is separated into two pieces.
 <span class="id" title="keyword">let</span> <a id="A:42" class="idref" href="#A:42"><span class="id" title="binder">A</span></a> <a id="pe0:40" class="idref" href="#pe0:40"><span class="id" title="binder">pe0</span></a> <a id="H:41" class="idref" href="#H:41"><span class="id" title="binder">H</span></a> := <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Datatypes.html#snd"><span class="id" title="definition">snd</span></a> (<a class="idref" href="ISL.PropQuantifiers.html#EA0:36"><span class="id" title="variable">EA0</span></a> <a class="idref" href="ISL.PropQuantifiers.html#pe0:40"><span class="id" title="variable">pe0</span></a> <a class="idref" href="ISL.PropQuantifiers.html#H:41"><span class="id" title="variable">H</span></a>) <span class="id" title="tactic">in</span> <br/>
 <span class="id" title="keyword">match</span> <a class="idref" href="ISL.PropQuantifiers.html#10a89d3ca8a0101d7983dca5cf18d933"><span class="id" title="variable">ϕ</span></a> <span class="id" title="keyword">with</span><br/>
 | <a class="idref" href="ISL.Formulas.html#Var"><span class="id" title="constructor">Var</span></a> <span class="id" title="var">q</span> =&gt;<br/>
+<<<<<<< HEAD
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">if</span> <span class="id" title="definition">decide</span> (<a class="idref" href="ISL.PropQuantifiers.html#UniformInterpolation.p"><span class="id" title="variable">p</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a> <span class="id" title="var">q</span>) <span class="comment">(*&nbsp;TODO&nbsp;:&nbsp;change&nbsp;this&nbsp;to&nbsp;p∈Vars(ϕ)&nbsp;*)</span><br/>
+=======
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">if</span> <span class="id" title="definition">decide</span> (<a class="idref" href="ISL.PropQuantifiers.html#UniformInterpolation.p"><span class="id" title="variable">p</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.19.1/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a> <span class="id" title="var">q</span>)<br/>
+>>>>>>> no-color
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">then</span> <a class="idref" href="ISL.Formulas.html#1a3a4fd597219ab65145ec13c238adc3"><span class="id" title="notation">⊥</span></a><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">else</span> <a class="idref" href="ISL.Formulas.html#Var"><span class="id" title="constructor">Var</span></a> <span class="id" title="var">q</span> <span class="comment">(*&nbsp;A9&nbsp;*)</span><br/>
 <span class="comment">(*&nbsp;A11&nbsp;*)</span><br/>
@@ -299,7 +303,7 @@ Congruence lemmas: if we apply any of e_rule, a_rule_env, or a_rule_form
 </div>
 
 <div class="doc">
-<a id="lab14"></a><h1 class="section">Correctness</h1>
+<a id="lab12"></a><h1 class="section">Correctness</h1>
 
 </div>
 <div class="code">
@@ -312,7 +316,7 @@ Congruence lemmas: if we apply any of e_rule, a_rule_env, or a_rule_form
 This section contains the proof of Proposition 5, the main correctness result, stating that the E- and A-formulas defined above are indeed existential and universal propositional quantified versions of the original formula, respectively. 
 <div class="paragraph"> </div>
 
-<a id="lab15"></a><h2 class="section">(i) Variables</h2>
+<a id="lab13"></a><h2 class="section">(i) Variables</h2>
 
 </div>
 <div class="code">
@@ -327,7 +331,7 @@ In this subsection we prove (i), which states that the variable p no longer
   
 <div class="paragraph"> </div>
 
-<a id="lab16"></a><h3 class="section">(a)</h3>
+<a id="lab14"></a><h3 class="section">(a)</h3>
 
 </div>
 <div class="code">
@@ -364,7 +368,7 @@ In this subsection we prove (i), which states that the variable p no longer
 </div>
 
 <div class="doc">
-<a id="lab17"></a><h3 class="section">(b)</h3>
+<a id="lab15"></a><h3 class="section">(b)</h3>
 
 </div>
 <div class="code">
@@ -466,7 +470,7 @@ In this subsection we prove (i), which states that the variable p no longer
 </div>
 
 <div class="doc">
-<a id="lab18"></a><h2 class="section">(ii) Entailment</h2>
+<a id="lab16"></a><h2 class="section">(ii) Entailment</h2>
 
 </div>
 <div class="code">
@@ -599,7 +603,7 @@ In this section we prove (ii), which states that the E- and A-formula are
 </div>
 
 <div class="doc">
-<a id="lab19"></a><h2 class="section">Uniformity</h2>
+<a id="lab17"></a><h2 class="section">Uniformity</h2>
 
 </div>
 <div class="code">
@@ -1035,7 +1039,7 @@ The proof in this section, which is the most complex part of the argument,
 </div>
 
 <div class="doc">
-<a id="lab20"></a><h1 class="section">Main uniform interpolation Theorem</h1>
+<a id="lab18"></a><h1 class="section">Main uniform interpolation Theorem</h1>
 
 </div>
 <div class="code">

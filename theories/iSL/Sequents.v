@@ -1,7 +1,5 @@
 Require Export ISL.Environments.
 
-Import EnvMS.
-
 Open Scope stdpp_scope.
 
 (** * Overview: Sequent calculus G4ip *)
