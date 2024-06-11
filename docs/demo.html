@@ -40,10 +40,12 @@
       <p>Enter a formula below and choose a logic and interpolant to compute.</p>
       <input style="font-size:1em; font-family:'Courier New', Courier, monospace; padding: .2em;" type="text" id="input_formula" size="30" value="(p ∨ q) ∧ □(p → r)" />
       <select style="font-size:1em;  padding: .2em;" id="function_select">
-        <option value="islE">iSL: E(p)</option>
-        <option value="islA">iSL: A(p)</option>
+        <option value="iE">IL: E(p)</option>
+        <option value="iA">IL: A(p)</option>
         <option value="k">K: A(p)</option>
         <option value="gl">GL: A(p)</option>
+        <option value="islE">iSL: E(p)</option>
+        <option value="islA">iSL: A(p)</option>
         <option value="parse">Test parsing</option>
       </select>
       <button style="font-size:1em; padding: .2em;"
@@ -56,10 +58,10 @@
       <b>Usage instructions.</b>
       We support four logics:
       <ul>
-        <li>intuitionistic Strong Löb logic <b>(iSL)</b>,</li>
-        <li>intuitionistic logic <b>(IL)</b> (use the option <b>iSL</b> and give an input with no □),</li>
-        <li>Gödel-Löb logic <b>(GL)</b>, and</li>
-        <li>basic modal logic <b>(K)</b>.</li>
+        <li>intuitionistic logic <b>(IL)</b>,</li>
+        <li>Gödel-Löb logic <b>(GL)</b>,</li>
+        <li>basic modal logic <b>(K)</b>, and
+        <li>intuitionistic Strong Löb logic <b>(iSL)</b>.</li>
       </ul>
       You may use the following symbols:
       <table style="border-collapse: collapse; border: 0;
