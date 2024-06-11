@@ -37,6 +37,11 @@ let v : variable = coqstring_of_camlstring "p"
 let _ =
   Js.export "UIML"
     (object%js
+(* TODO: iE and iA are just an alias for isl_E and isl_A, 
+there should really at least be a function that checks that 
+iE and iA are given box-free formulas as input.*)
+       method iA s =  catch_e (fun () -> string_of_formula (isl_A v (eval s)))
+       method iE s =  catch_e (fun () -> string_of_formula (isl_E v (eval s)))
        method islA s = catch_e (fun () -> string_of_formula (isl_A v (eval s)))
        method islE s = catch_e (fun () -> string_of_formula (isl_E v (eval s)))
        method k s = catch_e (fun () -> string_of_formula ~classical: true (k_UI v (eval s)))
