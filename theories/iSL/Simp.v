@@ -3,19 +3,88 @@ Require Import ISL.Sequents.
 Require Import ISL.Environments.
 
 
+Definition simp_or φ ψ := match φ,ψ  with
+| ⊥ , ψ => ψ 
+| φ , ψ => φ ∨ ψ 
+end.
+
+
+Definition simp_and φ ψ := match φ,ψ  with
+| ⊥ , _ => ⊥  
+| φ , ψ => φ ∧ ψ 
+end.
+
 Fixpoint simp φ := match φ with
 (*
 | φ1 ∧ (φ2 ∧ φ3) => if decide (φ1  = φ2)
-                          then (simp φ1) ∧ (simp φ3)
+then (simp φ1) ∧ (simp φ3)
                           else (simp  φ1) ∧ (simp φ2) ∧ (simp φ3)
 *)
-| ⊥ ∧ _ | _ ∧ ⊥   =>  ⊥ 
-| φ ∧ ψ => (simp φ) ∧ (simp ψ) 
-| ⊥ ∨ ψ => simp ψ 
-| φ ∨ ⊥ => simp φ
-| φ ∨ ψ => (simp φ) ∨ (simp ψ) 
+| φ ∨ ψ => simp_or (simp φ) (simp ψ) 
+| ⊥ ∧ _ | _ ∧ ⊥   =>  ⊥
+| φ ∧ ψ => (simp φ) ∧ (simp ψ)
 | _ => φ
 end.
+
+
+
+
+Lemma simp_shrink φ :
+  weight (simp φ) <= weight φ.
+Proof.
+Admitted.
+
+
+Lemma leq_to_le a b :
+  a < b ->
+  a <= b.
+Proof.
+  lia.
+Qed.
+
+
+ Lemma simp_or_no_bot φ ψ :
+   φ ≠ ⊥ -> simp_or φ ψ = (φ ∨ ψ).
+ Admitted.
+
+
+ Lemma simp_and_no_bot φ ψ :
+   φ ≠ ⊥ -> simp_or φ ψ = (φ ∧ ψ).
+ Admitted.
+
+Lemma simp_equiv_or_L Γ φ ψ : 
+  (forall f, weight f < weight (φ ∨ ψ) -> Γ • f ⊢ simp f) ->
+  Γ • (φ ∨ ψ) ⊢ simp (φ ∨ ψ).
+Proof.
+intros IH.
+
+assert (Hφ : Γ • φ  ⊢ simp φ ) by (apply (IH φ); simpl; lia).
+assert (Hψ : Γ • ψ  ⊢ simp ψ ) by (apply (IH ψ); simpl; lia).
+
+destruct φ.
+- simpl. auto 3 with proof.
+- simpl. auto 2 with proof.
+- assert (H: (Γ • φ1 ∧ φ2 ∨ ψ) ⊢ simp_or (simp (φ1 ∧ φ2)) (simp ψ)).
+  destruct (decide (simp (φ1 ∧ φ2) = ⊥)).
+  + rewrite e. simpl. apply OrL.
+    * rewrite e in Hφ. apply exfalso. trivial.
+    * apply Hψ.
+  + rewrite simp_or_no_bot.
+    * auto with proof.
+    * apply n.
+  +  apply H.
+- assert (H: (Γ • (φ1 ∨ φ2) ∨ ψ) ⊢ simp_or (simp (φ1 ∨ φ2)) (simp ψ)).
+  destruct (decide (simp (φ1 ∨ φ2) = ⊥)).
+  + rewrite e. simpl. apply OrL. 
+    * rewrite e in Hφ. apply exfalso. trivial.
+    * apply Hψ.
+  + rewrite simp_or_no_bot.
+    * auto with proof.
+    * apply n.
+  +  apply H.
+- simpl. auto 3 with proof.
+- simpl. auto 3 with proof.
+Qed.
 
 
 Lemma simp_equiv_and_L Γ φ ψ : 
@@ -32,22 +101,6 @@ assert (Hψ : Γ • ψ ⊢ simp ψ) by (apply (IH ψ); simpl; lia).
 
 destruct φ; destruct ψ; simpl; apply AndL; auto 2 with proof; apply AndR;
 simpl; auto 2 with proof; exch 0; apply weakening; try apply Hψ.
-Qed.
-
-Lemma simp_equiv_or_L Γ φ ψ : 
-  (forall f, weight f < weight (φ ∨ ψ) -> Γ • f ⊢ simp f) ->
-  Γ • (φ ∨ ψ) ⊢ simp (φ ∨ ψ).
-Proof.
-intros IH.
-
-remember (weight φ) as wφ.
-assert (Hφ : Γ • φ ⊢ simp φ) by (apply (IH φ); simpl; lia).
-
-remember (weight ψ) as wψ.
-assert (Hψ : Γ • ψ ⊢ simp ψ) by (apply (IH ψ); simpl; lia).
-
-destruct φ; auto 2 with proof; destruct ψ; auto 2 with proof; 
-simpl; apply OrL; auto 2 with proof.
 Qed.
 
 
@@ -115,3 +168,4 @@ Proof.
 - apply generalised_axiom.
 Qed.
  *)
+
