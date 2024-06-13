@@ -21,36 +21,28 @@ then (simp φ1) ∧ (simp φ3)
                           else (simp  φ1) ∧ (simp φ2) ∧ (simp φ3)
 *)
 | φ ∨ ψ => simp_or (simp φ) (simp ψ) 
-| ⊥ ∧ _ | _ ∧ ⊥   =>  ⊥
-| φ ∧ ψ => (simp φ) ∧ (simp ψ)
+| φ ∧ ψ => simp_and (simp φ) (simp ψ) 
 | _ => φ
 end.
 
-
-
-
-Lemma simp_shrink φ :
-  weight (simp φ) <= weight φ.
+ Lemma simp_or_no_bot φ ψ :
+   φ ≠ ⊥ -> simp_or φ ψ = (φ ∨ ψ).
 Proof.
-Admitted.
-
-
-Lemma leq_to_le a b :
-  a < b ->
-  a <= b.
-Proof.
-  lia.
+  intro H.
+  unfold simp_or.
+  destruct φ; trivial.
+  contradict H. reflexivity.
 Qed.
 
 
- Lemma simp_or_no_bot φ ψ :
-   φ ≠ ⊥ -> simp_or φ ψ = (φ ∨ ψ).
- Admitted.
-
-
  Lemma simp_and_no_bot φ ψ :
-   φ ≠ ⊥ -> simp_or φ ψ = (φ ∧ ψ).
- Admitted.
+   φ ≠ ⊥ -> simp_and φ ψ = (φ ∧ ψ).
+Proof.
+  intro H.
+  unfold simp_and.
+  destruct φ; trivial.
+  contradict H. reflexivity.
+Qed.
 
 Lemma simp_equiv_or_L Γ φ ψ : 
   (forall f, weight f < weight (φ ∨ ψ) -> Γ • f ⊢ simp f) ->
@@ -93,14 +85,52 @@ Lemma simp_equiv_and_L Γ φ ψ :
 Proof.
 intros IH.
 
-remember (weight φ) as wφ.
 assert (Hφ : Γ • φ ⊢ simp φ) by (apply (IH φ); simpl; lia).
-
-remember (weight ψ) as wψ.
 assert (Hψ : Γ • ψ ⊢ simp ψ) by (apply (IH ψ); simpl; lia).
 
-destruct φ; destruct ψ; simpl; apply AndL; auto 2 with proof; apply AndR;
-simpl; auto 2 with proof; exch 0; apply weakening; try apply Hψ.
+destruct φ.
+- simpl. 
+  apply AndL. 
+  apply AndR.
+  + exch 0; apply Atom.
+  + exch 0. apply weakening. apply Hψ.
+- simpl. 
+  apply AndL. exch 0.
+  apply ExFalso.
+- assert (H: (Γ • (φ1 ∧ φ2) ∧  ψ) ⊢ simp_and (simp (φ1 ∧ φ2)) (simp ψ)).
+  destruct (decide (simp (φ1 ∧ φ2) = ⊥)).
+  + rewrite e. simpl. apply AndL. rewrite e in Hφ. apply weakening. apply exfalso. trivial.
+  + rewrite simp_and_no_bot.
+    * apply AndL.
+      apply AndR.
+      -- apply weakening.
+         apply Hφ.
+      -- exch 0. apply weakening.
+         apply Hψ.
+    * apply n.
+  +  apply H.
+- assert (H: (Γ • (φ1 ∨ φ2) ∧ ψ) ⊢ simp_and (simp (φ1 ∨ φ2)) (simp ψ)).
+  destruct (decide (simp (φ1 ∨ φ2) = ⊥)).
+  + rewrite e. simpl. apply AndL. rewrite e in Hφ. apply weakening. apply exfalso. trivial.
+  + rewrite simp_and_no_bot.
+    * apply AndL.
+      apply AndR.
+      -- apply weakening.
+         apply Hφ.
+      -- exch 0. apply weakening.
+         apply Hψ.
+    * apply n.
+  +  apply H.
+- simpl. 
+  apply AndL. 
+  apply AndR.
+  + apply weakening; apply generalised_axiom.
+  + exch 0. apply weakening. apply Hψ.
+- simpl. 
+  apply AndL. 
+  apply AndR.
+  + apply weakening; apply generalised_axiom.
+  + exch 0. apply weakening. apply Hψ.
 Qed.
 
 
@@ -168,4 +198,5 @@ Proof.
 - apply generalised_axiom.
 Qed.
  *)
+
 
