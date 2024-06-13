@@ -6,12 +6,16 @@ Require Import ISL.Environments.
 Definition simp_or φ ψ := 
   if decide (φ =⊥) then ψ
   else if decide (ψ = ⊥) then φ
+  else if decide (φ = ⊤) then ⊤
+  else if decide (ψ = ⊤) then ⊤
   else φ ∨ ψ.
 
 
 Definition simp_and φ ψ :=
   if decide (φ =⊥) then ⊥
   else if decide (ψ = ⊥) then ⊥
+  else if decide (φ = ⊤) then ψ 
+  else if decide (ψ = ⊤) then φ 
   else φ ∨ ψ.
 
 Fixpoint simp φ := match φ with
@@ -19,6 +23,15 @@ Fixpoint simp φ := match φ with
 | φ ∧ ψ => simp_and (simp φ) (simp ψ) 
 | _ => φ
 end.
+
+
+Lemma top_provable Γ φ :
+ Γ • φ  ⊢ ⊤.
+Proof.
+  apply ImpR.
+  apply ExFalso.
+Qed.
+
 
 Lemma simp_equiv_or_L Γ φ ψ : 
   (forall f, weight f < weight (φ ∨ ψ) -> Γ • f ⊢ simp f) ->
@@ -42,11 +55,19 @@ case decide.
     * rewrite Hbot in Hψ.
       apply exfalso. trivial.
   + intro.
-    apply OrL.
-    * apply OrR1.
-      apply Hφ.
-    * apply OrR2.
-      apply Hψ.
+    case decide.
+    * intro Htop.
+      apply top_provable.
+    * intro.  
+      case decide.
+      -- intro Htop.
+         apply top_provable.
+      -- intro.
+         apply OrL.
+         ++ apply OrR1.
+            apply Hφ.
+         ++ apply OrR2.
+            apply Hψ.
 Qed.
 
 
@@ -90,3 +111,4 @@ Qed.
 
 Theorem simp_equiv_R Γ φ : Γ • (simp φ) ⊢ φ.
 Admitted.
+
