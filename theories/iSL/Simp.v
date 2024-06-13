@@ -3,79 +3,50 @@ Require Import ISL.Sequents.
 Require Import ISL.Environments.
 
 
-Definition simp_or φ ψ := match φ,ψ  with
-| ⊥ , ψ => ψ 
-| φ , ψ => φ ∨ ψ 
-end.
+Definition simp_or φ ψ := 
+  if decide (φ =⊥) then ψ
+  else if decide (ψ = ⊥) then φ
+  else φ ∨ ψ.
 
 
-Definition simp_and φ ψ := match φ,ψ  with
-| ⊥ , _ => ⊥  
-| φ , ψ => φ ∧ ψ 
-end.
+Definition simp_and φ ψ :=
+  if decide (φ =⊥) then ⊥
+  else if decide (ψ = ⊥) then ⊥
+  else φ ∨ ψ.
 
 Fixpoint simp φ := match φ with
-(*
-| φ1 ∧ (φ2 ∧ φ3) => if decide (φ1  = φ2)
-then (simp φ1) ∧ (simp φ3)
-                          else (simp  φ1) ∧ (simp φ2) ∧ (simp φ3)
-*)
 | φ ∨ ψ => simp_or (simp φ) (simp ψ) 
 | φ ∧ ψ => simp_and (simp φ) (simp ψ) 
 | _ => φ
 end.
-
- Lemma simp_or_no_bot φ ψ :
-   φ ≠ ⊥ -> simp_or φ ψ = (φ ∨ ψ).
-Proof.
-  intro H.
-  unfold simp_or.
-  destruct φ; trivial.
-  contradict H. reflexivity.
-Qed.
-
-
- Lemma simp_and_no_bot φ ψ :
-   φ ≠ ⊥ -> simp_and φ ψ = (φ ∧ ψ).
-Proof.
-  intro H.
-  unfold simp_and.
-  destruct φ; trivial.
-  contradict H. reflexivity.
-Qed.
 
 Lemma simp_equiv_or_L Γ φ ψ : 
   (forall f, weight f < weight (φ ∨ ψ) -> Γ • f ⊢ simp f) ->
   Γ • (φ ∨ ψ) ⊢ simp (φ ∨ ψ).
 Proof.
 intros IH.
-
 assert (Hφ : Γ • φ  ⊢ simp φ ) by (apply (IH φ); simpl; lia).
 assert (Hψ : Γ • ψ  ⊢ simp ψ ) by (apply (IH ψ); simpl; lia).
-
-destruct φ.
-- simpl. auto 3 with proof.
-- simpl. auto 2 with proof.
-- assert (H: (Γ • φ1 ∧ φ2 ∨ ψ) ⊢ simp_or (simp (φ1 ∧ φ2)) (simp ψ)).
-  destruct (decide (simp (φ1 ∧ φ2) = ⊥)).
-  + rewrite e. simpl. apply OrL.
-    * rewrite e in Hφ. apply exfalso. trivial.
-    * apply Hψ.
-  + rewrite simp_or_no_bot.
-    * auto with proof.
-    * apply n.
-  +  apply H.
-- assert (H: (Γ • (φ1 ∨ φ2) ∨ ψ) ⊢ simp_or (simp (φ1 ∨ φ2)) (simp ψ)).
-  destruct (decide (simp (φ1 ∨ φ2) = ⊥)).
-  + rewrite e. simpl. apply OrL. 
-    * rewrite e in Hφ. apply exfalso. trivial.
-    * apply Hψ.
-  + rewrite simp_or_no_bot.
-    * auto with proof.
-    * apply n.
-  +  apply H.
-- simpl. auto 3 with proof.
-- simpl. auto 3 with proof.
+simpl. unfold simp_or. 
+case decide.
+- intro Hbot.
+  apply OrL.
+  + rewrite Hbot in Hφ.
+    apply exfalso. trivial.
+  + apply Hψ.
+- intro.
+  case decide.
+  + intro Hbot.
+  apply OrL.
+    * apply Hφ.
+    * rewrite Hbot in Hψ.
+      apply exfalso. trivial.
+  + intro.
+    apply OrL.
+    * apply OrR1.
+      apply Hφ.
+    * apply OrR2.
+      apply Hψ.
 Qed.
 
 
@@ -84,53 +55,25 @@ Lemma simp_equiv_and_L Γ φ ψ :
   Γ • (φ ∧ ψ) ⊢ simp (φ ∧ ψ).
 Proof.
 intros IH.
-
-assert (Hφ : Γ • φ ⊢ simp φ) by (apply (IH φ); simpl; lia).
-assert (Hψ : Γ • ψ ⊢ simp ψ) by (apply (IH ψ); simpl; lia).
-
-destruct φ.
-- simpl. 
-  apply AndL. 
-  apply AndR.
-  + exch 0; apply Atom.
-  + exch 0. apply weakening. apply Hψ.
-- simpl. 
-  apply AndL. exch 0.
-  apply ExFalso.
-- assert (H: (Γ • (φ1 ∧ φ2) ∧  ψ) ⊢ simp_and (simp (φ1 ∧ φ2)) (simp ψ)).
-  destruct (decide (simp (φ1 ∧ φ2) = ⊥)).
-  + rewrite e. simpl. apply AndL. rewrite e in Hφ. apply weakening. apply exfalso. trivial.
-  + rewrite simp_and_no_bot.
-    * apply AndL.
-      apply AndR.
-      -- apply weakening.
-         apply Hφ.
-      -- exch 0. apply weakening.
-         apply Hψ.
-    * apply n.
-  +  apply H.
-- assert (H: (Γ • (φ1 ∨ φ2) ∧ ψ) ⊢ simp_and (simp (φ1 ∨ φ2)) (simp ψ)).
-  destruct (decide (simp (φ1 ∨ φ2) = ⊥)).
-  + rewrite e. simpl. apply AndL. rewrite e in Hφ. apply weakening. apply exfalso. trivial.
-  + rewrite simp_and_no_bot.
-    * apply AndL.
-      apply AndR.
-      -- apply weakening.
-         apply Hφ.
-      -- exch 0. apply weakening.
-         apply Hψ.
-    * apply n.
-  +  apply H.
-- simpl. 
-  apply AndL. 
-  apply AndR.
-  + apply weakening; apply generalised_axiom.
-  + exch 0. apply weakening. apply Hψ.
-- simpl. 
-  apply AndL. 
-  apply AndR.
-  + apply weakening; apply generalised_axiom.
-  + exch 0. apply weakening. apply Hψ.
+assert (Hφ : Γ • φ  ⊢ simp φ ) by (apply (IH φ); simpl; lia).
+assert (Hψ : Γ • ψ  ⊢ simp ψ ) by (apply (IH ψ); simpl; lia).
+simpl. unfold simp_and. 
+case decide.
+- intro Hbot.
+  rewrite Hbot in Hφ.
+  apply AndL. apply weakening.
+  apply exfalso. trivial.
+- intro.
+  case decide.
+  + intro Hbot.
+    rewrite Hbot in Hψ.
+    apply AndL. exch 0. apply weakening.
+    apply exfalso. trivial.
+  + intro.
+    apply OrR1.
+    apply AndL.
+    apply weakening.
+    apply Hφ.
 Qed.
 
 
@@ -145,58 +88,5 @@ destruct φ;  try apply generalised_axiom;
 intros f H; apply IHw; lia.
 Qed.
 
-(* TODO
-Lemma simp_equiv_and_R Γ φ ψ : 
-  Γ • (simp φ) ⊢ φ ->
-  Γ • (simp ψ) ⊢ ψ  ->
-  Γ • (simp (φ ∧ ψ)) ⊢ φ ∧ ψ.
-Proof.
-  intros IHφ IHψ.
-  simpl. 
-  destruct decide.
-  - apply ExFalso.
-  - destruct decide.
-    -- apply ExFalso.
-    -- apply AndL.
-       apply AndR.
-       ---  apply weakening.
-            apply IHφ.
-       ---  exch 0. apply weakening. 
-            apply IHψ.
-Qed.
-
-
-Lemma simp_equiv_or_R Γ φ ψ : 
-  Γ • (simp φ) ⊢ φ ->
-  Γ • (simp ψ) ⊢ ψ  ->
-  Γ • (simp (φ ∨ ψ)) ⊢ φ ∨ ψ.
-Proof.
-  intros IHφ IHψ.
-  simpl.
-  destruct decide.
-  - apply OrR2.
-    apply generalised_axiom.
-  - destruct decide.
-    -- apply OrR1.
-       apply generalised_axiom.
-    -- apply OrL.
-        --- apply OrR1.
-            apply IHφ.
-        --- apply OrR2.
-            apply IHψ.
-Qed.
-
-
 Theorem simp_equiv_R Γ φ : Γ • (simp φ) ⊢ φ.
-Proof.
-  induction φ.
-- apply generalised_axiom.
-- apply generalised_axiom.
-- apply (simp_equiv_and_R Γ φ1  φ2 IHφ1 IHφ2).
-- apply (simp_equiv_or_R Γ φ1  φ2 IHφ1 IHφ2).
-- apply generalised_axiom.
-- apply generalised_axiom.
-Qed.
- *)
-
-
+Admitted.
