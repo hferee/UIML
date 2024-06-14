@@ -25,8 +25,8 @@ Fixpoint simp φ := match φ with
 end.
 
 
-Lemma top_provable Γ φ :
- Γ • φ  ⊢ ⊤.
+Lemma top_provable Γ:
+ Γ ⊢ ⊤.
 Proof.
   apply ImpR.
   apply ExFalso.
@@ -91,10 +91,22 @@ case decide.
     apply AndL. exch 0. apply weakening.
     apply exfalso. trivial.
   + intro.
-    apply OrR1.
-    apply AndL.
-    apply weakening.
-    apply Hφ.
+    case decide.
+    * intro.
+      apply AndL.
+      exch 0. apply weakening.
+      apply Hψ.
+    * intro.
+      case decide.
+      -- intro.
+         apply AndL.
+         apply weakening.
+         apply Hφ.
+      -- intro.
+         apply OrR1.
+         apply AndL.
+         apply weakening.
+         apply Hφ.
 Qed.
 
 
