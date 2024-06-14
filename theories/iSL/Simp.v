@@ -8,6 +8,7 @@ Definition simp_or φ ψ :=
   else if decide (ψ = ⊥) then φ
   else if decide (φ = ⊤) then ⊤
   else if decide (ψ = ⊤) then ⊤
+  else if decide (φ = ψ) then φ
   else φ ∨ ψ.
 
 
@@ -16,29 +17,20 @@ Definition simp_and φ ψ :=
   else if decide (ψ = ⊥) then ⊥
   else if decide (φ = ⊤) then ψ 
   else if decide (ψ = ⊤) then φ 
-  else φ ∨ ψ.
+  else if decide (φ = ψ) then φ
+  else φ ∧ ψ.
 
 Fixpoint simp φ := match φ with
 | φ ∨ ψ => simp_or (simp φ) (simp ψ) 
 | φ ∧ ψ => simp_and (simp φ) (simp ψ) 
-| φ → ψ => φ → ψ
 | _ => φ
 end.
-
 
 Lemma top_provable Γ:
  Γ ⊢ ⊤.
 Proof.
   apply ImpR.
   apply ExFalso.
-Qed.
-
-
-Lemma self_imp Γ φ :
- Γ ⊢ (φ → φ) .
-Proof.
-  apply ImpR.
-  apply generalised_axiom.
 Qed.
 
 Lemma simp_equiv_or_L Γ φ ψ : 
@@ -71,11 +63,14 @@ case decide.
       -- intro Htop.
          apply top_provable.
       -- intro.
-         apply OrL.
-         ++ apply OrR1.
-            apply Hφ.
-         ++ apply OrR2.
-            apply Hψ.
+         case decide; [intro Heq | intro ]; apply OrL.
+            ** apply Hφ.
+            ** rewrite Heq.
+               apply Hψ.
+            ** apply OrR1.
+               apply Hφ.
+            ** apply OrR2.
+               apply Hψ.
 Qed.
 
 
@@ -111,10 +106,17 @@ case decide.
          apply weakening.
          apply Hφ.
       -- intro.
-         apply OrR1.
          apply AndL.
-         apply weakening.
-         apply Hφ.
+         case decide.
+         ++ intro.
+            apply weakening.
+            apply Hφ.
+         ++ intro.
+            apply AndR.
+            ** apply weakening.
+               apply Hφ.
+            ** exch 0. apply weakening.
+               apply Hψ.
 Qed.
 
 
