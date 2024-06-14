@@ -21,6 +21,7 @@ Definition simp_and φ ψ :=
 Fixpoint simp φ := match φ with
 | φ ∨ ψ => simp_or (simp φ) (simp ψ) 
 | φ ∧ ψ => simp_and (simp φ) (simp ψ) 
+| φ → ψ => φ → ψ
 | _ => φ
 end.
 
@@ -32,6 +33,13 @@ Proof.
   apply ExFalso.
 Qed.
 
+
+Lemma self_imp Γ φ :
+ Γ ⊢ (φ → φ) .
+Proof.
+  apply ImpR.
+  apply generalised_axiom.
+Qed.
 
 Lemma simp_equiv_or_L Γ φ ψ : 
   (forall f, weight f < weight (φ ∨ ψ) -> Γ • f ⊢ simp f) ->
