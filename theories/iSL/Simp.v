@@ -20,7 +20,9 @@ Definition simp_and φ ψ :=
 
 
 Definition simp_imp φ ψ :=
-  φ → ψ.
+  if decide (φ = ⊤) then ψ
+  else if decide (φ = ⊥) then ⊤
+  else φ → ψ.
 
 Fixpoint simp φ := match φ with
 | φ ∨ ψ => simp_or (simp φ) (simp ψ)
@@ -33,8 +35,7 @@ end.
 Lemma top_provable Γ :
  Γ ⊢ ⊤.
 Proof.
-  apply ImpR.
-  apply ExFalso.
+  apply ImpR. apply ExFalso.
 Qed.
 
 Lemma simp_equiv_or_L Γ φ ψ : 
@@ -126,7 +127,7 @@ case decide as [Hbot |].
 - case decide as [Hbot |].
   + rewrite Hbot in Hψ.
     apply AndL. exch 0. apply weakening.
-    apply exfalso. trivial.
+    apply Hψ.
   + case decide as [].
     * apply AndL.
       exch 0. apply weakening.
@@ -195,33 +196,47 @@ Lemma simp_equiv_imp_L Γ φ ψ :
 Proof.
 intros IH.
 assert (HφR : Γ • simp φ ⊢ φ) by (apply (IH φ); simpl; lia).
-assert (Hψ : Γ • ψ  ⊢ simp ψ) by (apply (IH ψ); simpl; lia).
+assert (HφL : Γ • φ ⊢ simp φ) by (apply (IH φ); simpl; lia).
+assert (HψL: Γ • ψ  ⊢ simp ψ) by (apply (IH ψ); simpl; lia).
 simpl. unfold simp_imp. 
-apply ImpR.
-exch 0.
-apply ImpL.
-- apply weakening. apply HφR.
-- exch 0. apply weakening.
-  apply Hψ.
+case decide as [Htop |].
+-  rewrite Htop in HφR.
+  apply weak_ImpL.
+  + eapply TopL_rev. 
+    apply HφR.
+  + apply HψL.
+- case decide as [].
+  + apply weakening.
+    apply top_provable.
+  + apply ImpR.
+    exch 0.
+    apply ImpL.
+    * apply weakening. apply HφR.
+    * exch 0. apply weakening.
+      apply HψL.
 Qed.
 
 Lemma simp_equiv_imp_R Γ φ ψ : 
   (forall f, weight f < weight (φ → ψ) -> (Γ • f ⊢ simp f) * (Γ • simp f ⊢ f)) ->
   Γ • simp (φ → ψ) ⊢ (φ → ψ).
 Proof.
-
-
 intros IH.
-
 assert (HφL : Γ • φ ⊢ simp φ) by (apply (IH φ); simpl; lia).
 assert (HψR : Γ • simp ψ ⊢ ψ) by (apply (IH ψ); simpl; lia).
-simpl. unfold simp_imp. 
-apply ImpR.
-exch 0.
-apply ImpL.
-- apply weakening. apply HφL.
-- exch 0. apply weakening.
+simpl. unfold simp_imp.
+case decide as [Htop |].
+- apply ImpR. 
+  apply weakening.
   apply HψR.
+- case decide as [Htop |].
+  + rewrite Htop in HφL.
+    auto with proof.
+  + apply ImpR.
+    exch 0.
+    apply ImpL.
+    * apply weakening. apply HφL.
+    * exch 0. apply weakening.
+      apply HψR.
 Qed.
 
 
