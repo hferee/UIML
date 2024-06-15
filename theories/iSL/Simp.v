@@ -25,7 +25,7 @@ Definition simp_imp φ ψ :=
 Fixpoint simp φ := match φ with
 | φ ∨ ψ => simp_or (simp φ) (simp ψ)
 | φ ∧ ψ => simp_and (simp φ) (simp ψ)
-| φ → ψ => simp_imp φ ψ
+| φ → ψ => simp_imp (simp φ) (simp ψ)
 | _ => φ
 end.
 
@@ -189,6 +189,50 @@ split; [ apply simp_equiv_and_L | apply simp_equiv_and_R] ; apply IH.
 Qed.
 
 
+Lemma simp_equiv_imp_L Γ φ ψ : 
+  (forall f, weight f < weight (φ → ψ) -> (Γ • f ⊢ simp f) * (Γ • simp f ⊢ f)) ->
+  Γ • (φ → ψ) ⊢ simp (φ → ψ).
+Proof.
+intros IH.
+assert (HφR : Γ • simp φ ⊢ φ) by (apply (IH φ); simpl; lia).
+assert (Hψ : Γ • ψ  ⊢ simp ψ) by (apply (IH ψ); simpl; lia).
+simpl. unfold simp_imp. 
+apply ImpR.
+exch 0.
+apply ImpL.
+- apply weakening. apply HφR.
+- exch 0. apply weakening.
+  apply Hψ.
+Qed.
+
+Lemma simp_equiv_imp_R Γ φ ψ : 
+  (forall f, weight f < weight (φ → ψ) -> (Γ • f ⊢ simp f) * (Γ • simp f ⊢ f)) ->
+  Γ • simp (φ → ψ) ⊢ (φ → ψ).
+Proof.
+
+
+intros IH.
+
+assert (HφL : Γ • φ ⊢ simp φ) by (apply (IH φ); simpl; lia).
+assert (HψR : Γ • simp ψ ⊢ ψ) by (apply (IH ψ); simpl; lia).
+simpl. unfold simp_imp. 
+apply ImpR.
+exch 0.
+apply ImpL.
+- apply weakening. apply HφL.
+- exch 0. apply weakening.
+  apply HψR.
+Qed.
+
+
+Lemma simp_equiv_imp Γ φ ψ: 
+  (forall f, weight f < weight (φ → ψ) -> (Γ • f ⊢ simp f) * (Γ • simp f ⊢ f)) ->
+  (Γ • (φ → ψ) ⊢ simp (φ → ψ)) * (Γ •  simp (φ → ψ) ⊢(φ → ψ)).
+Proof.
+intros IH.
+split; [ apply simp_equiv_imp_L | apply simp_equiv_imp_R] ; apply IH.
+Qed.
+
 
 Theorem simp_equiv Γ φ : (Γ • φ ⊢ simp φ) * (Γ • (simp φ) ⊢ φ).
 Proof.
@@ -198,6 +242,7 @@ clear Heqw. revert φ Hle.
 induction w; intros φ Hle; [destruct φ ; simpl in Hle; lia|].
 destruct φ;  simpl; try (split ; apply generalised_axiom);
 [eapply (simp_equiv_and Γ φ1  φ2)|
- eapply (simp_equiv_or Γ φ1  φ2)];
+ eapply (simp_equiv_or Γ φ1  φ2)|
+ eapply (simp_equiv_imp Γ φ1  φ2)];
 intros f H; apply IHw; lia.
 Qed.
