@@ -37,7 +37,7 @@ clean::
 #SOURCES=$(addprefix $(SOURCE_ROOT)/,$(BUILD_PATTERNS))
 #RESULT=extraction/UIML_extraction
 
-demo: extraction/UIML_extraction.vo bin/uiml_demo.ml
+demo: theories/extraction/UIML_extraction.vo bin/uiml_demo.ml
 	dune build
 
 
