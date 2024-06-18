@@ -1,4 +1,4 @@
-Require Import ISL.Sequents.
+Require Import ISL.Sequents ISL.SizedFormulas.
 Require Import ISL.SequentProps ISL.Order.
 Require Import Coq.Program.Equality. (* for dependent induction *)
 
@@ -32,91 +32,174 @@ Section PropQuantDefinition.
 
 
 (* solves the obligations of the following programs *)
-Obligation Tactic := intros; order_tac.
+Obligation Tactic := intros; try order_tac.
+
+Notation pform := (pform p).
+
+Coercion pform_of_nform:nform >-> pform.
+
+Notation "f ::: Δ" := (pform_of_nform f :: Δ) (at level 90, right associativity).
+
+
+Definition is_nVar (nφ: pform) := nφ = nVar p.
+
 
 (** First, the implementation of the rules for calculating E. The names of the rules
   refer to the table in Pitts' paper. *)
 (** note the use of  "lazy" conjunctions, disjunctions and implications *)
-Program Definition e_rule {Δ : env} {ϕ : form}
+Program Definition e_rule {Δ : list pform} {ϕ : pform}
   (EA0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form * form)
-  (θ: form) (Hin : θ ∈ Δ) : form :=
+  (nθ : pform) (Hin : (existT (projT1 nθ) (projT2 nθ)) ∈ Δ) : form :=
+let n := projT1 nθ in
+let θ := projT2 nθ in
 let E Δ H := fst (EA0 (Δ, ϕ) H) in
 let A pe0 H := snd (EA0 pe0 H) in
-let Δ'  := Δ ∖ {[θ]} in
-match θ with
-| Bot => ⊥  (* E0 *)
-| Var q =>
+let Δ' := remove (nform_eq_dec p) nθ Δ in
+match θ as θ' in (nform n') return existT n θ = existT n'  θ' -> form  with
+| @nBot _ => fun Heq => Bot  (* E0 *)
+| nVar q => fun Heq =>
     if decide (p = q) then ⊤ (* default *)
     else E Δ' _ ⊼ q (* E1 *)
 (* E2 *)
-| δ₁ ∧ δ₂ => E ((Δ'•δ₁)•δ₂) _
+| @nAnd _ n1 n2 δ₁ δ₂ => fun Heq =>
+E (δ₁ ::: δ₂ ::: Δ') _
 (* E3 *)
-| δ₁ ∨ δ₂ => E (Δ'•δ₁) _ ⊻ E (Δ' •δ₂) _
-| Var q → δ =>
-    if decide (p = q)
-    then
-      if decide (Var p ∈ Δ) then E (Δ'•δ) _ (* E5 *)
-      else ⊤
-    else q ⇢ E (Δ'•δ) _ (* E4 *)
-(* E6 *)
-| (δ₁ ∧ δ₂)→ δ₃ => E (Δ'•(δ₁ → (δ₂ → δ₃))) _
-(* E7 *)
-| (δ₁ ∨ δ₂)→ δ₃ => E (Δ'•(δ₁ → δ₃)•(δ₂ → δ₃)) _
-(* E8 *)
-| ((δ₁→ δ₂)→ δ₃) =>
-  (E (Δ'•(δ₂ → δ₃)) _⇢ A (Δ'•(δ₂ → δ₃), δ₁ → δ₂) _) ⇢ E (Δ'•δ₃) _
-| Bot → _ => ⊤
-| □ φ => □(E ((⊗Δ') • φ ) _) (* very redundant ; identical for each box *)
-| (□δ1 → δ2) =>  (□(E((⊗Δ') • δ2 • □δ1) _ ⇢ A((⊗Δ') • δ2 • □δ1, δ1) _)) ⇢ E(Δ' • δ2) _
+| (δ₁ ∨n δ₂) => fun Heq => E (δ₁ ::: Δ') _ ⊻ E (δ₂ ::: Δ') (_ nθ)
+| @nImplies _ n0 n3 δ₀ δ₃ => fun Heq =>
+    (match δ₀ as δ₀' in (nform n0') return existT n0 δ₀ = existT n0' δ₀' -> form with
+    | nVar q => fun Heq' =>
+      if decide (p = q) then 
+        if decide (Exists is_nVar Δ) then E (δ₃ ::: Δ') _ (* E5 *)
+        else ⊤
+      else q ⇢ E (δ₃ ::: Δ') _ (* E4 *)
+    (* E6 *)
+    | (δ₁ ∧n δ₂) => fun Heq' =>
+        E ((δ₁ →n (δ₂ →n δ₃)) ::: Δ') _
+    (* E7 *)
+    | (δ₁ ∨n δ₂) => fun Heq' =>
+        E ((δ₁ →n δ₃) ::: (δ₂ →n δ₃) ::: Δ') _
+    (* E8 *)
+    | (δ₁→n δ₂) => fun Heq' => (* TODO: need coercion? *)
+        (E ((δ₂ →n δ₃) ::: Δ') _⇢ A ((δ₂ →n δ₃) ::: Δ', pform_of_nform (δ₁ →n δ₂)) _) ⇢ E (δ₃ ::: Δ') _
+    | □n δ₁ =>  fun Heq' =>
+        (□(E(δ₃ ::: □n δ₁ ::: □⁻¹Δ') _ ⇢ A(δ₃ ::: □n δ₁ ::: □⁻¹ Δ', pform_of_nform δ₁) _)) ⇢ E(δ₃ ::: Δ') _
+    | nBot => fun Heq => ⊤
+    end eq_refl)
+| □n φ => fun Heq => □(E (φ ::: □⁻¹Δ' ) _) (* very redundant ; identical for each box *)
+end eq_refl.
+
+Next Obligation.
+unfold pointed_senv_order;
+repeat (apply env_order_add_compat); simpl;
+unfold senv_order, ltof; repeat rewrite senv_weight_add;
+try match goal with | Δ := _ |- _ => subst Δ end;
+repeat match goal with
+  | Heq : existT ?a _ = existT ?a _ |- _ => apply Eqdep.EqdepTheory.inj_pair2 in Heq; subst
+  | Heq : existT ?n ?θ = _  |- _ =>
+   try subst n; try subst θ; inversion Heq;
+   rewrite <- sigT_eta in *; subst; simpl in * end;
+repeat rewrite Nat.add_assoc;
+   try match goal with Hin : ?ψ ∈ ?Γ |- context C [remove ?d ?ψ ?Γ] =>
+   eapply Nat.lt_le_trans; [| exact (senv_order_remove (nform_eq_dec _) Hin)] ||
+   eapply (lt_le_add_trans_r _ (senv_order_remove (nform_eq_dec _) Hin))
 end.
+repeat rewrite Nat.add_assoc;
+try refine (Nat.add_lt_le_mono _ _ _ _ _ (senv_weight_open_boxes _)).
+unfold pow_weight, form_of_sig; simpl weight;
+repeat apply Nat.add_lt_mono_r;
+simpl Nat.pow;
+repeat rewrite ?Nat.pow_succ_r', ?Nat.pow_add_r;
+repeat match goal with
+|  |- context C [Nat.pow 5 (weight ?δ)] =>
+    lazymatch goal with | H :  1 <  5 ^ (weight δ) |- _ => fail | _ =>
+    (let HH := fresh "Z" in assert (HH := pow_weight_gt δ)) end end;
+simpl; unfold pow_weight in *.
+repeat rewrite Nat.mul_assoc.
+pose (Nat.lt_1_mul_pos _ (5 ^ weight (form_of_nform δ₂)) Z0). nia.
+Defined.
 
 (** The implementation of the rules for defining A is separated into two pieces.
     Referring to Table 5 in Pitts, the definition a_rule_env handles A1-8 and A10,
     and the definition a_rule_form handles A9 and A11-13. *)
-Program Definition a_rule_env {Δ : env} {ϕ : form}
+Program Definition a_rule_env {Δ : list pform} {ϕ : pform}
   (EA0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form * form)
-  (θ: form) (Hin : θ ∈ Δ) : form :=
+  (nθ: pform) (Hin : (existT (projT1 nθ) (projT2 nθ) ∈ Δ)) : form :=
+let n := projT1 nθ in
+let θ := projT2 nθ in
 let E Δ H := fst (EA0 (Δ, ϕ) H) in
 let A pe0 H := snd (EA0 pe0 H) in
-let Δ'  := Δ ∖ {[θ]} in
-match θ with
-| Var q =>
+let Δ' := remove (nform_eq_dec p) nθ Δ in
+match θ as θ' in (nform n') return existT n θ = existT n'  θ' -> form  with
+| nVar q => fun Heq =>
     if decide (p = q)
     then
-      if decide (Var p = ϕ) then ⊤ (* A10 *)
+      if nform_eq_dec _ (nVar p) (projT2 ϕ) then ⊤ (* A10 *)
       else ⊥
     else A (Δ', ϕ) _ (* A1 *)
 (* A2 *)
-| δ₁ ∧ δ₂ => A ((Δ'•δ₁)•δ₂, ϕ) _
+| δ₁ ∧n δ₂ => fun Heq => A (δ₁ ::: δ₂ ::: Δ', ϕ) _
 (* A3 *)
-| δ₁ ∨ δ₂ =>
-      (E (Δ'•δ₁) _ ⇢ A (Δ'•δ₁, ϕ) _)
-  ⊼ (E (Δ'•δ₂) _ ⇢ A (Δ'•δ₂, ϕ) _)
-| Var q → δ =>
-    if decide (p = q)
-    then
-      if decide (Var p ∈ Δ) then A (Δ'•δ, ϕ) _ (* A5 *)
-      else ⊥
-    else q ⊼ A (Δ'•δ, ϕ) _ (* A4 *)
+| δ₁ ∨n δ₂ => fun Heq =>
+      (E (δ₁ ::: Δ') _ ⇢ A (δ₁ ::: Δ', ϕ) _)
+  ⊼ (E (δ₂ ::: Δ') _ ⇢ A (δ₂ ::: Δ', ϕ) _)
+| @nImplies _ n0 n3 δ₀ δ₃ => fun Heq =>
+    (match δ₀ as δ₀' in (nform n0') return existT n0 δ₀ = existT n0' δ₀' -> form with
+    | nVar q => fun Heq' =>
+        if decide (p = q)
+        then
+          if decide (Exists is_nVar Δ) then A (δ₃ ::: Δ', ϕ) _ (* A5 *)
+          else ⊥
+        else q ⊼ A (δ₃ ::: Δ', ϕ) _ (* A4 *)
 (* A6 *)
-| (δ₁ ∧ δ₂)→ δ₃ =>
-  A (Δ'•(δ₁ → (δ₂ → δ₃)), ϕ) _
-(* A7 *)
-| (δ₁ ∨ δ₂)→ δ₃ =>
-  A ((Δ'•(δ₁ → δ₃))•(δ₂ → δ₃), ϕ) _
-(* A8 *)
-| ((δ₁→ δ₂)→ δ₃) =>
-  (E (Δ'•(δ₂ → δ₃)) _ ⇢ A (Δ'•(δ₂ → δ₃), (δ₁ → δ₂)) _)
-  ⊼ A (Δ'•δ₃, ϕ) _
-| Bot => ⊥
-| Bot → _ => ⊥
-| □δ => ⊥
-| ((□δ1) → δ2) => (□(E((⊗Δ')• δ2 • □δ1) _  ⇢ A((⊗Δ')• δ2 • □δ1, δ1) _)) ∧ A(Δ' • δ2, ϕ) _
+    | (δ₁ ∧n δ₂) => fun Heq' =>
+      A ((δ₁ →n (δ₂ →n δ₃)) ::: Δ', ϕ) _
+    (* A7 *)
+    | (δ₁ ∨n δ₂) => fun Heq' =>
+      A ((δ₁ →n δ₃) ::: (δ₂ →n δ₃) ::: Δ', ϕ) _
+    (* A8 *)
+    | (δ₁→n δ₂) => fun Heq' =>
+      (E ((δ₂ →n δ₃) ::: Δ') _ ⇢ A ((δ₂ →n δ₃) ::: Δ',  pform_of_nform (δ₁ →n δ₂)) _)
+      ⊼ A (δ₃ ::: Δ', ϕ) _
+    | (□n δ1) => fun Heq' => (□(E(δ₃ ::: □n δ1 ::: (□⁻¹ Δ')) _  ⇢ A(δ₃ ::: □n δ1 ::: (□⁻¹ Δ'), pform_of_nform δ1) _)) ∧ A(δ₃ ::: Δ', ϕ) _
+    | nBot => fun Heq' => ⊥
+    end) eq_refl
+| _ => fun Heq => ⊥
 (* using ⊼ here breaks congruence *)
+end eq_refl.
+Next Obligation.
+unfold pointed_senv_order;
+repeat (apply env_order_add_compat); simpl;
+unfold senv_order, ltof; repeat rewrite senv_weight_add;
+try match goal with | Δ := _ |- _ => subst Δ end;
+repeat match goal with
+  | Heq : existT ?a _ = existT ?a _ |- _ => apply Eqdep.EqdepTheory.inj_pair2 in Heq; subst
+  | Heq : existT ?n ?θ = _  |- _ =>
+   try subst n; try subst θ; inversion Heq;
+   rewrite <- sigT_eta in *; subst; simpl in * end;
+repeat rewrite Nat.add_assoc;
+   try match goal with Hin : ?ψ ∈ ?Γ |- context C [remove ?d ?ψ ?Γ] =>
+   eapply Nat.lt_le_trans; [| exact (senv_order_remove (nform_eq_dec _) Hin)] ||
+   eapply (lt_le_add_trans_r _ (senv_order_remove (nform_eq_dec _) Hin))
 end.
+repeat rewrite Nat.add_assoc;
+try refine (Nat.add_lt_le_mono _ _ _ _ _ (senv_weight_open_boxes _)).
+unfold pow_weight, form_of_sig; simpl weight;
+repeat apply Nat.add_lt_mono_r;
+simpl Nat.pow;
+repeat rewrite ?Nat.pow_succ_r', ?Nat.pow_add_r;
+repeat match goal with
+|  |- context C [Nat.pow 5 (weight ?δ)] =>
+    lazymatch goal with | H :  1 <  5 ^ (weight δ) |- _ => fail | _ =>
+    (let HH := fresh "Z" in assert (HH := pow_weight_gt δ)) end end;
+simpl; unfold pow_weight in *.
+repeat rewrite Nat.mul_assoc.
+pose (Nat.lt_1_mul_pos _ (5 ^ weight (form_of_nform δ₂)) Z0). nia.
+Defined.
 
 (* make sure that the proof obligations do not depend on EA0 *)
 Obligation Tactic := intros Δ ϕ _ _ _; intros; order_tac.
+
+(* TODO HERE *)
 Program Definition a_rule_form {Δ : env} {ϕ : form}
   (EA0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form * form) : form :=
 let E pe0 H := fst (EA0 pe0 H) in
@@ -137,6 +220,12 @@ match ϕ with
 end.
 
 Obligation Tactic := intros; order_tac.
+
+(* TODO: we can do even better by  remembering sum_list *)
+(*
+if list.Forall_dec (fun f => num_of_pform f = 0)(nθ ::  Δ) then θ else
+*)
+
 Program Fixpoint EA (pe : env * form) {wf pointed_env_order pe} :=
   let Δ := fst pe in
   (⋀ (in_map Δ (e_rule EA)),

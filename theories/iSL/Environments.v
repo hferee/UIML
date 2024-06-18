@@ -99,98 +99,6 @@ Definition irreducible (Γ : env) :=
   ¬ ⊥ ∈ Γ /\
   ∀ φ ψ, ¬ (φ ∧ ψ) ∈ Γ /\ ¬ (φ ∨ ψ) ∈ Γ.
 
-(** We use binary conjunction and disjunction operations which produce simpler equivalent formulas,
-   in particular  by taking ⊥ and ⊤ into account *)
-Definition make_conj x y := match x with
-| ⊥ => ⊥
-|  (⊥→ ⊥)  => y
-| _ => match y with
-    | ⊥ => ⊥
-    | (⊥→ ⊥)  => x
-    | _ =>  if decide (x = y) then x else x ∧ y
-    end
-end.
-
-Infix "⊼" := make_conj (at level 60).
-
-Lemma make_conj_spec x y :
-  {x = ⊥ ∧ x ⊼ y = ⊥} +
-  {x = ⊤ ∧ x  ⊼ y = y} +
-  {y = ⊥ ∧ x ⊼ y = ⊥}+
-  {y = ⊤ ∧ x ⊼ y = x} +
-  {x = y ∧ x ⊼ y = x} +
-  {x ⊼ y = (x ∧ y)}.
-Proof.
-unfold make_conj.
-repeat (match goal with |- context  [match ?x with | _  => _ end] => destruct x end; try tauto).
-Qed.
-
-Lemma occurs_in_make_conj v x y : occurs_in v (x ⊼ y) -> occurs_in v x \/ occurs_in v y.
-Proof.
-destruct (make_conj_spec x y) as [[[[[Hm|Hm]|Hm]|Hm]|Hm]|Hm]; try tauto.
-6:{ rewrite Hm. simpl. tauto. }
-all:(destruct Hm as [Heq Hm]; rewrite Hm; simpl; tauto).
-Qed.
-
-Definition make_disj x y := match x with
-| ⊥ => y
-|  (⊥→ ⊥)  => (⊥→ ⊥)
-| _ => match y with
-    | ⊥ => x
-    | (⊥→ ⊥)  => (⊥→ ⊥)
-    | _ => if decide (x = y) then x else x ∨ y
-    end
-end.
-
-Infix "⊻" := make_disj (at level 65).
-
-Lemma make_disj_spec x y :
-  {x = ⊥ ∧ x ⊻ y = y} +
-  {x = ⊤ ∧ x ⊻ y = ⊤} +
-  {y = ⊥ ∧ x ⊻ y = x} +
-  {y = ⊤ ∧ x ⊻ y = ⊤} +
-  {x = y ∧ x ⊻ y = x} +
-  {x ⊻ y = (x ∨ y)}.
-Proof.
-unfold make_disj.
-repeat (match goal with |- context  [match ?x with | _  => _ end] => destruct x end; try tauto).
-Qed.
-
-Lemma occurs_in_make_disj v x y : occurs_in v (x ⊻ y) -> occurs_in v x ∨ occurs_in v y.
-Proof.
-destruct (make_disj_spec x y) as [[[[[Hm|Hm]|Hm]|Hm]|Hm]|Hm]; try tauto.
-6:{ rewrite Hm. simpl. tauto. }
-all:(destruct Hm as [Heq Hm]; rewrite Hm; simpl; tauto).
-Qed.
-
-
-(* "lazy" implication, which produces a potentially simpler, equivalent formula *)
-Definition make_impl x y :=
-if decide (x = ⊥) then ⊤ else if decide (y = (⊥ → ⊥)) then ⊤ else x → y.
-
-Infix "⇢" := make_impl (at level 66).
-
-Lemma make_impl_spec x y:
-  {x = ⊥ ∧ x ⇢ y = ⊤} +
-  {y = ⊤ ∧ x ⇢ y = ⊤} +
-  {x ⇢ y = (x → y)}.
-Proof.
-unfold make_impl.
-repeat (match goal with |- context  [match ?x with | _  => _ end] => destruct x end; try tauto).
-Qed.
-
-Lemma occurs_in_make_impl v x y : occurs_in v (x ⇢ y) -> occurs_in v x ∨ occurs_in v y.
-Proof.
-destruct (make_impl_spec x y) as [[Hm|Hm]|Hm]; try tauto.
-3:{ rewrite Hm. simpl. tauto. }
-all:(destruct Hm as [Heq Hm]; rewrite Hm; simpl; tauto).
-Qed.
-
-Lemma occurs_in_make_impl2 v x y z: occurs_in v (x ⇢ (y ⇢ z)) -> occurs_in v x ∨ occurs_in v y ∨ occurs_in v z.
-Proof.
-intro H. apply occurs_in_make_impl in H. destruct H as [H|H]; try tauto.
-apply occurs_in_make_impl in H. tauto.
-Qed.
 
 (** To be noted: we remove duplicates first *)
 Definition conjunction l := foldl make_conj (⊥→ ⊥) (nodup form_eq_dec l).
@@ -199,40 +107,45 @@ Notation "⋀" := conjunction.
 Definition disjunction l := foldl make_disj ⊥ (nodup form_eq_dec l).
 Notation "⋁" := disjunction.
 
-Lemma variables_conjunction x l : occurs_in x (⋀ l) -> exists φ, φ ∈ l /\ occurs_in x φ.
+Definition occurs_in_list x (l : list form) := Exists (occurs_in x) l.
+
+Global Instance decidable_occurs_in_list x l: Decision (occurs_in_list x l).
+Proof. apply list.Exists_dec. auto with *. Defined.
+
+Lemma variables_conjunction x l : occurs_in x (⋀ l) -> occurs_in_list x l.
 Proof.
 unfold conjunction.
 assert (Hcut : forall ψ, occurs_in x (foldl make_conj ψ (nodup form_eq_dec l))
-  -> occurs_in x ψ \/ (∃ φ : form, (φ ∈ l ∧ occurs_in x φ)%type)).
+  -> occurs_in x ψ \/ occurs_in_list x l).
 {
-induction l; simpl.
+induction l as [| a l IHl]; simpl.
 - tauto.
 - intros ψ Hocc.
   case in_dec in Hocc; apply IHl in Hocc; simpl in Hocc;
-  destruct Hocc as [Hx|(φ&Hin&Hx)]; try tauto.
-  + right. exists φ. split; auto with *.
+  destruct Hocc as [Hx|Hin]; try tauto.
+  + right. now right.
   + apply occurs_in_make_conj in Hx; destruct Hx as [Hx|Hx]; auto with *.
-      right. exists a. auto with *.
-  + right. exists φ. split; auto with *.
+      right. now left.
+  + right. now right.
 }
 intro Hocc. apply Hcut in Hocc. simpl in Hocc. tauto.
 Qed.
 
-Lemma variables_disjunction x l : occurs_in x (⋁ l) -> exists φ, φ ∈ l /\ occurs_in x φ.
+Lemma variables_disjunction x l : occurs_in x (⋁ l) -> occurs_in_list x l.
 Proof.
 unfold disjunction.
 assert (Hcut : forall ψ, occurs_in x (foldl make_disj ψ (nodup form_eq_dec l))
-  -> occurs_in x ψ \/ (∃ φ : form, (φ ∈ l ∧ occurs_in x φ)%type)).
+  -> occurs_in x ψ \/ occurs_in_list x l).
 {
 induction l; simpl.
 - tauto.
 - intros ψ Hocc.
   case in_dec in Hocc; apply IHl in Hocc; simpl in Hocc;
-  destruct Hocc as [Hx|(φ&Hin&Hx)]; try tauto.
-  + right. exists φ. split; auto with *.
+  destruct Hocc as [Hx|Hx]; try tauto.
+  + right. now right.
   + apply occurs_in_make_disj in Hx; destruct Hx as [Hx|Hx]; auto with *.
-      right. exists a. auto with *.
-  + right. exists φ. split; auto with *.
+      right. now left.
+  + right. now right.
 }
 intro Hocc. apply Hcut in Hocc. simpl in Hocc. tauto.
 Qed.

@@ -28,8 +28,11 @@ match φ with
 | Or φ ψ => (occurs_in x φ) \/ (occurs_in x ψ)
 | Implies φ ψ => (occurs_in x φ) \/ (occurs_in x ψ)
 | Box φ => occurs_in x φ
-
 end.
+
+Global Instance decidable_occurs_in x φ: Decision (occurs_in x φ).
+Proof. induction φ; simpl; auto with *. Defined.
+
 
 (** Pretty notations for formulas *)
 Notation "¬ φ" := (Implies φ Bot) (at level 75, φ at level 75).
@@ -110,7 +113,7 @@ Fixpoint weight (φ : form) : nat := match φ with
 | □φ => 1 + weight φ
 end.
 
-Lemma weight_pos φ : weight φ > 0.
+Lemma weight_pos φ : 0 < weight φ.
 Proof. induction φ; simpl; lia. Qed.
 
 (** We obtain an induction principle based on weight. *)
@@ -135,3 +138,96 @@ Global Instance irreflexive_form_order : Irreflexive form_order.
 Proof. unfold form_order. intros x y. lia. Qed.
 
 Notation "φ ≺f ψ" := (form_order ψ φ) (at level 149).
+
+(** We use binary conjunction and disjunction operations which produce simpler equivalent formulas,
+   in particular  by taking ⊥ and ⊤ into account *)
+Definition make_conj x y := match x with
+| ⊥ => ⊥
+|  (⊥→ ⊥)  => y
+| _ => match y with
+    | ⊥ => ⊥
+    | (⊥→ ⊥)  => x
+    | _ =>  if decide (x = y) then x else x ∧ y
+    end
+end.
+
+Infix "⊼" := make_conj (at level 60).
+
+Lemma make_conj_spec x y :
+  {x = ⊥ ∧ x ⊼ y = ⊥} +
+  {x = ⊤ ∧ x  ⊼ y = y} +
+  {y = ⊥ ∧ x ⊼ y = ⊥}+
+  {y = ⊤ ∧ x ⊼ y = x} +
+  {x = y ∧ x ⊼ y = x} +
+  {x ⊼ y = (x ∧ y)}.
+Proof.
+unfold make_conj.
+repeat (match goal with |- context  [match ?x with | _  => _ end] => destruct x end; try tauto).
+Qed.
+
+Lemma occurs_in_make_conj v x y : occurs_in v (x ⊼ y) -> occurs_in v x \/ occurs_in v y.
+Proof.
+destruct (make_conj_spec x y) as [[[[[Hm|Hm]|Hm]|Hm]|Hm]|Hm]; try tauto.
+6:{ rewrite Hm. simpl. tauto. }
+all:(destruct Hm as [Heq Hm]; rewrite Hm; simpl; tauto).
+Qed.
+
+Definition make_disj x y := match x with
+| ⊥ => y
+|  (⊥→ ⊥)  => (⊥→ ⊥)
+| _ => match y with
+    | ⊥ => x
+    | (⊥→ ⊥)  => (⊥→ ⊥)
+    | _ => if decide (x = y) then x else x ∨ y
+    end
+end.
+
+Infix "⊻" := make_disj (at level 65).
+
+Lemma make_disj_spec x y :
+  {x = ⊥ ∧ x ⊻ y = y} +
+  {x = ⊤ ∧ x ⊻ y = ⊤} +
+  {y = ⊥ ∧ x ⊻ y = x} +
+  {y = ⊤ ∧ x ⊻ y = ⊤} +
+  {x = y ∧ x ⊻ y = x} +
+  {x ⊻ y = (x ∨ y)}.
+Proof.
+unfold make_disj.
+repeat (match goal with |- context  [match ?x with | _  => _ end] => destruct x end; try tauto).
+Qed.
+
+Lemma occurs_in_make_disj v x y : occurs_in v (x ⊻ y) -> occurs_in v x ∨ occurs_in v y.
+Proof.
+destruct (make_disj_spec x y) as [[[[[Hm|Hm]|Hm]|Hm]|Hm]|Hm]; try tauto.
+6:{ rewrite Hm. simpl. tauto. }
+all:(destruct Hm as [Heq Hm]; rewrite Hm; simpl; tauto).
+Qed.
+
+
+(* "lazy" implication, which produces a potentially simpler, equivalent formula *)
+Definition make_impl x y :=
+if decide (x = ⊥) then ⊤ else if decide (y = (⊥ → ⊥)) then ⊤ else x → y.
+
+Infix "⇢" := make_impl (at level 66).
+
+Lemma make_impl_spec x y:
+  {x = ⊥ ∧ x ⇢ y = ⊤} +
+  {y = ⊤ ∧ x ⇢ y = ⊤} +
+  {x ⇢ y = (x → y)}.
+Proof.
+unfold make_impl.
+repeat (match goal with |- context  [match ?x with | _  => _ end] => destruct x end; try tauto).
+Qed.
+
+Lemma occurs_in_make_impl v x y : occurs_in v (x ⇢ y) -> occurs_in v x ∨ occurs_in v y.
+Proof.
+destruct (make_impl_spec x y) as [[Hm|Hm]|Hm]; try tauto.
+3:{ rewrite Hm. simpl. tauto. }
+all:(destruct Hm as [Heq Hm]; rewrite Hm; simpl; tauto).
+Qed.
+
+Lemma occurs_in_make_impl2 v x y z: occurs_in v (x ⇢ (y ⇢ z)) -> occurs_in v x ∨ occurs_in v y ∨ occurs_in v z.
+Proof.
+intro H. apply occurs_in_make_impl in H. destruct H as [H|H]; try tauto.
+apply occurs_in_make_impl in H. tauto.
+Qed.
