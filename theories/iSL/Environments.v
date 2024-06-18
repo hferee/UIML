@@ -154,11 +154,11 @@ Qed.
 (* a dependent map on lists, with knowledge that we are on that list *)
 (* should work with any set-like type *)
 
-Program Fixpoint in_map_aux {A : Type} (Γ : env) (f : forall φ, (φ ∈ Γ) -> A)
+Program Fixpoint dep_in_map_aux {A : Type} (Γ : env) (f : forall φ, (φ ∈ Γ) -> A)
  Γ' (HΓ' : Γ' ⊆ elements Γ) : list A:=
 match Γ' with
 | [] => []
-| a::Γ' => f a _ :: in_map_aux Γ f Γ' _
+| a::Γ' => f a _ :: dep_in_map_aux Γ f Γ' _
 end.
 Next Obligation.
 intros. apply gmultiset_elem_of_elements. auto with *.
@@ -166,22 +166,22 @@ Qed.
 Next Obligation. auto with *. Qed.
 
 
-Definition in_map {A : Type} (Γ : env)
+Definition dep_in_map {A : Type} (Γ : env)
   (f : forall φ, (φ ∈ Γ) -> A) : list A :=
-  in_map_aux Γ f (elements Γ) (reflexivity _).
+  dep_in_map_aux Γ f (elements Γ) (reflexivity _).
 
 
 (* This generalises to any type. decidability of equality over this type is necessary for a result in "Type" *)
 Lemma in_in_map {A : Type} {HD : forall a b : A, Decision (a = b)}
   Γ (f : forall φ, (φ ∈ Γ) -> A) ψ :
-  ψ ∈ (in_map Γ f) -> {ψ0 & {Hin | ψ = f ψ0 Hin}}.
+  ψ ∈ (dep_in_map Γ f) -> {ψ0 & {Hin | ψ = f ψ0 Hin}}.
 Proof.
-unfold in_map.
-assert(Hcut : forall Γ' (HΓ' : Γ' ⊆ elements Γ), ψ ∈ in_map_aux Γ f Γ' HΓ'
+unfold dep_in_map.
+assert(Hcut : forall Γ' (HΓ' : Γ' ⊆ elements Γ), ψ ∈ dep_in_map_aux Γ f Γ' HΓ'
   → {ψ0 & {Hin : ψ0 ∈ Γ | ψ = f ψ0 Hin}}); [|apply Hcut].
 induction Γ'; simpl; intros HΓ' Hin.
 - contradict Hin. auto. now rewrite elem_of_nil.
-- match goal with | H : ψ ∈ ?a :: (in_map_aux _ _ _ ?HΓ'') |- _ =>
+- match goal with | H : ψ ∈ ?a :: (dep_in_map_aux _ _ _ ?HΓ'') |- _ =>
   case (decide (ψ = a)); [| pose (myHΓ' := HΓ'')] end.
   + intro Heq; subst. exists a. eexists. reflexivity.
   + intro Hneq. apply (IHΓ' myHΓ').
@@ -195,16 +195,16 @@ Proof. apply gmultiset_elem_of_elements,Hi, Hin. Defined.
 (* we require proof irrelevance for the mapped function *)
 Lemma in_map_in {A : Type} {HD : forall a b : A, Decision (a = b)}
   {Γ} {f : forall φ, (φ ∈ Γ) -> A} {ψ0} (Hin : ψ0 ∈ Γ):
-  {Hin' | f ψ0 Hin' ∈ (in_map Γ f)}.
+  {Hin' | f ψ0 Hin' ∈ (dep_in_map Γ f)}.
 Proof.
-unfold in_map.
+unfold dep_in_map.
 assert(Hcut : forall Γ' (HΓ' : Γ' ⊆ elements Γ) ψ0 (Hin : In ψ0 Γ'),
-  {Hin' | f ψ0 Hin' ∈ in_map_aux Γ f Γ' HΓ'}).
+  {Hin' | f ψ0 Hin' ∈ dep_in_map_aux Γ f Γ' HΓ'}).
 - induction Γ'; simpl; intros HΓ' ψ' Hin'; [auto with *|].
   case (decide (ψ' = a)).
   + intro; subst a. eexists. left.
   + intro Hneq. assert (Hin'' : In ψ' Γ') by (destruct Hin'; subst; tauto).
-      pose (Hincl := (in_map_aux_obligation_2 Γ (a :: Γ') HΓ' a Γ' eq_refl)).
+      pose (Hincl := (dep_in_map_aux_obligation_2 Γ (a :: Γ') HΓ' a Γ' eq_refl)).
       destruct (IHΓ' Hincl ψ' Hin'') as [Hin0 Hprop].
       eexists. right. apply Hprop.
 - destruct (Hcut (elements Γ) (reflexivity (elements Γ)) ψ0) as [Hin' Hprop].
@@ -212,15 +212,15 @@ assert(Hcut : forall Γ' (HΓ' : Γ' ⊆ elements Γ) ψ0 (Hin : In ψ0 Γ'),
   + exists Hin'. exact Hprop.
 Qed.
 
-Lemma in_map_empty A f : @in_map A ∅ f = [].
+Lemma in_map_empty A f : @dep_in_map A ∅ f = [].
 Proof. auto with *. Qed.
 
 Lemma in_map_ext {A} Δ f g:
-  (forall φ H, f φ H = g φ H) -> @in_map A Δ f = in_map Δ g.
+  (forall φ H, f φ H = g φ H) -> @dep_in_map A Δ f = dep_in_map Δ g.
 Proof.
   intros Heq.
-  unfold in_map.
-  assert(forall Γ HΓ, in_map_aux Δ f Γ  HΓ = in_map_aux Δ g Γ  HΓ); [|trivial].
+  unfold dep_in_map.
+  assert(forall Γ HΓ, dep_in_map_aux Δ f Γ  HΓ = dep_in_map_aux Δ g Γ  HΓ); [|trivial].
   induction Γ; intro HΓ.
   - trivial.
   - simpl. now rewrite Heq, IHΓ.
