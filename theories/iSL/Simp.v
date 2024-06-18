@@ -2,7 +2,6 @@ Require Import ISL.SequentProps.
 Require Import ISL.Sequents.
 Require Import ISL.Environments.
 
-
 Definition simp_or φ ψ := 
   if decide (φ = ⊥) then ψ
   else if decide (ψ = ⊥) then φ
@@ -44,12 +43,10 @@ Proof.
 Qed.
 
 Lemma simp_equiv_or_L φ ψ : 
-  (forall f, weight f < weight (φ ∨ ψ) -> (f ≼ simp f) * (simp f ≼ f)) ->
+  (φ  ≼ simp φ) -> (ψ  ≼ simp ψ) ->
   (φ ∨ ψ) ≼ simp (φ ∨ ψ).
 Proof.
-intros IH.
-assert (Hφ :  φ  ≼ simp φ ) by (apply (IH φ); simpl; lia).
-assert (Hψ :  ψ  ≼ simp ψ ) by (apply (IH ψ); simpl; lia).
+intros Hφ Hψ.
 simpl. unfold simp_or. 
 case decide as [Hbot |].
 - apply OrL.
@@ -75,14 +72,11 @@ case decide as [Hbot |].
                apply Hψ.
 Qed.
 
-
 Lemma simp_equiv_or_R φ ψ : 
-  (forall f, weight f < weight (φ ∨ ψ) -> (f ≼ simp f) * (simp f ≼ f)) ->
+  (simp φ ≼ φ) -> (simp ψ ≼ ψ) ->
   simp (φ ∨ ψ) ≼ (φ ∨ ψ).
 Proof.
-intros IH.
-assert (Hφ : simp φ ≼ φ ) by (apply (IH φ); simpl; lia).
-assert (Hψ :  simp ψ ≼ ψ ) by (apply (IH ψ); simpl; lia).
+intros Hφ Hψ.
 simpl. unfold simp_or. 
 case decide as [].
 - apply OrR2.
@@ -109,20 +103,19 @@ case decide as [].
 Qed.
 
 Lemma simp_equiv_or φ ψ: 
-  (forall f, weight f < weight (φ ∨ ψ) -> (f ≼ simp f) * (simp f ≼ f)) ->
+  (φ ≼ simp φ) * (simp φ ≼ φ) ->
+  (ψ ≼ simp ψ) * (simp ψ ≼ ψ) ->
   ((φ ∨ ψ) ≼ simp (φ ∨ ψ)) * (simp (φ ∨ ψ) ≼ (φ ∨ ψ)).
 Proof.
-intros IH.
-split; [ apply simp_equiv_or_L | apply simp_equiv_or_R] ; apply IH.
+intros IHφ IHψ.
+split; [ apply simp_equiv_or_L | apply simp_equiv_or_R]; try apply IHφ ; try apply IHψ.
 Qed.
 
 Lemma simp_equiv_and_L φ ψ : 
-  (forall f, weight f < weight (φ ∧ ψ) -> (f ≼ simp f) * (simp f ≼ f)) ->
+  (φ  ≼ simp φ) -> (ψ  ≼ simp ψ) ->
   (φ ∧ ψ) ≼ simp (φ ∧ ψ).
 Proof.
-intros IH.
-assert (Hφ :  φ  ≼ simp φ ) by (apply (IH φ); simpl; lia).
-assert (Hψ :  ψ  ≼ simp ψ ) by (apply (IH ψ); simpl; lia).
+intros Hφ Hψ.
 simpl. unfold simp_and. 
 case decide as [Hbot |].
 - rewrite Hbot in Hφ.
@@ -153,55 +146,52 @@ Qed.
 
 
 Lemma simp_equiv_and_R φ ψ : 
-  (forall f, weight f < weight (φ ∧ ψ) -> (f ≼ simp f) * (simp f ≼ f)) ->
+  (simp φ ≼ φ) -> (simp ψ ≼ ψ) ->
   simp (φ ∧ ψ) ≼  φ ∧ ψ.
 Proof.
-  intros IH.
-  assert (Hφ :  simp φ ≼ φ ) by (apply (IH φ); simpl; lia).
-  assert (Hψ :  simp ψ ≼ ψ ) by (apply (IH ψ); simpl; lia).
-  simpl. unfold simp_and. 
-  case decide as [].
-  - apply exfalso. apply ExFalso.
-  - case decide as [].
-    + apply exfalso. apply ExFalso.
-    + case decide as [Htop |].
-      * apply AndR.
-        -- rewrite Htop in Hφ.
-           apply weakening.
-           eapply TopL_rev.
-           apply Hφ.
-        -- apply Hψ.
-      * case decide as [Htop |].
-        -- apply AndR. 
-           ++ apply Hφ.
-           ++ rewrite Htop in Hψ.
-              apply weakening.
-              eapply TopL_rev.
-              apply Hψ.
-        -- case decide as [ Heq | Hneq].
-           ++ apply AndR; [ apply Hφ| rewrite Heq ; apply Hψ].
-           ++ apply AndL.
-              apply AndR; [|exch 0]; apply weakening; [apply Hφ | apply Hψ].
+intros Hφ Hψ.
+simpl. unfold simp_and. 
+case decide as [].
+- apply exfalso. apply ExFalso.
+- case decide as [].
+  + apply exfalso. apply ExFalso.
+  + case decide as [Htop |].
+    * apply AndR.
+      -- rewrite Htop in Hφ.
+         apply weakening.
+         eapply TopL_rev.
+         apply Hφ.
+      -- apply Hψ.
+    * case decide as [Htop |].
+      -- apply AndR. 
+         ++ apply Hφ.
+         ++ rewrite Htop in Hψ.
+            apply weakening.
+            eapply TopL_rev.
+            apply Hψ.
+      -- case decide as [ Heq | Hneq].
+         ++ apply AndR; [ apply Hφ| rewrite Heq ; apply Hψ].
+         ++ apply AndL.
+            apply AndR; [|exch 0]; apply weakening; [apply Hφ | apply Hψ].
 Qed.
 
 
 Lemma simp_equiv_and φ ψ: 
-  (forall f, weight f < weight (φ ∧ ψ) -> (f ≼ simp f) * (simp f ≼ f)) ->
+  (φ ≼ simp φ) * (simp φ ≼ φ) ->
+  (ψ ≼ simp ψ) * (simp ψ ≼ ψ) ->
   ((φ ∧ ψ) ≼ simp (φ ∧ ψ)) * (simp (φ ∧ ψ) ≼ (φ ∧ ψ)).
 Proof.
-intros IH.
-split; [ apply simp_equiv_and_L | apply simp_equiv_and_R] ; apply IH.
+intros IHφ IHψ.
+split; [ apply simp_equiv_and_L | apply simp_equiv_and_R]; try apply IHφ ; try apply IHψ.
 Qed.
 
 
 Lemma simp_equiv_imp_L φ ψ : 
-  (forall f, weight f < weight (φ → ψ) -> (f ≼ simp f) * (simp f ≼ f)) ->
+  (simp φ ≼ φ) ->
+  (ψ ≼ simp ψ) ->
   (φ → ψ) ≼ simp (φ → ψ).
 Proof.
-intros IH.
-assert (HφR : simp φ ≼ φ) by (apply (IH φ); simpl; lia).
-assert (HφL :  φ ≼ simp φ) by (apply (IH φ); simpl; lia).
-assert (HψL:  ψ  ≼ simp ψ) by (apply (IH ψ); simpl; lia).
+intros HφR HψL.
 simpl. unfold simp_imp. 
 case decide as [Htop |].
 -  rewrite Htop in HφR.
@@ -221,12 +211,11 @@ case decide as [Htop |].
 Qed.
 
 Lemma simp_equiv_imp_R φ ψ : 
-  (forall f, weight f < weight (φ → ψ) -> (f ≼ simp f) * ( simp f ≼ f)) ->
+  (φ ≼ simp φ) ->
+  (simp ψ ≼ ψ) ->
   simp (φ → ψ) ≼ (φ → ψ).
 Proof.
-intros IH.
-assert (HφL : φ ≼ simp φ) by (apply (IH φ); simpl; lia).
-assert (HψR : simp ψ ≼ ψ) by (apply (IH ψ); simpl; lia).
+intros HφL HψR.
 simpl. unfold simp_imp.
 case decide as [Htop |].
 - apply ImpR. 
@@ -248,13 +237,21 @@ Qed.
 
 
 Lemma simp_equiv_imp φ ψ: 
-  (forall f, weight f < weight (φ → ψ) -> (f ≼ simp f) * (simp f ≼ f)) ->
+  (φ ≼ simp φ) * (simp φ ≼ φ) ->
+  (ψ ≼ simp ψ) * (simp ψ ≼ ψ) ->
   ((φ → ψ) ≼ simp (φ → ψ)) * (simp (φ → ψ) ≼ (φ → ψ)).
 Proof.
-intros IH.
-split; [ apply simp_equiv_imp_L | apply simp_equiv_imp_R] ; apply IH.
+intros IHφ IHψ.
+split; [ apply simp_equiv_imp_L | apply simp_equiv_imp_R]; try apply IHφ ; try apply IHψ.
 Qed.
 
+Lemma tmp a b c  :
+  c <= S b ->
+  a < c ->
+  a <= b.
+Proof.
+  lia.
+Qed.
 
 Theorem simp_equiv φ : 
   (φ ≼ (simp φ)) * ((simp φ) ≼ φ).
@@ -263,14 +260,25 @@ remember (weight φ) as w.
 assert(Hle : weight φ  ≤ w) by lia.
 clear Heqw. revert φ Hle.
 induction w; intros φ Hle; [destruct φ ; simpl in Hle; lia|].
-destruct φ;  simpl; try (split ; apply generalised_axiom);
+destruct φ; simpl; try (split ; apply generalised_axiom); 
 [eapply (simp_equiv_and φ1  φ2)|
  eapply (simp_equiv_or φ1  φ2)|
- eapply (simp_equiv_imp φ1  φ2)];
-intros f H; apply IHw; lia.
+eapply (simp_equiv_imp φ1  φ2)]; apply IHw.
+- assert (Hφ1w: weight φ1 < weight (φ1 ∧ φ2)) by (simpl; lia).
+  lia.
+- assert (Hφ1w: weight φ2 < weight (φ1 ∧ φ2)) by (simpl; lia).
+  lia.
+- assert (Hφ1w: weight φ1 < weight (φ1 ∨ φ2)) by (simpl; lia).
+  lia.
+- assert (Hφ1w: weight φ2 < weight (φ1 ∨ φ2)) by (simpl; lia).
+  lia.
+- assert (Hφ1w: weight φ1 < weight (φ1 → φ2)) by (simpl; lia).
+  lia.
+- assert (Hφ1w: weight φ2 < weight (φ1 → φ2)) by (simpl; lia).
+  lia.
 Qed.
 
 Require Import ISL.PropQuantifiers.
 
-Definition E_simplified  (ψ : form) := Ef (simp ψ).
-Definition A_simplified  (ψ : form) := Af (simp ψ).
+Definition E_simplified (p:variable) (ψ: form) := simp (Ef p ψ).
+Definition A_simplified (p: variable)  (ψ: form) := simp (Af p ψ).
