@@ -2,7 +2,9 @@ Require Import ISL.SequentProps.
 Require Import ISL.Sequents.
 Require Import ISL.Environments.
 
+
 Definition simp_or φ ψ := 
+
   if decide (φ = ⊥) then ψ
   else if decide (ψ = ⊥) then φ
   else if decide (φ = ⊤) then ⊤
@@ -22,6 +24,7 @@ Definition simp_and φ ψ :=
 Definition simp_imp φ ψ :=
   if decide (φ = ⊤) then ψ
   else if decide (φ = ⊥) then ⊤
+  else if decide (φ = ψ) then ⊤
   else φ → ψ.
 
 Fixpoint simp φ := match φ with
@@ -41,6 +44,12 @@ Lemma top_provable Γ :
 Proof.
   apply ImpR. apply ExFalso.
 Qed.
+
+
+Theorem cut Γ φ ψ θ:
+  Γ • φ ⊢ ψ -> Γ • ψ ⊢ θ ->
+  Γ • φ ⊢ θ.
+Admitted.
 
 Lemma simp_equiv_or_L φ ψ : 
   (φ  ≼ simp φ) -> (ψ  ≼ simp ψ) ->
@@ -202,12 +211,15 @@ case decide as [Htop |].
 - case decide as [].
   + apply weakening.
     apply top_provable.
-  + apply ImpR.
-    exch 0.
-    apply ImpL.
-    * apply weakening. apply HφR.
-    * exch 0. apply weakening.
-      apply HψL.
+  + case decide as [].
+    * apply ImpR.
+      apply ExFalso.
+    * apply ImpR.
+      exch 0.
+      apply ImpL.
+      -- apply weakening. apply HφR.
+      -- exch 0. apply weakening.
+         apply HψL.
 Qed.
 
 Lemma simp_equiv_imp_R φ ψ : 
@@ -227,14 +239,20 @@ case decide as [Htop |].
     apply exfalso.
     exch 0. apply weakening.
     apply HφL.
-  + apply ImpR.
-    exch 0.
-    apply ImpL.
-    * apply weakening. apply HφL.
-    * exch 0. apply weakening.
-      apply HψR.
+  + case decide as [Heq |].
+    * apply ImpR.
+      exch 0. apply weakening.
+      rewrite <- Heq in HψR.
+      eapply cut.
+      -- apply HφL.
+      -- apply HψR.
+    * apply ImpR.
+      exch 0.
+      apply ImpL.
+      -- apply weakening. apply HφL.
+      -- exch 0. apply weakening.
+         apply HψR.
 Qed.
-
 
 Lemma simp_equiv_imp φ ψ: 
   (φ ≼ simp φ) * (simp φ ≼ φ) ->
@@ -243,14 +261,6 @@ Lemma simp_equiv_imp φ ψ:
 Proof.
 intros IHφ IHψ.
 split; [ apply simp_equiv_imp_L | apply simp_equiv_imp_R]; try apply IHφ ; try apply IHψ.
-Qed.
-
-Lemma tmp a b c  :
-  c <= S b ->
-  a < c ->
-  a <= b.
-Proof.
-  lia.
 Qed.
 
 Theorem simp_equiv φ : 
