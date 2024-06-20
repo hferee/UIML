@@ -45,7 +45,6 @@ Proof.
   apply ImpR. apply ExFalso.
 Qed.
 
-
 Theorem cut Γ φ ψ θ:
   Γ • φ ⊢ ψ -> Γ • ψ ⊢ θ ->
   Γ • φ ⊢ θ.
