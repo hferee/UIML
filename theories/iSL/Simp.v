@@ -2,9 +2,7 @@ Require Import ISL.SequentProps.
 Require Import ISL.Sequents.
 Require Import ISL.Environments.
 
-
 Definition simp_or φ ψ := 
-
   if decide (φ = ⊥) then ψ
   else if decide (ψ = ⊥) then φ
   else if decide (φ = ⊤) then ⊤
@@ -292,6 +290,58 @@ Require Import ISL.PropQuantifiers.
 Definition E_simplified (p: variable) (ψ: form) := simp (Ef p ψ).
 Definition A_simplified (p: variable) (ψ: form) := simp (Af p ψ).
 
+
+Lemma vars_incl_simp φ V :
+  vars_incl φ V -> vars_incl (simp φ) V.
+Proof.
+Admitted.
+
+Theorem iSL_uniform_interpolation_simp p V: p ∉ V ->
+  ∀ φ, vars_incl φ (p :: V) ->
+    (vars_incl (E_simplified p φ) V)
+  * (φ ≼ E_simplified p φ)
+  * (∀ ψ, vars_incl ψ V -> (φ ≼ ψ) -> E_simplified p φ ≼ ψ)
+  * (vars_incl (A_simplified p φ) V)
+  * (A_simplified p φ ≼ φ)
+  * (∀ θ, vars_incl θ V -> (θ ≼ φ) -> (θ ≼ A_simplified p φ)).
+Proof.
+
+intros Hp φ Hvarsφ.
+assert (Hislφ : 
+    (vars_incl (Ef p φ) V)
+  * ({[φ]} ⊢ (Ef p φ))
+  * (∀ ψ, vars_incl ψ V -> {[φ]} ⊢ ψ -> {[Ef p φ]} ⊢ ψ)
+  * (vars_incl (Af p φ) V)
+  * ({[Af p φ]} ⊢ φ)
+  * (∀ θ, vars_incl θ V -> {[θ]} ⊢ φ -> {[θ]} ⊢ Af p φ)) by 
+    (apply iSL_uniform_interpolation; [apply Hp | apply Hvarsφ]).
+repeat split.
+
+  + intros Hx.
+    eapply vars_incl_simp.
+    apply Hislφ.
+  + eapply cut.
+    * assert (Hef: ({[φ]} ⊢ Ef p φ)) by apply Hislφ.
+      peapply Hef.
+    * apply (simp_equiv  (Ef p φ)).
+  + intros ψ Hψ Hyp.
+    eapply cut.
+    * apply (simp_equiv  (Ef p φ)).
+    * assert (Hef: ({[Ef p φ]} ⊢ ψ)) by (apply Hislφ; [apply Hψ | peapply Hyp]).
+      peapply Hef.
+  + intros Hx.
+    eapply vars_incl_simp.
+    apply Hislφ.
+  + eapply cut.
+    * apply (simp_equiv  (Af p φ)).
+    * assert (Hef: ({[Af p φ]} ⊢ φ)) by apply Hislφ.
+      peapply Hef.
+  + intros ψ Hψ Hyp.
+    eapply cut.
+    * assert (Hef: ({[ψ]} ⊢ Af p φ)) by (apply Hislφ; [apply Hψ | peapply Hyp]).
+      peapply Hef.
+    * apply (simp_equiv  (Af p φ)).
+Qed.
 
 Require Import String.
 
