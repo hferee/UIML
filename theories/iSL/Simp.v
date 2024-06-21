@@ -293,7 +293,6 @@ Definition A_simplified (p: variable) (ψ: form) := simp (Af p ψ).
 
 Lemma vars_incl_simp φ V :
   vars_incl φ V -> vars_incl (simp φ) V.
-Proof.
 Admitted.
 
 Theorem iSL_uniform_interpolation_simp p V: p ∉ V ->
@@ -316,7 +315,6 @@ assert (Hislφ :
   * (∀ θ, vars_incl θ V -> {[θ]} ⊢ φ -> {[θ]} ⊢ Af p φ)) by 
     (apply iSL_uniform_interpolation; [apply Hp | apply Hvarsφ]).
 repeat split.
-
   + intros Hx.
     eapply vars_incl_simp.
     apply Hislφ.
@@ -334,8 +332,7 @@ repeat split.
     apply Hislφ.
   + eapply cut.
     * apply (simp_equiv  (Af p φ)).
-    * assert (Hef: ({[Af p φ]} ⊢ φ)) by apply Hislφ.
-      peapply Hef.
+    * peapply Hislφ.
   + intros ψ Hψ Hyp.
     eapply cut.
     * assert (Hef: ({[ψ]} ⊢ Af p φ)) by (apply Hislφ; [apply Hψ | peapply Hyp]).
