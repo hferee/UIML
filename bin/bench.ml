@@ -22,24 +22,9 @@ let percentage_reduction before after = 100. -. (after /. before *. 100.)
 let percentage_increase before after = (after /. before *. 100.) -. 100.
 
 let time f x =
-  let attempts = 20 in
-  let total, value, _ =
-    List.init attempts (fun _ -> ())
-    (* Run the tests `attempts` times *)
-    |> List.map (fun _ ->
-           let t = Sys.time () in
-           let fx = f x in
-           { value = fx; time = Sys.time () -. t })
-    (* Sort them by execution time *)
-    |> List.sort (fun result1 result2 -> compare result1.time result2.time)
-    (* Compute the average time removing the slowest and fastest times *)
-    |> List.fold_left
-         (fun (total, _, len) { value; time } ->
-           if len >= 1 && len < attempts - 1 then (total +. time, value, len + 1)
-           else (total, value, len + 1))
-         (0., 0, 0)
-  in
-  { value; time = total /. float_of_int (attempts - 2) }
+  let t = Sys.time () in
+  let fx = f x in
+  { value = fx; time = Sys.time () -. t }
 
 let print_value_results { name; before; after } =
   Printf.printf "| %s | %d | %d | %.2f |\n" name before.value after.value
@@ -109,14 +94,22 @@ let bench l =
 
 let test_cases =
   [
+    "(p ∧ q) -> ~p";
     "t ∨ q ∨ t";
+    "~((F & p) -> ~p | F)";
     "(q -> p) & (p -> ~r)";
     "(q -> (p -> r)) -> r";
     "((q -> p) -> r) -> r";
     "(a → (q ∧ r)) → s";
     "(a → (q ∧ r)) → ~p";
     "(a → (q ∧ r)) → ~p → k";
+    "(q -> (p -> r)) -> ~t";
+    "(q -> (p -> r)) -> ~t";
     "(q → (q ∧ (k -> p)) -> k)";
+    "(q -> (p ∨  r)) -> ~(t ∨ p)";
+    "((q -> (p ∨  r)) ∧ (t -> p)) -> t";
+    "((~t -> (q  ∧ p)) ∧ (t -> p)) -> t";
+    "(~p ∧ q) -> (p ∨ r -> t) -> o";
   ]
 
 let _ = bench test_cases
