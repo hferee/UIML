@@ -1,5 +1,6 @@
 Require Import ISL.Environments ISL.Sequents ISL.SequentProps ISL.Cut.
 
+
 Definition simp_or φ ψ := 
   if decide (φ = ⊥) then ψ
   else if decide (ψ = ⊥) then φ
@@ -7,6 +8,16 @@ Definition simp_or φ ψ :=
   else if decide (ψ = ⊤) then ⊤
   else if decide (φ = ψ) then φ
   else φ ∨ ψ.
+
+
+Fixpoint flatten_or φ :=
+match φ with
+  |φ ∨ ψ => flatten_or φ ++ flatten_or ψ 
+  | _ => [φ]
+end.
+
+Definition simp_or_form φ :=
+   foldl simp_or ⊥ (nodup form_eq_dec (flatten_or φ)).
 
 Definition simp_and φ ψ :=
   if decide (φ =⊥) then ⊥
@@ -16,6 +27,15 @@ Definition simp_and φ ψ :=
   else if decide (φ = ψ) then φ
   else φ ∧ ψ.
 
+Fixpoint flatten_and φ :=
+match φ with
+  |φ ∧ ψ => flatten_and φ ++ flatten_and ψ 
+  | _ => [φ]
+end.
+
+Definition simp_and_form φ :=
+   foldl simp_and ⊤ (nodup form_eq_dec (flatten_and φ)).
+
 
 Definition simp_imp φ ψ :=
   if decide (φ = ⊤) then ψ
@@ -23,15 +43,17 @@ Definition simp_imp φ ψ :=
   else if decide (φ = ψ) then ⊤
   else φ → ψ.
 
-Fixpoint simp φ := match φ with
-| φ ∨ ψ => simp_or (simp φ) (simp ψ)
-| φ ∧ ψ => simp_and (simp φ) (simp ψ)
+Fixpoint simp φ :=
+match φ with
+| φ ∨ ψ => simp_or_form (simp_or (simp φ) (simp ψ))
+| φ ∧ ψ => simp_and_form (simp_and (simp φ) (simp ψ))
 | φ → ψ => simp_imp (simp φ) (simp ψ)
 | _ => φ
 end.
 
+
 Definition Lindenbaum_Tarski_preorder φ ψ :=
-  ∅ • φ  ⊢ ψ.
+  ∅ • φ ⊢ ψ.
 
 Notation "φ ≼ ψ" := (Lindenbaum_Tarski_preorder φ ψ) (at level 149).
 
@@ -63,12 +85,40 @@ Proof.
   apply H.
 Qed.
 
+Lemma simp_or_form_equiv_L φ ψ:
+(φ ≼ ψ) -> 
+φ ≼ simp_or_form ψ.
+Proof. 
+Admitted.
+
+
+Lemma simp_or_form_equiv_R φ ψ:
+(φ ≼ ψ) -> 
+simp_or_form φ ≼  ψ.
+Admitted.
+
+
+Lemma simp_and_form_equiv_L φ ψ:
+(φ ≼ ψ) -> 
+φ ≼ simp_and_form ψ.
+Proof. 
+Admitted.
+
+
+Lemma simp_and_form_equiv_R φ ψ:
+(φ ≼ ψ) -> 
+simp_and_form φ ≼  ψ.
+Proof.
+Admitted.
+
+
 Lemma simp_equiv_or_L φ ψ : 
   (φ  ≼ simp φ) -> (ψ  ≼ simp ψ) ->
   (φ ∨ ψ) ≼ simp (φ ∨ ψ).
 Proof.
 intros Hφ Hψ.
 simpl. unfold simp_or. 
+apply simp_or_form_equiv_L.
 case decide as [Hbot |].
 - apply OrL.
   + rewrite Hbot in Hφ.
@@ -99,6 +149,7 @@ Lemma simp_equiv_or_R φ ψ :
 Proof.
 intros Hφ Hψ.
 simpl. unfold simp_or. 
+apply simp_or_form_equiv_R.
 case decide as [].
 - apply OrR2.
   apply Hψ.
@@ -138,6 +189,7 @@ Lemma simp_equiv_and_L φ ψ :
 Proof.
 intros Hφ Hψ.
 simpl. unfold simp_and. 
+apply simp_and_form_equiv_L.
 case decide as [Hbot |].
 - rewrite Hbot in Hφ.
   apply AndL. apply weakening.
@@ -172,6 +224,7 @@ Lemma simp_equiv_and_R φ ψ :
 Proof.
 intros Hφ Hψ.
 simpl. unfold simp_and. 
+apply simp_and_form_equiv_R.
 case decide as [].
 - apply exfalso. apply ExFalso.
 - case decide as [].
@@ -261,6 +314,7 @@ case decide as [Htop |].
     * apply ImpR.
       exch 0.
       apply ImpL.
+      
       -- apply weakening. apply HφL.
       -- exch 0. apply weakening.
          apply HψR.
@@ -337,12 +391,28 @@ Proof.
   intuition.
 Qed.
 
+
+Lemma simp_and_form_vars_incl φ V :
+  vars_incl φ V ->
+  vars_incl (simp_and_form φ) V. 
+Proof.
+Admitted.
+
+
+Lemma simp_or_form_vars_incl φ V :
+  vars_incl φ V ->
+  vars_incl (simp_or_form φ) V. 
+Proof.
+Admitted.
+
+
 Lemma vars_incl_simp φ V :
   vars_incl φ V -> vars_incl (simp φ) V.
 Proof.
 intro H.
 induction φ; auto.
 - simpl. unfold simp_and. 
+  apply simp_and_form_vars_incl.
   case decide as [].
   + apply bot_vars_incl.
   + case decide as [].
@@ -364,6 +434,7 @@ induction φ; auto.
                   apply IHφ2; eapply and_vars_incl_L];
                apply H.
 - simpl. unfold simp_or. 
+  apply simp_or_form_vars_incl.
   case decide as [].
   + apply IHφ2.
     eapply and_vars_incl_L.
@@ -384,7 +455,6 @@ induction φ; auto.
                [ apply IHφ1; apply (and_vars_incl_L _  φ2)|
                   apply IHφ2; eapply and_vars_incl_L];
                apply H.
-
 - simpl. unfold simp_imp. 
   case decide as [].
   + apply IHφ2.
@@ -409,7 +479,6 @@ Theorem iSL_uniform_interpolation_simp p V: p ∉ V ->
   * (A_simplified p φ ≼ φ)
   * (∀ θ, vars_incl θ V -> (θ ≼ φ) -> (θ ≼ A_simplified p φ)).
 Proof.
-
 intros Hp φ Hvarsφ.
 assert (Hislφ : 
     (vars_incl (Ef p φ) V)
@@ -450,7 +519,6 @@ repeat split.
 Qed.
 
 Require Import String.
-
 Local Open Scope string_scope.
 
 Example ex1: simp (Implies (Var "a")  (And (Var "b") (Var "b" ))) = Implies (Var "a")  (Var "b").
