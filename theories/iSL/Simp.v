@@ -270,19 +270,13 @@ induction w; intros φ Hle; [destruct φ ; simpl in Hle; lia|].
 destruct φ; simpl; try (split ; apply generalised_axiom); 
 [eapply (simp_equiv_and φ1  φ2)|
  eapply (simp_equiv_or φ1  φ2)|
-eapply (simp_equiv_imp φ1  φ2)]; apply IHw.
-- assert (Hφ1w: weight φ1 < weight (φ1 ∧ φ2)) by (simpl; lia).
-  lia.
-- assert (Hφ1w: weight φ2 < weight (φ1 ∧ φ2)) by (simpl; lia).
-  lia.
-- assert (Hφ1w: weight φ1 < weight (φ1 ∨ φ2)) by (simpl; lia).
-  lia.
-- assert (Hφ1w: weight φ2 < weight (φ1 ∨ φ2)) by (simpl; lia).
-  lia.
-- assert (Hφ1w: weight φ1 < weight (φ1 → φ2)) by (simpl; lia).
-  lia.
-- assert (Hφ1w: weight φ2 < weight (φ1 → φ2)) by (simpl; lia).
-  lia.
+eapply (simp_equiv_imp φ1  φ2)]; apply IHw;
+[assert (Hφ1w: weight φ1 < weight (φ1 ∧ φ2))|
+assert (Hφ1w: weight φ2 < weight (φ1 ∧ φ2))|
+assert (Hφ1w: weight φ1 < weight (φ1 ∨ φ2))|
+assert (Hφ1w: weight φ2 < weight (φ1 ∨ φ2))|
+assert (Hφ1w: weight φ1 < weight (φ1 → φ2))|
+assert (Hφ1w: weight φ2 < weight (φ1 → φ2))]; simpl; lia.
 Qed.
 
 Require Import ISL.PropQuantifiers.
@@ -290,10 +284,106 @@ Require Import ISL.PropQuantifiers.
 Definition E_simplified (p: variable) (ψ: form) := simp (Ef p ψ).
 Definition A_simplified (p: variable) (ψ: form) := simp (Af p ψ).
 
+Lemma bot_vars_incl V:
+vars_incl ⊥ V.
+Proof.
+  intros x H.
+  unfold In.
+  induction V; auto.
+Qed.
+
+
+Lemma top_vars_incl V:
+vars_incl ⊤ V.
+Proof.
+  intros x H.
+  unfold In.
+  induction V. 
+  - unfold occurs_in in H.
+    lia.
+  - auto.
+Qed.
+
+Lemma and_vars_incl_L φ ψ V:
+  vars_incl (And φ ψ) V ->
+  vars_incl φ V * vars_incl ψ V.
+Proof.
+  intros H.
+  split; intros x H1; apply H; simpl; auto.
+Qed.
+
+
+Lemma and_vars_incl_R φ ψ V:
+  vars_incl φ V ->
+  vars_incl ψ V ->
+  vars_incl (And φ ψ) V.
+Proof.
+  intros H1 H2.
+  intros x H.
+  Admitted.
 
 Lemma vars_incl_simp φ V :
   vars_incl φ V -> vars_incl (simp φ) V.
-Admitted.
+Proof.
+intro H.
+induction φ; auto.
+- simpl. unfold simp_and. 
+  case decide as [].
+  + apply bot_vars_incl.
+  + case decide as [].
+    * apply bot_vars_incl.
+    * case decide as [].
+      --  apply IHφ2.
+          eapply and_vars_incl_L.
+          apply H.
+      -- case decide as [].
+         ++ apply IHφ1.
+            apply (and_vars_incl_L _  φ2).
+            apply H.
+         ++ case decide as [].
+            ** apply IHφ1.
+               apply (and_vars_incl_L _  φ2).
+               apply H.
+            ** apply and_vars_incl_R; 
+               [ apply IHφ1; apply (and_vars_incl_L _  φ2)|
+                  apply IHφ2; eapply and_vars_incl_L];
+               apply H.
+- simpl. unfold simp_or. 
+  case decide as [].
+  + apply IHφ2.
+    eapply and_vars_incl_L.
+    apply H.
+  + case decide as [].
+    * apply IHφ1.
+      apply (and_vars_incl_L _  φ2).
+      apply H.
+    * case decide as [].
+      -- apply top_vars_incl.
+      -- case decide as [].
+         ++ apply top_vars_incl.
+         ++ case decide as [].
+            ** apply IHφ1.
+               apply (and_vars_incl_L _  φ2).
+               apply H.
+            ** apply and_vars_incl_R; 
+               [ apply IHφ1; apply (and_vars_incl_L _  φ2)|
+                  apply IHφ2; eapply and_vars_incl_L];
+               apply H.
+
+- simpl. unfold simp_imp. 
+  case decide as [].
+  + apply IHφ2.
+    eapply and_vars_incl_L.
+    apply H.
+  + case decide as [].
+    * apply top_vars_incl.
+    * case decide as [].
+      -- apply top_vars_incl.
+      -- apply and_vars_incl_R;
+        [ apply IHφ1; apply (and_vars_incl_L _  φ2)|
+          apply IHφ2; eapply and_vars_incl_L];
+          apply H.
+Qed.
 
 Theorem iSL_uniform_interpolation_simp p V: p ∉ V ->
   ∀ φ, vars_incl φ (p :: V) ->
