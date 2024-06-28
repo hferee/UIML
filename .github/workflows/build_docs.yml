@@ -28,8 +28,8 @@ jobs:
             startGroup "Build project"
               opam update -y
               ./install.sh -y
-              make
-              make doc
+              make -j 4
+              make -j 4 doc
             endGroup
           uninstall: |
             startGroup "Clean project"
