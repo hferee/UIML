@@ -1,0 +1,69 @@
+name: Build doc
+
+on:
+  push:
+
+jobs:
+  build:
+    name: Build docs
+    runs-on: ubuntu-latest
+    container:
+      image: coqorg/coq:8.19
+      # This is a workaround a "bug" on the checkout action,
+      # see https://github.com/actions/checkout/issues/956
+      options: --user root
+
+    steps:
+      - uses: actions/checkout@master
+      - name: "Run coq-community/docker-coq-action@v1 with debian:10"
+        uses: coq-community/docker-coq-action@v1
+        with:
+          # Explanation for the permission issue:
+          # https://github.com/coq-community/docker-coq-action#permissions
+          before_script: |
+            startGroup "Workaround permission issue"
+              sudo chown -R coq:coq .  # <--
+            endGroup
+          script: |
+            startGroup "Build project"
+              opam update -y
+              ./install.sh -y
+              make
+              make doc
+            endGroup
+          uninstall: |
+            startGroup "Clean project"
+              make clean
+            endGroup
+
+      - name: Upload docs
+        uses: actions/upload-artifact@master
+        with:
+          name: docs-artifact
+          path: docs
+
+      - name: Revert permissions
+        # to avoid a warning at cleanup time
+        if: ${{ always() }}
+        run: sudo chown -R 1001:116 . # <--
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@master
+
+      - uses: actions/download-artifact@master
+        with:
+          name: docs-artifact
+          path: docs
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3.8.0
+        with:
+          deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+          publish_dir: docs
+          allow_empty_commit: true
+          force_orphan: true
+          enable_jekyll: true

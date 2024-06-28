@@ -44,6 +44,7 @@ time-of-build-after.log
 time-of-build-before.log
 time-of-build-both.log
 time-of-build-pretty.log
+
 CoqMakefile.conf
 _opam
 _build
@@ -55,3 +56,5 @@ extraction/*.d
 ._ncdi/
 uiml.opam
 makefile.coq.conf
+
+docs/
