@@ -41,6 +41,7 @@ Definition isl_A v f := Af v f.
 Definition isl_simplified_E v f := E_simplified v f.
 Definition isl_simplified_A v f := A_simplified v f.
 
-Separate Extraction gl_UI k_UI isl_E isl_A isl_simplified_E isl_simplified_A.
+Separate Extraction gl_UI k_UI isl_E isl_A isl_simplified_E isl_simplified_A Formulas.weight.
+
 
 Cd "..".
