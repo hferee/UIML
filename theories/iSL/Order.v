@@ -409,6 +409,7 @@ unfold senv_order, ltof; repeat rewrite senv_weight_add;
 try match goal with | Δ := _ |- _ => subst Δ end;
 repeat match goal with
   | Heq : existT ?a _ = existT ?a _ |- _ => apply Eqdep.EqdepTheory.inj_pair2 in Heq; subst
+  | Heq : existT ?a _ = existT _ _ |- _ => inversion Heq; subst a
   | Heq : existT ?n ?θ = _  |- _ =>
    try subst n; try subst θ; inversion Heq;
    rewrite <- sigT_eta in *; subst; simpl in * end;

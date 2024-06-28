@@ -154,26 +154,26 @@ Qed.
 (* a dependent map on lists, with knowledge that we are on that list *)
 (* should work with any set-like type *)
 
-Program Fixpoint dep_in_map_aux {A : Type} (Γ : env) (f : forall φ, (φ ∈ Γ) -> A)
- Γ' (HΓ' : Γ' ⊆ elements Γ) : list A:=
+Program Fixpoint dep_in_map_aux {A B : Type} (Γ : list A) (f : forall φ, (φ ∈ Γ) -> B)
+ Γ' (HΓ' : Γ' ⊆ Γ) : list B:=
 match Γ' with
 | [] => []
 | a::Γ' => f a _ :: dep_in_map_aux Γ f Γ' _
 end.
 Next Obligation.
-intros. apply gmultiset_elem_of_elements. auto with *.
+intros. auto with *.
 Qed.
 Next Obligation. auto with *. Qed.
 
 
-Definition dep_in_map {A : Type} (Γ : env)
-  (f : forall φ, (φ ∈ Γ) -> A) : list A :=
-  dep_in_map_aux Γ f (elements Γ) (reflexivity _).
+Definition dep_in_map {A B : Type} (Γ : list A)
+  (f : forall φ, (φ ∈ Γ) -> B) : list B :=
+  dep_in_map_aux Γ f Γ (reflexivity _).
 
 
 (* This generalises to any type. decidability of equality over this type is necessary for a result in "Type" *)
-Lemma in_in_map {A : Type} {HD : forall a b : A, Decision (a = b)}
-  Γ (f : forall φ, (φ ∈ Γ) -> A) ψ :
+Lemma in_in_map {A B : Type} {HD : forall a b : B, Decision (a = b)}
+  Γ (f : forall (φ : A), (φ ∈ Γ) -> B) ψ :
   ψ ∈ (dep_in_map Γ f) -> {ψ0 & {Hin | ψ = f ψ0 Hin}}.
 Proof.
 unfold dep_in_map.
@@ -193,8 +193,8 @@ Proof. apply gmultiset_elem_of_elements,Hi, Hin. Defined.
 
 (* converse *)
 (* we require proof irrelevance for the mapped function *)
-Lemma in_map_in {A : Type} {HD : forall a b : A, Decision (a = b)}
-  {Γ} {f : forall φ, (φ ∈ Γ) -> A} {ψ0} (Hin : ψ0 ∈ Γ):
+Lemma in_map_in {A B : Type} {HD : forall a b : A, Decision (a = b)}
+  {Γ} {f : forall (φ : A), (φ ∈ Γ) -> B} {ψ0} (Hin : ψ0 ∈ Γ):
   {Hin' | f ψ0 Hin' ∈ (dep_in_map Γ f)}.
 Proof.
 unfold dep_in_map.
@@ -204,19 +204,19 @@ assert(Hcut : forall Γ' (HΓ' : Γ' ⊆ elements Γ) ψ0 (Hin : In ψ0 Γ'),
   case (decide (ψ' = a)).
   + intro; subst a. eexists. left.
   + intro Hneq. assert (Hin'' : In ψ' Γ') by (destruct Hin'; subst; tauto).
-      pose (Hincl := (dep_in_map_aux_obligation_2 Γ (a :: Γ') HΓ' a Γ' eq_refl)).
+      pose (Hincl := (dep_in_map_aux_obligation_2 A Γ (a :: Γ') HΓ' a Γ' eq_refl)).
       destruct (IHΓ' Hincl ψ' Hin'') as [Hin0 Hprop].
       eexists. right. apply Hprop.
-- destruct (Hcut (elements Γ) (reflexivity (elements Γ)) ψ0) as [Hin' Hprop].
-  + now apply elem_of_list_In,  gmultiset_elem_of_elements.
+- destruct (Hcut (elements Γ) (reflexivity Γ) ψ0) as [Hin' Hprop].
+  + now apply elem_of_list_In.
   + exists Hin'. exact Hprop.
 Qed.
 
-Lemma in_map_empty A f : @dep_in_map A ∅ f = [].
+Lemma in_map_empty A B f : @dep_in_map A B [] f = [].
 Proof. auto with *. Qed.
 
-Lemma in_map_ext {A} Δ f g:
-  (forall φ H, f φ H = g φ H) -> @dep_in_map A Δ f = dep_in_map Δ g.
+Lemma in_map_ext {A B} Δ f g:
+  (forall φ H, f φ H = g φ H) -> @dep_in_map A B Δ f = dep_in_map Δ g.
 Proof.
   intros Heq.
   unfold dep_in_map.

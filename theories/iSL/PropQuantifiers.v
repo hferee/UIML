@@ -49,9 +49,9 @@ Definition is_nVar (nφ: pform) := nφ = nVar p.
 (** note the use of  "lazy" conjunctions, disjunctions and implications *)
 Program Definition e_rule {Δ : list pform} {ϕ : pform}
   (EA0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form * form)
-  (nθ : pform) (Hin : (existT (projT1 nθ) (projT2 nθ)) ∈ Δ) : form :=
-let n := projT1 nθ in
-let θ := projT2 nθ in
+  (nθ : pform) (Hin : nθ ∈ Δ) : form :=
+match nθ as nθ' return nθ = nθ' -> form with
+existT n θ => fun Heqnθ => 
 let E Δ H := fst (EA0 (Δ, ϕ) H) in
 let A pe0 H := snd (EA0 pe0 H) in
 let Δ' := remove (nform_eq_dec p) nθ Δ in
@@ -86,46 +86,18 @@ E (δ₁ ::: δ₂ ::: Δ') _
     | nBot => fun Heq => ⊤
     end eq_refl)
 | □n φ => fun Heq => □(E (φ ::: □⁻¹Δ' ) _) (* very redundant ; identical for each box *)
+end eq_refl
 end eq_refl.
 
-Next Obligation.
-unfold pointed_senv_order;
-repeat (apply env_order_add_compat); simpl;
-unfold senv_order, ltof; repeat rewrite senv_weight_add;
-try match goal with | Δ := _ |- _ => subst Δ end;
-repeat match goal with
-  | Heq : existT ?a _ = existT ?a _ |- _ => apply Eqdep.EqdepTheory.inj_pair2 in Heq; subst
-  | Heq : existT ?n ?θ = _  |- _ =>
-   try subst n; try subst θ; inversion Heq;
-   rewrite <- sigT_eta in *; subst; simpl in * end;
-repeat rewrite Nat.add_assoc;
-   try match goal with Hin : ?ψ ∈ ?Γ |- context C [remove ?d ?ψ ?Γ] =>
-   eapply Nat.lt_le_trans; [| exact (senv_order_remove (nform_eq_dec _) Hin)] ||
-   eapply (lt_le_add_trans_r _ (senv_order_remove (nform_eq_dec _) Hin))
-end.
-repeat rewrite Nat.add_assoc;
-try refine (Nat.add_lt_le_mono _ _ _ _ _ (senv_weight_open_boxes _)).
-unfold pow_weight, form_of_sig; simpl weight;
-repeat apply Nat.add_lt_mono_r;
-simpl Nat.pow;
-repeat rewrite ?Nat.pow_succ_r', ?Nat.pow_add_r;
-repeat match goal with
-|  |- context C [Nat.pow 5 (weight ?δ)] =>
-    lazymatch goal with | H :  1 <  5 ^ (weight δ) |- _ => fail | _ =>
-    (let HH := fresh "Z" in assert (HH := pow_weight_gt δ)) end end;
-simpl; unfold pow_weight in *.
-repeat rewrite Nat.mul_assoc.
-pose (Nat.lt_1_mul_pos _ (5 ^ weight (form_of_nform δ₂)) Z0). nia.
-Defined.
 
 (** The implementation of the rules for defining A is separated into two pieces.
     Referring to Table 5 in Pitts, the definition a_rule_env handles A1-8 and A10,
     and the definition a_rule_form handles A9 and A11-13. *)
 Program Definition a_rule_env {Δ : list pform} {ϕ : pform}
   (EA0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form * form)
-  (nθ: pform) (Hin : (existT (projT1 nθ) (projT2 nθ) ∈ Δ)) : form :=
-let n := projT1 nθ in
-let θ := projT2 nθ in
+  (nθ: pform) (Hin : (nθ ∈ Δ)) : form :=
+match nθ as nθ' return nθ = nθ' -> form with
+existT n θ => fun Heqnθ =>
 let E Δ H := fst (EA0 (Δ, ϕ) H) in
 let A pe0 H := snd (EA0 pe0 H) in
 let Δ' := remove (nform_eq_dec p) nθ Δ in
@@ -165,78 +137,63 @@ match θ as θ' in (nform n') return existT n θ = existT n'  θ' -> form  with
     end) eq_refl
 | _ => fun Heq => ⊥
 (* using ⊼ here breaks congruence *)
+end eq_refl
 end eq_refl.
-Next Obligation.
-unfold pointed_senv_order;
-repeat (apply env_order_add_compat); simpl;
-unfold senv_order, ltof; repeat rewrite senv_weight_add;
-try match goal with | Δ := _ |- _ => subst Δ end;
-repeat match goal with
-  | Heq : existT ?a _ = existT ?a _ |- _ => apply Eqdep.EqdepTheory.inj_pair2 in Heq; subst
-  | Heq : existT ?n ?θ = _  |- _ =>
-   try subst n; try subst θ; inversion Heq;
-   rewrite <- sigT_eta in *; subst; simpl in * end;
-repeat rewrite Nat.add_assoc;
-   try match goal with Hin : ?ψ ∈ ?Γ |- context C [remove ?d ?ψ ?Γ] =>
-   eapply Nat.lt_le_trans; [| exact (senv_order_remove (nform_eq_dec _) Hin)] ||
-   eapply (lt_le_add_trans_r _ (senv_order_remove (nform_eq_dec _) Hin))
-end.
-repeat rewrite Nat.add_assoc;
-try refine (Nat.add_lt_le_mono _ _ _ _ _ (senv_weight_open_boxes _)).
-unfold pow_weight, form_of_sig; simpl weight;
-repeat apply Nat.add_lt_mono_r;
-simpl Nat.pow;
-repeat rewrite ?Nat.pow_succ_r', ?Nat.pow_add_r;
-repeat match goal with
-|  |- context C [Nat.pow 5 (weight ?δ)] =>
-    lazymatch goal with | H :  1 <  5 ^ (weight δ) |- _ => fail | _ =>
-    (let HH := fresh "Z" in assert (HH := pow_weight_gt δ)) end end;
-simpl; unfold pow_weight in *.
-repeat rewrite Nat.mul_assoc.
-pose (Nat.lt_1_mul_pos _ (5 ^ weight (form_of_nform δ₂)) Z0). nia.
-Defined.
 
 (* make sure that the proof obligations do not depend on EA0 *)
-Obligation Tactic := intros Δ ϕ _ _ _; intros; order_tac.
+Obligation Tactic := intros Δ ϕ _ _ _; intros; try order_tac.
 
 (* TODO HERE *)
-Program Definition a_rule_form {Δ : env} {ϕ : form}
-  (EA0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form * form) : form :=
-let E pe0 H := fst (EA0 pe0 H) in
-let A pe0 H := snd (EA0 pe0 H) in 
-match ϕ with
-| Var q =>
+Program Definition a_rule_form{Δ : list pform} {nϕ : pform}
+  (EA0 : ∀ pe (Hpe : pe ≺· (Δ, nϕ)), form * form) : form :=
+let E d H := fst (EA0 (d, pform_of_nform nBot) H) in
+let A pe0 H := snd (EA0 pe0 H) in
+let n := projT1 nϕ in
+let ϕ := projT2 nϕ in
+match ϕ as ϕ' in (nform n') return existT n ϕ = existT n' ϕ' -> form with
+| nVar q => fun Heq =>
     if decide (p = q) (* TODO : change this to p∈Vars(ϕ) *)
     then ⊥
     else Var q (* A9 *)
 (* A11 *)
-| ϕ₁ ∧ ϕ₂ => A (Δ, ϕ₁) _ ⊼ A (Δ, ϕ₂) _
-(* A12 *)
-| ϕ₁ ∨ ϕ₂ => A (Δ, ϕ₁) _ ⊻ A (Δ, ϕ₂) _
-(* A13 *)
-| ϕ₁→ ϕ₂ => E (Δ•ϕ₁, ϕ₂) _ ⇢ A (Δ•ϕ₁, ϕ₂) _
-| Bot => ⊥
-| □δ => □((E ((⊗Δ) • □δ, δ) _) ⇢ A((⊗Δ) • □δ, δ) _)
-end.
 
-Obligation Tactic := intros; order_tac.
+| ϕ₁ ∧n ϕ₂ => fun Heq => A (Δ, pform_of_nform nBot) _ ⊼ A (Δ, pform_of_nform ϕ₂) _
+(* A12 *)
+| ϕ₁ ∨n ϕ₂ => fun Heq => A (Δ, pform_of_nform ϕ₁) _ ⊻ A (Δ, pform_of_nform ϕ₂) _
+(* A13 *)
+| ϕ₁→n ϕ₂ => fun Heq => E (ϕ₁ ::: Δ) _ ⇢ A (ϕ₁ ::: Δ, pform_of_nform ϕ₂) _
+| nBot => fun Heq => ⊥
+| □n δ => fun Heq => □((E (□n δ ::: □⁻¹ Δ) _) ⇢ A(□n δ ::: □⁻¹ Δ, pform_of_nform δ) _)
+end eq_refl.
+
+Obligation Tactic := apply wf_pointed_order.
 
 (* TODO: we can do even better by  remembering sum_list *)
 (*
 if list.Forall_dec (fun f => num_of_pform f = 0)(nθ ::  Δ) then θ else
 *)
 
-Program Fixpoint EA (pe : env * form) {wf pointed_env_order pe} :=
+Program Fixpoint EA (pe : list pform * pform) {wf (@pointed_senv_order p) pe} :=
   let Δ := fst pe in
-  (⋀ (in_map Δ (e_rule EA)),
-   ⋁ (in_map Δ (a_rule_env EA)) ⊻ a_rule_form EA).
-Next Obligation. apply wf_pointed_order. Defined.
+  let nθ := snd pe in
+  if list.Forall_dec (fun f => projT1 f = 0)(nθ ::  Δ) then 
+  let φ := conjunction (map form_of_nform' Δ) in (φ, φ → (form_of_nform' nθ))
+  else
+  (⋀ (dep_in_map Δ (e_rule EA) ),
+   ⋁ (dep_in_map Δ (a_rule_env EA)) ⊻ a_rule_form EA).
 
-Definition E (pe : env * form) := (EA pe).1.
-Definition A (pe : env * form) := (EA pe).2.
+Definition E (pe : (senv p) * pform) := (EA pe).1.
+Definition A (pe : (senv p) * pform) := (EA pe).2.
 
-Definition Ef (ψ : form) := E ({[ψ]}, ⊥).
-Definition Af (ψ : form) := A (∅, ψ).
+
+Definition pform_of_form (φ : form) : pform.
+Proof.
+destruct (@nform_of_form p φ) as [n [nφ Hnφ]].
+exact (pform_of_nform nφ).
+Defined.
+
+Definition Ef (ψ : form) := E ([pform_of_form ψ], existT 0 nBot).
+Definition Af (ψ : form) := A ([], pform_of_form ψ).
 
 
 (** Congruence lemmas: if we apply any of e_rule, a_rule_env, or a_rule_form
@@ -246,7 +203,7 @@ Lemma e_rule_cong Δ ϕ θ (Hin : θ ∈ Δ) EA1 EA2:
   @e_rule Δ ϕ EA1 θ Hin = @e_rule Δ ϕ EA2 θ Hin.
 Proof.
   intro Heq.
-  destruct θ; simpl; try (destruct θ1); repeat (destruct decide);
+  destruct θ as [n θ]. simpl. destruct θ; simpl; try (destruct θ1); repeat (case decide; intros; subst);
   f_equal; repeat erewrite Heq; trivial.
 Qed.
 
@@ -254,27 +211,27 @@ Lemma a_rule_env_cong Δ ϕ θ Hin EA1 EA2:
   (forall pe Hpe, EA1 pe Hpe = EA2 pe Hpe) ->
   @a_rule_env Δ ϕ EA1 θ Hin = @a_rule_env Δ ϕ EA2 θ Hin.
 Proof.
-  intro Heq.
-  destruct θ; simpl; trivial; repeat (destruct decide);
+  intro Heq. destruct θ as [n θ].
+  destruct θ; simpl; trivial; repeat (case decide; intros; subst);
   f_equal; repeat erewrite Heq; trivial;
-  destruct θ1; try (destruct decide); trivial; simpl;
-  repeat erewrite Heq; trivial; (destruct decide); trivial.
+  destruct θ1; try (case decide; intros; subst); trivial; simpl;
+  repeat erewrite Heq; trivial.
 Qed.
 
 Lemma a_rule_form_cong Δ ϕ EA1 EA2:
   (forall pe Hpe, EA1 pe Hpe = EA2 pe Hpe) ->
   @a_rule_form Δ ϕ EA1 = @a_rule_form Δ ϕ EA2.
 Proof.
-  intro Heq.
-  destruct ϕ; simpl; repeat (destruct decide); trivial;
+  intro Heq. unfold a_rule_form. destruct ϕ as [n ϕ]. simpl;
+  destruct ϕ; simpl; repeat (case decide; intros; subst); trivial;
   repeat (erewrite Heq; eauto); trivial.
 Qed.
 
 Lemma EA_eq Δ ϕ:
-  (E (Δ, ϕ) =  ⋀ (in_map Δ (@e_rule Δ ϕ (λ pe _, EA pe)))) /\
-  (A (Δ, ϕ) = (⋁ (in_map Δ (@a_rule_env Δ ϕ (λ pe _, EA pe)))) ⊻
+  (E (Δ, ϕ) =  ⋀ (dep_in_map Δ (@e_rule Δ ϕ (λ pe _, EA pe)))) /\
+  (A (Δ, ϕ) = (⋁ (dep_in_map Δ (@a_rule_env Δ ϕ (λ pe _, EA pe)))) ⊻
        @a_rule_form Δ ϕ (λ pe _, EA pe)).
-Proof.
+Proof. (* TODO: fix the statement
 simpl. unfold E, A, EA. simpl.
 rewrite -> Wf.Fix_eq.
 - simpl. split; trivial.
@@ -284,13 +241,14 @@ rewrite -> Wf.Fix_eq.
   + f_equal. apply in_map_ext. intros. apply a_rule_env_cong; intros.
       now rewrite Heq.
   + apply a_rule_form_cong; intros. now rewrite Heq.
-Qed.
+Qed. *)
+Admitted.
 
 Definition E_eq Δ ϕ := proj1 (EA_eq Δ ϕ).
 Definition A_eq Δ ϕ := proj2 (EA_eq Δ ϕ).
 
 End PropQuantDefinition.
-
+(*
 (** * Correctness *)
 Section Correctness.
 
@@ -300,13 +258,15 @@ Section Correctness.
 (** ** (i) Variables *)
 Section VariablesCorrect.
 
+Notation pform := (pform p).
+
 (** In this subsection we prove (i), which states that the variable p no longer
   occurs in the E- and A-formulas, and that the E- and A-formulas contain no more variables than the original formula.
   *)
 
 (** *** (a)  *)
 
-Lemma e_rule_vars (Δ : env) (θ : form) (Hin : θ ∈ Δ) (ϕ : form)
+Lemma e_rule_vars (Δ : list pform) (θ : pform) (Hin : θ ∈ Δ) (ϕ : pform)
   (EA0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form * form) x
   (HEA0 : ∀ pe Hpe, 
       (occurs_in x (fst (EA0 pe Hpe)) -> x ≠ p ∧ ∃ θ, θ ∈ pe.1 /\ occurs_in x θ) /\
@@ -948,9 +908,11 @@ Qed.
 End PropQuantCorrect.
 
 End Correctness.
+*)
 
 End UniformInterpolation.
 
+(*
 (** * Main uniform interpolation Theorem *)
 
 Open Scope type_scope.
@@ -997,3 +959,4 @@ intros Hp φ Hvarsφ; repeat split.
       * now rewrite E_of_empty.
 Qed.
 
+*)
