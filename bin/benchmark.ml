@@ -1,14 +1,7 @@
 open UIML.UIML_extraction
 open UIML.Formulas
 open Modal_expressions_parser
-
-let rec weight = function
-  | Bot -> 1
-  | Var _ -> 1
-  | And (f1, f2) -> 2 + weight f1 + weight f2
-  | Or (f1, f2) -> 3 + weight f1 + weight f2
-  | Implies (f1, f2) -> 1 + weight f1 + weight f2
-  | Box f -> 1 + weight f
+open Printer
 
 type 'a timed_result = { value : 'a; time : float }
 
@@ -41,13 +34,13 @@ let bench_one fs =
   [
     {
       name = "A " ^ fs;
-      before = time (fun f -> weight (isl_A [ 'p' ] f)) f;
-      after = time (fun f -> weight (isl_simplified_A [ 'p' ] f)) f;
+      before = time (fun f -> int_of_nat (weight (isl_A [ 'p' ] f))) f;
+      after = time (fun f -> int_of_nat (weight (isl_simplified_A [ 'p' ] f))) f;
     };
     {
       name = "E " ^ fs;
-      before = time (fun f -> weight (isl_E [ 'p' ] f)) f;
-      after = time (fun f -> weight (isl_simplified_E [ 'p' ] f)) f;
+      before = time (fun f -> int_of_nat (weight (isl_E [ 'p' ] f))) f;
+      after = time (fun f -> int_of_nat (weight (isl_simplified_E [ 'p' ] f))) f;
     };
   ]
 
