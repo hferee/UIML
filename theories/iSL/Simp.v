@@ -43,10 +43,32 @@ Proof.
   apply ImpR. apply ExFalso.
 Qed.
 
-Theorem cut Γ φ ψ θ:
-  Γ • φ ⊢ ψ -> Γ • ψ ⊢ θ ->
-  Γ • φ ⊢ θ.
+Theorem cut Γ Γ' φ ψ :
+  Γ ⊢ φ  -> Γ' • φ ⊢ ψ ->
+  Γ ⊎ Γ' ⊢ ψ.
 Admitted.
+
+Lemma preorder_singleton  φ ψ:
+  {[φ]} ⊢ ψ -> (φ ≼ ψ).
+Proof.
+intro H.
+assert (H3: (φ ≼ ψ) = ({[φ]} ⊢ ψ)) by (apply proper_Provable; ms).
+rewrite H3.
+apply H.
+Qed.
+
+Corollary cut2 φ ψ θ:
+  (φ ≼ ψ) -> (ψ ≼ θ) ->
+  φ ≼ θ.
+Proof.
+  intros H1 H2.
+  assert ({[φ]} ⊎ ∅ ⊢ θ). {
+  peapply (cut  {[φ]} ∅ ψ θ).
+  - peapply H1.
+  - apply H2.
+  }
+  apply H.
+Qed.
 
 Lemma simp_equiv_or_L φ ψ : 
   (φ  ≼ simp φ) -> (ψ  ≼ simp ψ) ->
@@ -240,7 +262,7 @@ case decide as [Htop |].
     * apply ImpR.
       exch 0. apply weakening.
       rewrite <- Heq in HψR.
-      eapply cut.
+      eapply cut2.
       -- apply HφL.
       -- apply HψR.
     * apply ImpR.
@@ -409,25 +431,29 @@ repeat split.
   + intros Hx.
     eapply vars_incl_simp.
     apply Hislφ.
-  + eapply cut.
+  + eapply cut2.
     * assert (Hef: ({[φ]} ⊢ Ef p φ)) by apply Hislφ.
-      peapply Hef.
+      apply preorder_singleton.
+      apply Hef.
     * apply (simp_equiv  (Ef p φ)).
   + intros ψ Hψ Hyp.
-    eapply cut.
+    eapply cut2.
     * apply (simp_equiv  (Ef p φ)).
     * assert (Hef: ({[Ef p φ]} ⊢ ψ)) by (apply Hislφ; [apply Hψ | peapply Hyp]).
-      peapply Hef.
+      apply preorder_singleton.
+      apply Hef.
   + intros Hx.
     eapply vars_incl_simp.
     apply Hislφ.
-  + eapply cut.
+  + eapply cut2.
     * apply (simp_equiv  (Af p φ)).
-    * peapply Hislφ.
+    * apply preorder_singleton.
+      apply Hislφ.
   + intros ψ Hψ Hyp.
-    eapply cut.
+    eapply cut2.
     * assert (Hef: ({[ψ]} ⊢ Af p φ)) by (apply Hislφ; [apply Hψ | peapply Hyp]).
-      peapply Hef.
+      apply preorder_singleton.
+      apply Hef.
     * apply (simp_equiv  (Af p φ)).
 Qed.
 
