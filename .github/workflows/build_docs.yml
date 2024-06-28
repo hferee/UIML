@@ -6,9 +6,9 @@ on:
 jobs:
   build:
     name: Build docs
-    runs-on: ubuntu-latest # container actions require GNU/Linux
+    runs-on: ubuntu-latest
     container:
-      image: coqorg/coq:8.19.1
+      image: coqorg/coq:8.19
       # This is a workaround a "bug" on the checkout action,
       # see https://github.com/actions/checkout/issues/956
       options: --user root
@@ -43,13 +43,14 @@ jobs:
           path: docs
 
       - name: Revert permissions
-      # to avoid a warning at cleanup time
+        # to avoid a warning at cleanup time
         if: ${{ always() }}
-        run: sudo chown -R 1001:116 .  # <--
+        run: sudo chown -R 1001:116 . # <--
 
   deploy:
     runs-on: ubuntu-latest
     needs: build
+    if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@master
 
