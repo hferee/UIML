@@ -1,4 +1,4 @@
-open ExEnum
+open Exenum
 open Printer
 open UIML.Formulas
 open Sys
