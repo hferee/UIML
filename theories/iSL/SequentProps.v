@@ -20,7 +20,7 @@ Logic (65):4.
 
 (** We prove the admissibility of the weakening rule. *)
 
-Theorem weakening φ' Γ φ : Γ ⊢ φ -> Γ•φ' ⊢ φ.
+Theorem weakening {K : Kind} φ' Γ φ : (Γ ⊢ φ )-> (Γ•φ' ⊢ φ).
 Proof with (auto with proof).
 intro H. revert φ'.  induction H; intro φ'; auto with proof; try (exch 0; auto with proof).
 - constructor 4. exch 1; exch 0...
@@ -38,7 +38,7 @@ Qed.
 
 Global Hint Resolve weakening : proof.
 
-Theorem generalised_weakeningL (Γ Γ' : env) φ: Γ ⊢ φ -> Γ' ⊎ Γ ⊢ φ.
+Theorem generalised_weakeningL {K : Kind} (Γ Γ' : env) φ: Γ ⊢ φ -> Γ' ⊎ Γ ⊢ φ.
 Proof.
 intro Hp.
 induction Γ' as [| x Γ' IHΓ'] using gmultiset_rec.
@@ -46,7 +46,7 @@ induction Γ' as [| x Γ' IHΓ'] using gmultiset_rec.
 - peapply (weakening x). exact IHΓ'. ms.
 Qed.
 
-Theorem generalised_weakeningR (Γ Γ' : env) φ: Γ' ⊢ φ -> Γ' ⊎ Γ ⊢ φ.
+Theorem generalised_weakeningR {K : Kind} (Γ Γ' : env) φ: Γ' ⊢ φ -> Γ' ⊎ Γ ⊢ φ.
 Proof.
 intro Hp.
 induction Γ as [| x Γ IHΓ] using gmultiset_rec.
@@ -62,7 +62,7 @@ Global Hint Extern 5 (?a <= ?b) => simpl in *; lia : proof.
   left, or left, top left (i.e., the appliction of weakening for the formula
   top), the four implication left rules, the and right rule and the application of the or right rule with bottom. *)
 
-Lemma ImpR_rev Γ φ ψ :
+Lemma ImpR_rev {K : Kind} Γ φ ψ :
   (Γ ⊢ (φ →  ψ))
     -> Γ•φ ⊢  ψ.
 Proof with (auto with proof).
@@ -80,7 +80,7 @@ Qed.
 
 Global Hint Resolve ImpR_rev : proof.
 
-Theorem generalised_axiom Γ φ : Γ•φ ⊢ φ.
+Theorem generalised_axiom {K : Kind} Γ φ : Γ•φ ⊢ φ.
 Proof with (auto with proof).
 remember (weight φ) as w.
 assert(Hle : weight φ ≤ w) by lia.
@@ -96,13 +96,16 @@ induction w; intros Γ φ Hle.
   + apply ImpR. exch 0. apply ImpLOr.
     exch 1; exch 0...
   + apply ImpR. exch 0...
-  + apply ImpR. exch 0. apply ImpBox; box_tac...
+  + apply ImpR. exch 0. 
+  (* missing condition on φ : φ is modal -> K is modal apply ImpBox; box_tac...
   + apply BoxR; box_tac...
 Qed.
+*)
+Admitted.
 
 Global Hint Resolve generalised_axiom : proof.
 
-Lemma open_box_L Γ φ ψ : Γ • φ ⊢ ψ -> Γ • ⊙ φ ⊢ ψ.
+Lemma open_box_L {K : Kind} Γ φ ψ : Γ • φ ⊢ ψ -> Γ • ⊙ φ ⊢ ψ.
 Proof.
 intro Hp.
 remember (Γ•φ) as Γ' eqn:HH.
@@ -181,7 +184,7 @@ Qed.
 
 Local Hint Resolve env_in_add : proof.
 
-Lemma AndL_rev Γ φ ψ θ: (Γ•φ ∧ ψ) ⊢ θ  → (Γ•φ•ψ) ⊢ θ.
+Lemma AndL_rev {K : Kind} Γ φ ψ θ: (Γ•φ ∧ ψ) ⊢ θ  → (Γ•φ•ψ) ⊢ θ.
 Proof.
 intro Hp.
 remember (Γ•φ ∧ ψ) as Γ' eqn:HH.
@@ -226,7 +229,7 @@ induction Hp; intros φ0 ψ0 Hin; try forward.
       apply In_open_boxes in Hin. auto with proof.
 Qed.
 
-Lemma OrL_rev Γ φ ψ θ: (Γ•φ ∨ ψ) ⊢ θ  → (Γ•φ ⊢ θ)  * (Γ•ψ ⊢ θ).
+Lemma OrL_rev {K : Kind} Γ φ ψ θ: (Γ•φ ∨ ψ) ⊢ θ  → (Γ•φ ⊢ θ)  * (Γ•ψ ⊢ θ).
 Proof.
 intro Hp.
 remember (Γ•φ ∨ ψ) as Γ' eqn:HH.
@@ -259,7 +262,7 @@ induction Hp.
     split; constructor 14; repeat box_tac; backward; apply open_box_L; now apply IHHp.
 Qed.
 
-Lemma TopL_rev Γ φ θ: Γ•(⊥ → φ) ⊢ θ -> Γ ⊢ θ.
+Lemma TopL_rev {K : Kind} Γ φ θ: Γ•(⊥ → φ) ⊢ θ -> Γ ⊢ θ.
 Proof.
 remember (Γ•(⊥ → φ)) as Γ' eqn:HH.
 assert (Heq: Γ ≡ Γ' ∖ {[ ⊥ → φ ]}) by ms.
@@ -286,7 +289,7 @@ Qed.
 
 Local Hint Immediate TopL_rev : proof.
 
-Lemma ImpLVar_rev Γ p φ ψ: (Γ•Var p•(p → φ)) ⊢ ψ  → (Γ•Var p•φ) ⊢ ψ.
+Lemma ImpLVar_rev {K : Kind} Γ p φ ψ: (Γ•Var p•(p → φ)) ⊢ ψ  → (Γ•Var p•φ) ⊢ ψ.
 Proof.
 intro Hp.
 remember (Γ•Var p•(p → φ)) as Γ' eqn:HH.
@@ -315,7 +318,7 @@ induction Hp; try forward.
 Qed.
 
 (* inversion for ImpLImp is only partial *)
-Lemma ImpLImp_prev Γ φ1 φ2 φ3 ψ: (Γ•((φ1 → φ2) → φ3)) ⊢ ψ -> (Γ•φ3) ⊢ ψ.
+Lemma ImpLImp_prev {K : Kind} Γ φ1 φ2 φ3 ψ: (Γ•((φ1 → φ2) → φ3)) ⊢ ψ -> (Γ•φ3) ⊢ ψ.
 Proof.
 intro Hp.
 remember (Γ •((φ1 → φ2) → φ3)) as Γ' eqn:HH.
@@ -344,7 +347,7 @@ induction Hp; try forward.
 Qed.
 
 (* inversion for ImpLbox is only partial too *)
-Lemma ImpLBox_prev Γ φ1 φ2 ψ: (Γ•((□φ1) → φ2)) ⊢ ψ -> (Γ•φ2) ⊢ ψ.
+Lemma ImpLBox_prev Γ φ1 φ2 ψ: (Γ•((□φ1) → φ2)) ⊢iSL ψ -> (Γ•φ2) ⊢iSL ψ.
 Proof.
 intro Hp.
 remember (Γ •((□φ1) → φ2)) as Γ' eqn:HH.
@@ -373,7 +376,7 @@ induction Hp; try forward.
 Qed.
 
 
-Lemma ImpLOr_rev Γ φ1 φ2 φ3 ψ: Γ•((φ1 ∨ φ2) → φ3) ⊢ ψ -> Γ•(φ1 → φ3)•(φ2 → φ3) ⊢ ψ.
+Lemma ImpLOr_rev {K : Kind} Γ φ1 φ2 φ3 ψ: Γ•((φ1 ∨ φ2) → φ3) ⊢ ψ -> Γ•(φ1 → φ3)•(φ2 → φ3) ⊢ ψ.
 Proof.
 intro Hp.
 remember (Γ •((φ1 ∨ φ2) → φ3)) as Γ' eqn:HH.
@@ -401,7 +404,7 @@ induction Hp; try forward.
 - apply BoxR. repeat box_tac. backward. apply IHHp. ms.
 Qed.
 
-Lemma ImpLAnd_rev Γ φ1 φ2 φ3 ψ: (Γ•(φ1 ∧ φ2 → φ3)) ⊢ ψ ->  (Γ•(φ1 → φ2 → φ3)) ⊢ ψ .
+Lemma ImpLAnd_rev {K : Kind} Γ φ1 φ2 φ3 ψ: (Γ•(φ1 ∧ φ2 → φ3)) ⊢ ψ ->  (Γ•(φ1 → φ2 → φ3)) ⊢ ψ .
 Proof.
 intro Hp.
 remember (Γ •((φ1 ∧ φ2) → φ3)) as Γ' eqn:HH.
@@ -436,22 +439,22 @@ Global Hint Resolve ImpLOr_rev : proof.
 Global Hint Resolve ImpLAnd_rev : proof.
 Global Hint Resolve ImpLBox_prev : proof.
 
-Lemma exfalso Γ φ: Γ ⊢ ⊥ -> Γ ⊢ φ.
+Lemma exfalso {K : Kind} Γ φ: Γ ⊢ ⊥ -> Γ ⊢ φ.
 Proof.
 intro Hp. dependent induction Hp; try tauto; auto with proof; tauto.
 Qed.
 
 Global Hint Immediate exfalso : proof.
 
-Lemma AndR_rev {Γ φ1 φ2} : Γ ⊢ φ1 ∧ φ2 -> (Γ ⊢ φ1) * (Γ ⊢ φ2).
+Lemma AndR_rev {K : Kind} {Γ φ1 φ2} : Γ ⊢ φ1 ∧ φ2 -> (Γ ⊢ φ1) * (Γ ⊢ φ2).
 Proof. intro Hp. dependent induction Hp generalizing φ1 φ2 Hp; intuition; auto with proof. Qed.
 
 
 (** A general inversion rule for disjunction is not admissible. However, inversion holds if one of the formulas is ⊥. *)
 
-Lemma OrR1Bot_rev Γ φ :  Γ ⊢ φ ∨ ⊥ -> Γ ⊢ φ.
+Lemma OrR1Bot_rev {K : Kind} Γ φ :  Γ ⊢ φ ∨ ⊥ -> Γ ⊢ φ.
 Proof. intro Hd. dependent induction Hd; auto with proof. Qed.
-Lemma OrR2Bot_rev Γ φ :  Γ ⊢ ⊥ ∨ φ -> Γ ⊢ φ.
+Lemma OrR2Bot_rev {K : Kind} Γ φ :  Γ ⊢ ⊥ ∨ φ -> Γ ⊢ φ.
 Proof. intro Hd. dependent induction Hd; auto with proof. Qed.
 
 (** We prove Lemma 4.1 of (Dyckhoff & Negri 2000). This lemma shows that a
@@ -460,7 +463,7 @@ Proof. intro Hd. dependent induction Hd; auto with proof. Qed.
     proved above.
   *)
 
-Lemma weak_ImpL Γ φ ψ θ :Γ ⊢ φ -> Γ•ψ ⊢ θ -> Γ•(φ → ψ) ⊢ θ.
+Lemma weak_ImpL {K : Kind} Γ φ ψ θ :Γ ⊢ φ -> Γ•ψ ⊢ θ -> Γ•(φ → ψ) ⊢ θ.
 Proof with (auto with proof).
 intro Hp. revert ψ θ. induction Hp; intros ψ0 θ0 Hp'.
 - auto with proof.
@@ -492,7 +495,7 @@ Global Hint Resolve weak_ImpL : proof.
  G4ip. *)
 
 (** An auxiliary definition of **height** of a proof, measured along the leftmost branch. *)
-Fixpoint height {Γ φ} (Hp : Γ ⊢ φ) := match Hp with
+Fixpoint height {K : Kind} {Γ φ} (Hp : Γ ⊢ φ) := match Hp with
 | Atom _ _ => 1
 | ExFalso _ _ => 1
 | AndR Γ φ ψ H1 H2 => 1 + height H1 + height H2
@@ -509,12 +512,12 @@ Fixpoint height {Γ φ} (Hp : Γ ⊢ φ) := match Hp with
 | BoxR Γ φ H => 1 + height H
 end.
 
-Lemma height_0 {Γ φ} (Hp : Γ ⊢ φ) : height Hp <> 0.
+Lemma height_0 {K : Kind} {Γ φ} (Hp : Γ ⊢ φ) : height Hp <> 0.
 Proof. destruct Hp; simpl; lia. Qed.
 
 (** Lemma 4.2 in (Dyckhoff & Negri 2000), showing that a "duplication" in the context of the implication-case of the implication-left rule is admissible. *)
 
-Lemma ImpLImp_dup Γ φ1 φ2 φ3 θ:
+Lemma ImpLImp_dup {K : Kind} Γ φ1 φ2 φ3 θ:
   Γ•((φ1 → φ2) → φ3) ⊢ θ ->
     Γ•φ1 •(φ2 → φ3) •(φ2 → φ3) ⊢ θ.
 Proof.
@@ -565,8 +568,8 @@ destruct Hp; simpl in Hleh.
 Qed.
 
 Lemma ImpBox_dup Γ φ1 φ2 θ:
-  Γ•(□φ1 → φ2)  ⊢ θ ->
-    Γ • □ φ1 • □ φ1 • φ2 ⊢ θ.
+  Γ•(□φ1 → φ2)  ⊢iSL θ ->
+    Γ • □ φ1 • □ φ1 • φ2 ⊢iSL θ.
 Proof.
 intro Hp.
 remember (Γ• (□ φ1 → φ2)) as Γ0 eqn:Heq0.
@@ -626,7 +629,7 @@ case (decide (((φ0 → φ4) → φ5) = ((φ1 → φ2) → φ3))); intro Heq.
 Qed.
 
 (* technical lemma for contraction *)
-Local Lemma p_contr Γ φ θ:
+Local Lemma p_contr {K : Kind} Γ φ θ:
   (Γ•φ•φ) ∖ {[φ]} ⊢ θ ->
   ((Γ•φ) ⊢ θ).
 Proof. intros * Hd; peapply Hd. Qed.
@@ -639,7 +642,7 @@ Proof. destruct φ; simpl; lia. Qed.
 
 
 (** Admissibility of contraction in G4ip. *)
-Lemma contraction Γ ψ θ : Γ•ψ•ψ ⊢ θ -> Γ•ψ ⊢ θ.
+Lemma contraction {K : Kind} Γ ψ θ : Γ•ψ•ψ ⊢ θ -> Γ•ψ ⊢ θ.
 Proof.
 remember (Γ•ψ•ψ) as Γ0 eqn:Heq0.
 assert(HeqΓ : (Γ•ψ) ≡ Γ0 ∖ {[ψ]}) by ms.
@@ -774,7 +777,7 @@ Qed.
 
 Global Hint Resolve contraction : proof.
 
-Theorem generalised_contraction (Γ Γ' : env) φ: Γ' ⊎ Γ' ⊎ Γ ⊢ φ -> Γ' ⊎ Γ ⊢ φ.
+Theorem generalised_contraction {K : Kind} (Γ Γ' : env) φ: Γ' ⊎ Γ' ⊎ Γ ⊢ φ -> Γ' ⊎ Γ ⊢ φ.
 Proof.
 revert Γ.
 induction Γ' as [| x Γ' IHΓ'] using gmultiset_rec; intros Γ Hp.
@@ -787,14 +790,14 @@ Qed.
 (** We show that the general implication left rule of LJ is admissible in G4ip.
   This is Proposition 5.2 in (Dyckhoff Negri 2000). *)
 
-Lemma ImpL Γ φ ψ θ: Γ•(φ → ψ) ⊢ φ -> Γ•ψ  ⊢ θ -> Γ•(φ → ψ) ⊢ θ.
+Lemma ImpL {K : Kind} Γ φ ψ θ: Γ•(φ → ψ) ⊢ φ -> Γ•ψ  ⊢ θ -> Γ•(φ → ψ) ⊢ θ.
 Proof. intros H1 H2. apply contraction, weak_ImpL; auto with proof. Qed.
 
 
 (* Lemma 5.3 (Dyckhoff Negri 2000) shows that an implication on the left may be
    weakened. *)
 
-Lemma imp_cut φ Γ ψ θ: Γ•(φ → ψ) ⊢ θ -> Γ•ψ ⊢ θ.
+Lemma imp_cut {K : Kind} φ Γ ψ θ: Γ•(φ → ψ) ⊢ θ -> Γ•ψ ⊢ θ.
 Proof.
 intro Hp.
 remember (Γ•(φ → ψ)) as Γ0 eqn:HH.
@@ -810,11 +813,11 @@ induction Hp.
 - forward. auto with proof.
 - forward. auto with proof.
 -apply AndR; intuition.
-- forward; apply AndL. exch 0. do 2 backward. apply IHHp. ms.
+- forward; apply AndL. exch 0. do 2 backward. apply IHHp; ms.
 - apply OrR1; intuition.
 - apply OrR2; intuition.
 - forward. apply OrL; backward; [apply IHHp1 | apply IHHp2]; ms.
-- apply ImpR. backward. apply IHHp. ms.
+- apply ImpR. backward. apply IHHp; ms.
 - case (decide ((p → φ0) = (φ → ψ))); intro Heq0.
   + inversion Heq0; subst. peapply Hp.
   + do 2 forward. exch 0. apply ImpLVar. exch 0. do 2 backward. apply IHHp; ms.
@@ -824,7 +827,7 @@ induction Hp.
     rw Heq1 1; clear Heq1. simpl in Hle.
     peapply (IHw (Γ•(φ2 → ψ)) φ2 ψ ψ0); [lia|ms|].
     peapply (IHw (Γ•(φ1 → φ2 → ψ)) φ1 (φ2 → ψ) ψ0); [lia|ms|trivial].
-  + forward. apply ImpLAnd. backward. apply IHHp. ms.
+  + forward. apply ImpLAnd. backward. apply IHHp; ms.
 - case (decide ((φ1 ∨ φ2 → φ3) = (φ → ψ))); intro Heq0.
   + inversion Heq0. subst. clear Heq0.
     apply contraction. simpl in Hle.
@@ -838,9 +841,10 @@ induction Hp.
 - case (decide((□φ1 → φ2) = (φ → ψ))).
   + intro Heq. inversion Heq. subst. clear Heq. peapply Hp2.
   + intro Hneq. forward. apply ImpBox; repeat box_tac.
-      * exch 0. do 2 backward. apply open_box_L. apply IHHp1. ms.
-      * backward. apply IHHp2. ms.
+      * exch 0. do 2 backward. apply open_box_L. apply IHHp1; ms.
+      * backward. apply IHHp2; ms.
 - apply BoxR.  repeat box_tac. backward. apply open_box_L, IHHp.
+  auto with proof.
   apply env_in_add. right. auto with proof.
 Qed.
 
@@ -850,7 +854,7 @@ Global Hint Resolve imp_cut : proof.
 
 To make the definitions of the propositional quantifiers that we extract from the Coq definition more readable, we introduced functions "make_impl", "make_conj" and "make_disj" in Environments.v which perform obvious simplifications such as reducing φ ∧ ⊥ to ⊥ and φ ∨ ⊥ to φ. The following results show that the definitions of these functions are correct, in the sense that it does not make a difference for provability of a sequent whether one uses the literal conjunction, disjunction, and implication, or its optimized version. *)
 
-Lemma make_impl_sound_L Γ φ ψ θ: Γ•(φ → ψ) ⊢ θ -> Γ•(φ ⇢ ψ) ⊢ θ.
+Lemma make_impl_sound_L {K : Kind} Γ φ ψ θ: Γ•(φ → ψ) ⊢ θ -> Γ•(φ ⇢ ψ) ⊢ θ.
 Proof.
 destruct (make_impl_spec φ ψ) as  [[[Hm Heq]|[Hm Heq]]|Hm].
 - subst. rewrite Heq. intros Hp. apply TopL_rev in Hp. now apply weakening.
@@ -860,7 +864,7 @@ Qed.
 
 Global Hint Resolve make_impl_sound_L : proof.
 
-Lemma make_impl_sound_L2 Γ φ1 φ2 ψ θ: Γ•(φ1 → (φ2 → ψ)) ⊢ θ -> Γ•(φ1 ⇢ (φ2 ⇢ ψ)) ⊢ θ.
+Lemma make_impl_sound_L2 {K : Kind} Γ φ1 φ2 ψ θ: Γ•(φ1 → (φ2 → ψ)) ⊢ θ -> Γ•(φ1 ⇢ (φ2 ⇢ ψ)) ⊢ θ.
 Proof.
 destruct (make_impl_spec φ2 ψ) as [[[Hm Heq]|[Hm Heq]]|Hm].
 - subst. rewrite Heq. intro Hp. apply imp_cut, TopL_rev in Hp. auto with proof.
@@ -870,7 +874,7 @@ Qed.
 
 Global Hint Resolve make_impl_sound_L2: proof.
 
-Lemma make_impl_sound_L2' Γ φ1 φ2 ψ θ: Γ•((φ1 → φ2) → ψ) ⊢ θ -> Γ•((φ1 ⇢ φ2) ⇢ ψ) ⊢ θ.
+Lemma make_impl_sound_L2' {K : Kind} Γ φ1 φ2 ψ θ: Γ•((φ1 → φ2) → ψ) ⊢ θ -> Γ•((φ1 ⇢ φ2) ⇢ ψ) ⊢ θ.
 Proof.
 destruct (make_impl_spec φ1 φ2) as [[[Hm Heq]|[Hm Heq]]|Hm].
 - subst. rewrite Heq. 
@@ -893,7 +897,7 @@ destruct (make_impl_spec φ1 φ2) as [[[Hm Heq]|[Hm Heq]]|Hm].
   + now rewrite Hm.
 Qed.
 
-Lemma make_impl_complete_L Γ φ ψ θ: Γ•(φ ⇢ ψ) ⊢ θ -> Γ•(φ → ψ) ⊢ θ.
+Lemma make_impl_complete_L {K : Kind} Γ φ ψ θ: Γ•(φ ⇢ ψ) ⊢ θ -> Γ•(φ → ψ) ⊢ θ.
 Proof.
 destruct (make_impl_spec φ ψ) as  [[[Hm Heq]|[Hm Heq]]|Hm].
 - subst. rewrite Heq. intros Hp. apply TopL_rev in Hp. now apply weakening.
@@ -901,7 +905,7 @@ destruct (make_impl_spec φ ψ) as  [[[Hm Heq]|[Hm Heq]]|Hm].
 - now rewrite Hm.
 Qed.
 
-Lemma make_impl_complete_L2 Γ φ1 φ2 ψ θ: Γ•(φ1 ⇢ (φ2 ⇢ ψ)) ⊢ θ -> Γ•(φ1 → (φ2 → ψ)) ⊢ θ.
+Lemma make_impl_complete_L2 {K : Kind} Γ φ1 φ2 ψ θ: Γ•(φ1 ⇢ (φ2 ⇢ ψ)) ⊢ θ -> Γ•(φ1 → (φ2 → ψ)) ⊢ θ.
 Proof.
 destruct (make_impl_spec φ2 ψ) as  [[[Hm Heq]|[Hm Heq]]|Hm].
 - subst. rewrite Heq. intro Hp. apply make_impl_complete_L in Hp.
@@ -911,20 +915,20 @@ destruct (make_impl_spec φ2 ψ) as  [[[Hm Heq]|[Hm Heq]]|Hm].
 - rewrite Hm. apply make_impl_complete_L.
 Qed.
 
-Lemma make_impl_complete_R Γ φ ψ: Γ ⊢ φ ⇢ ψ -> Γ ⊢ (φ → ψ).
+Lemma make_impl_complete_R {K : Kind} Γ φ ψ: Γ ⊢ φ ⇢ ψ -> Γ ⊢ (φ → ψ).
 Proof.
 destruct (make_impl_spec φ ψ) as  [[[Hm Heq]|[Hm Heq]]|Hm]; subst; auto with proof.
 now rewrite Hm. 
 Qed.
 
-Lemma make_impl_sound_R Γ φ ψ: Γ ⊢ (φ → ψ) -> Γ ⊢ φ ⇢ ψ.
+Lemma make_impl_sound_R {K : Kind} Γ φ ψ: Γ ⊢ (φ → ψ) -> Γ ⊢ φ ⇢ ψ.
 Proof.
 destruct (make_impl_spec φ ψ) as  [[[Hm Heq]|[Hm Heq]]|Heq]; subst; rewrite Heq; auto with proof.
 Qed.
 
 Global Hint Resolve make_impl_sound_R : proof.
 
-Lemma make_disj_sound_L Γ φ ψ θ : Γ•φ ∨ψ ⊢ θ -> Γ•make_disj φ ψ ⊢ θ.
+Lemma make_disj_sound_L {K : Kind} Γ φ ψ θ : Γ•φ ∨ψ ⊢ θ -> Γ•make_disj φ ψ ⊢ θ.
 Proof.
 intro Hd. apply OrL_rev in Hd as (Hφ&Hψ). unfold make_disj.
 destruct φ; trivial;
@@ -935,14 +939,14 @@ Qed.
 
 Global Hint Resolve make_disj_sound_L : proof.
 
-Lemma make_disj_complete Γ φ ψ θ : Γ•make_disj φ ψ ⊢ θ -> Γ•φ ∨ψ ⊢ θ.
+Lemma make_disj_complete {K : Kind} Γ φ ψ θ : Γ•make_disj φ ψ ⊢ θ -> Γ•φ ∨ψ ⊢ θ.
 Proof.
 destruct  (make_disj_spec φ ψ) as [[[[[Hm|Hm]|Hm]|Hm]|Hm]|Hm].
 6: { now rewrite Hm. }
 all : destruct Hm as (Heq&Hm); rewrite Hm; subst; eauto 2 with proof.
 Qed.
 
-Lemma make_conj_sound_L Γ φ ψ θ : Γ•φ ∧ψ ⊢ θ -> Γ•make_conj φ ψ ⊢ θ.
+Lemma make_conj_sound_L {K : Kind} Γ φ ψ θ : Γ•φ ∧ψ ⊢ θ -> Γ•make_conj φ ψ ⊢ θ.
 Proof.
 intro Hd. apply AndL_rev in Hd.
 destruct (make_conj_spec φ ψ) as  [[[[[Hm|Hm]|Hm]|Hm]|Hm]|Hm].
@@ -954,14 +958,14 @@ Qed.
 
 Global Hint Resolve make_conj_sound_L : proof.
 
-Lemma make_conj_complete_L Γ φ ψ θ : Γ•make_conj φ ψ ⊢ θ -> Γ•φ ∧ψ ⊢ θ.
+Lemma make_conj_complete_L {K : Kind} Γ φ ψ θ : Γ•make_conj φ ψ ⊢ θ -> Γ•φ ∧ψ ⊢ θ.
 Proof.
 destruct (make_conj_spec φ ψ) as  [[[[[Hm|Hm]|Hm]|Hm]|Hm]|Hm].
 6:{ now rewrite Hm. }
 all:(destruct Hm as [Heq Hm]; rewrite Hm; subst; auto with proof).
 Qed.
 
-Lemma make_conj_sound_R Γ φ ψ : Γ  ⊢ φ ∧ψ -> Γ ⊢ make_conj φ ψ.
+Lemma make_conj_sound_R {K : Kind} Γ φ ψ : Γ  ⊢ φ ∧ψ -> Γ ⊢ make_conj φ ψ.
 Proof.
 intro Hd. apply AndR_rev in Hd.
 destruct (make_conj_spec φ ψ) as  [[[[[Hm|Hm]|Hm]|Hm]|Hm]|Hm].
@@ -971,17 +975,17 @@ Qed.
 
 Global Hint Resolve make_conj_sound_R : proof.
 
-Lemma make_conj_complete_R Γ φ ψ : Γ  ⊢ make_conj φ ψ -> Γ  ⊢ φ ∧ψ.
+Lemma make_conj_complete_R {K : Kind} Γ φ ψ : Γ  ⊢ make_conj φ ψ -> Γ  ⊢ φ ∧ψ.
 Proof.
 destruct (make_conj_spec φ ψ) as  [[[[[Hm|Hm]|Hm]|Hm]|Hm]|Hm].
 6:{ now rewrite Hm. }
 all:(destruct Hm as [Heq Hm]; rewrite Hm; subst; auto with proof). 
 Qed.
 
-Lemma OrR_idemp Γ ψ : Γ ⊢ ψ ∨ ψ -> Γ ⊢ ψ.
+Lemma OrR_idemp {K : Kind} Γ ψ : Γ ⊢ ψ ∨ ψ -> Γ ⊢ ψ.
 Proof. intro Hp. dependent induction Hp; auto with proof. Qed.
 
-Lemma make_disj_sound_R Γ φ ψ : Γ  ⊢ φ ∨ψ -> Γ ⊢ make_disj φ ψ.
+Lemma make_disj_sound_R {K : Kind} Γ φ ψ : Γ  ⊢ φ ∨ψ -> Γ ⊢ make_disj φ ψ.
 Proof.
 intro Hd.
 destruct (make_disj_spec φ ψ) as  [[[[[Hm|Hm]|Hm]|Hm]|Hm]|Hm].
@@ -992,7 +996,7 @@ Qed.
 
 Global Hint Resolve make_disj_sound_R : proof.
 
-Lemma make_disj_complete_R Γ φ ψ : Γ  ⊢ make_disj φ ψ -> Γ  ⊢ φ ∨ψ.
+Lemma make_disj_complete_R {K : Kind} Γ φ ψ : Γ  ⊢ make_disj φ ψ -> Γ  ⊢ φ ∨ψ.
 Proof.
 destruct (make_disj_spec φ ψ) as  [[[[[Hm|Hm]|Hm]|Hm]|Hm]|Hm].
 6:{ now rewrite Hm. }
@@ -1010,7 +1014,7 @@ conjunctions of various individual formulas.
 
 (** ** Generalized OrL and its invertibility *)
 
-Lemma disjunction_L Γ Δ θ :
+Lemma disjunction_L {K : Kind} Γ Δ θ :
   ((forall φ, φ ∈ Δ -> (Γ•φ ⊢ θ)) -> (Γ•⋁ Δ ⊢ θ)) *
   ((Γ•⋁ Δ ⊢ θ) -> (forall φ, φ ∈ Δ -> (Γ•φ ⊢ θ))).
 Proof.
@@ -1039,7 +1043,7 @@ Qed.
 
 (** ** Generalized AndR *)
 
-Lemma conjunction_R1 Γ Δ : (forall φ, φ ∈ Δ -> Γ  ⊢ φ) -> (Γ  ⊢ ⋀ Δ).
+Lemma conjunction_R1 {K : Kind} Γ Δ : (forall φ, φ ∈ Δ -> Γ  ⊢ φ) -> (Γ  ⊢ ⋀ Δ).
 Proof.
 intro Hprov. unfold conjunction.
 assert(Hcut : forall θ, Γ ⊢ θ -> Γ ⊢ foldl make_conj θ (nodup form_eq_dec Δ)).
@@ -1055,7 +1059,7 @@ Qed.
 
 (** ** Generalized invertibility of AndR *)
 
-Lemma conjunction_R2 Γ Δ : (Γ  ⊢ ⋀ Δ) -> (forall φ, φ ∈ Δ -> Γ  ⊢ φ).
+Lemma conjunction_R2 {K : Kind} Γ Δ : (Γ  ⊢ ⋀ Δ) -> (forall φ, φ ∈ Δ -> Γ  ⊢ φ).
 Proof.
  unfold conjunction.
 assert(Hcut : forall θ, Γ ⊢ foldl make_conj θ (nodup form_eq_dec Δ) -> (Γ ⊢ θ) * (forall φ, φ ∈ Δ -> Γ  ⊢ φ)).
@@ -1075,7 +1079,7 @@ Qed.
 
 (** ** Generalized AndL *)
 
-Lemma conjunction_L Γ Δ φ θ: (φ ∈ Δ) -> (Γ•φ ⊢ θ) -> (Γ•⋀ Δ ⊢ θ).
+Lemma conjunction_L {K : Kind} Γ Δ φ θ: (φ ∈ Δ) -> (Γ•φ ⊢ θ) -> (Γ•⋀ Δ ⊢ θ).
 Proof.
 intros Hin Hprov. unfold conjunction. revert Hin.
 assert(Hcut : forall ψ, ((φ ∈ Δ) + (Γ•ψ ⊢ θ)) -> (Γ•foldl make_conj ψ (nodup form_eq_dec Δ) ⊢ θ)).
@@ -1096,7 +1100,7 @@ Qed.
 
 (** ** Generalized OrR *)
 
-Lemma disjunction_R Γ Δ φ : (φ ∈ Δ) -> (Γ  ⊢ φ) -> (Γ  ⊢ ⋁ Δ).
+Lemma disjunction_R {K : Kind} Γ Δ φ : (φ ∈ Δ) -> (Γ  ⊢ φ) -> (Γ  ⊢ ⋁ Δ).
 Proof.
 intros Hin Hprov. unfold disjunction. revert Hin.
 assert(Hcut : forall θ, ((Γ ⊢ θ) + (φ ∈ Δ)) -> Γ ⊢ foldl make_disj θ (nodup form_eq_dec Δ)).
@@ -1115,7 +1119,7 @@ assert(Hcut : forall θ, ((Γ ⊢ θ) + (φ ∈ Δ)) -> Γ ⊢ foldl make_disj �
 intro Hin. apply Hcut; now right.
 Qed.  
 
-Lemma strongness φ : ∅ •  φ ⊢ □ φ.
+Lemma strongness φ : ∅ •  φ ⊢iSL □ φ.
 Proof.
 apply BoxR. box_tac. apply weakening, open_box_L, generalised_axiom.
 Qed.

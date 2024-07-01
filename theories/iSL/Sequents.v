@@ -16,54 +16,66 @@ Open Scope stdpp_scope.
  a contraction rule. The left implication rule is refined into four separate
  proof rules.  *)
 
+Inductive Kind := Modal | Normal.
 
+Existing Class Kind.
 
 (** * Definition of provability in G4iSL *)
 Reserved Notation "Γ ⊢ φ" (at level 90).
-Inductive Provable : env -> form -> Type :=
-| Atom :    ∀ Γ p, Γ • (Var p) ⊢ (Var p)
-| ExFalso : ∀ Γ φ, Γ • ⊥ ⊢ φ
-| AndR : ∀ Γ φ ψ,
-    Γ ⊢ φ ->    Γ ⊢ ψ ->
-      Γ ⊢ (φ ∧ ψ)
-| AndL :    ∀ Γ φ ψ θ,
-    Γ • φ • ψ ⊢ θ ->
-      Γ • (φ ∧ ψ) ⊢ θ
-| OrR1 :    ∀ Γ φ ψ,
-    Γ ⊢ φ ->
-      Γ ⊢ (φ ∨ ψ)
-| OrR2 :    ∀ Γ φ ψ,
-    Γ ⊢ ψ ->
-      Γ ⊢ (φ ∨ ψ)
-| OrL :     ∀ Γ φ ψ θ,
-    Γ • φ  ⊢ θ -> Γ • ψ ⊢ θ ->
-      Γ • (φ ∨ ψ) ⊢ θ
-| ImpR :    ∀ Γ φ ψ,
-    Γ • φ ⊢ ψ ->
-      Γ ⊢ (φ → ψ)
-| ImpLVar : ∀ Γ p φ ψ,
-    Γ • Var p • φ ⊢ ψ ->
-      Γ • Var p • (Var p → φ) ⊢ ψ
-| ImpLAnd : ∀ Γ φ1 φ2 φ3 ψ,
-    Γ • (φ1 → (φ2 → φ3)) ⊢ ψ ->
-      Γ • ((φ1 ∧ φ2) → φ3) ⊢ ψ
-| ImpLOr :  ∀ Γ φ1 φ2 φ3 ψ,
-    Γ • (φ1 → φ3) • (φ2 → φ3) ⊢ ψ ->
-      Γ • ((φ1 ∨ φ2) → φ3) ⊢ ψ
-| ImpLImp : ∀ Γ φ1 φ2 φ3 ψ,
-    Γ • (φ2 → φ3) ⊢ (φ1 → φ2) ->Γ • φ3 ⊢ ψ ->
-      Γ • ((φ1 → φ2) → φ3) ⊢ ψ
+Reserved Notation "Γ ⊢iSL φ" (at level 90).
+
+Inductive Provable : forall (K : Kind), env -> form -> Type :=
+| Atom :    ∀ {K : Kind} Γ p, Provable K (Γ • (Var p)) (Var p)
+| ExFalso : ∀ {K} Γ φ, Provable K (Γ • ⊥) φ
+| AndR : ∀ {K} Γ φ ψ,
+    Provable K Γ φ ->  Provable K Γ ψ ->
+      Provable K Γ (φ ∧ ψ)
+| AndL :    ∀ {K} Γ φ ψ θ,
+    Provable K (Γ • φ • ψ) θ ->
+      Provable K (Γ • (φ ∧ ψ)) θ
+| OrR1 :    ∀ {K} Γ φ ψ,
+    Provable K Γ φ ->
+      Provable K Γ (φ ∨ ψ)
+| OrR2 :    ∀ {K} Γ φ ψ,
+    Provable K Γ ψ ->
+      Provable K Γ (φ ∨ ψ)
+| OrL :     ∀ {K} Γ φ ψ θ,
+    Provable K (Γ • φ) θ -> Provable K (Γ • ψ) θ ->
+      Provable K (Γ • (φ ∨ ψ)) θ
+| ImpR :    ∀ {K} Γ φ ψ,
+    Provable K (Γ • φ) ψ ->
+      Provable K Γ (φ → ψ)
+| ImpLVar : ∀ {K} Γ p φ ψ,
+    Provable K (Γ • Var p • φ) ψ ->
+      Provable K (Γ • Var p • (Var p → φ)) ψ
+| ImpLAnd : ∀ {K} Γ φ1 φ2 φ3 ψ,
+    Provable K (Γ • (φ1 → (φ2 → φ3))) ψ ->
+      Provable K (Γ • ((φ1 ∧ φ2) → φ3)) ψ
+| ImpLOr :  ∀ {K} Γ φ1 φ2 φ3 ψ,
+    Provable K (Γ • (φ1 → φ3) • (φ2 → φ3)) ψ ->
+      Provable K (Γ • ((φ1 ∨ φ2) → φ3)) ψ
+| ImpLImp : ∀ {K} Γ φ1 φ2 φ3 ψ,
+    Provable K (Γ • (φ2 → φ3)) (φ1 → φ2) ->
+    Provable K (Γ • φ3) ψ ->
+      Provable K (Γ • ((φ1 → φ2) → φ3)) ψ
 | ImpBox : ∀ Γ φ1 φ2 ψ,
-    (⊗ Γ) • □ φ1 • φ2 ⊢ φ1 ->
-    Γ • φ2 ⊢ ψ ->
-      Γ • ((□ φ1) → φ2) ⊢ ψ
-| BoxR : ∀ Γ φ, open_boxes Γ • □ φ ⊢ φ -> Γ ⊢ □ φ
-where "Γ ⊢ φ" := (Provable Γ φ).
+    @Provable Modal ((⊗ Γ) • □ φ1 • φ2) φ1 ->
+    @Provable Modal (Γ • φ2) ψ ->
+     @Provable Modal (Γ • ((□ φ1) → φ2)) ψ
+| BoxR : ∀ Γ φ, @Provable Modal (open_boxes Γ • □ φ) φ -> @Provable Modal Γ (□ φ)
+where "Γ ⊢iSL φ" := (@Provable Modal Γ φ).
+
+Arguments Provable {_} _ _.
+
+Notation "Γ ⊢ φ" := (Provable Γ φ) (at level 90).
+Notation "Γ ⊢G4iP φ" := (@Provable Normal Γ φ) (at level 90).
+
+
 
 Global Hint Constructors Provable : proof.
 
 (** We show that equivalent multisets prove the same things. *)
-Global Instance proper_Provable : Proper ((≡@{env}) ==> (=) ==> (=)) Provable.
+Global Instance proper_Provable {K} : Proper ((≡@{env}) ==> (=) ==> (=)) (@Provable K).
 Proof. intros Γ Γ' Heq φ φ' Heq'. ms. Qed.
 
 (** We introduce a tactic "peapply" which allows for application of a G4ip rule
@@ -92,6 +104,7 @@ Ltac exhibit Hin n := match n with
 | 2 => rewrite (proper_Provable _ _ (equiv_disj_union_compat_r (equiv_disj_union_compat_r (difference_singleton _ _ Hin))) _ _ eq_refl)
 | 3 => rewrite (proper_Provable _ _ (equiv_disj_union_compat_r(equiv_disj_union_compat_r (equiv_disj_union_compat_r (difference_singleton _ _ Hin)))) _ _ eq_refl)
 end.
+
 
 (** The tactic "forward" tries to change a goal of the form : 
 
@@ -128,7 +141,7 @@ Ltac forward := match goal with
   assert(Hin : ψ ∈ Γ) by ms;
   rewrite (proper_Provable _ _ (equiv_disj_union_compat_r(equiv_disj_union_compat_r(equiv_disj_union_compat_r(equiv_disj_union_compat_r (env_replace φ Hin))))) _ _ eq_refl);
   exch 3; exch 2; exch 1; exch 0
-end.
+end.  
 
 (** The tactic "backward" changes a goal of the form : 
 
@@ -181,4 +194,4 @@ Ltac box_tac :=
   |⊗(?Γ ∖ {[?ψ]}) => match goal with |H: ψ ∈ Γ |- _ => rw (open_boxes_remove Γ ψ H) n end
   | ?Δ' • ?φ => box_tac_aux Δ' (S n)  end
   in
-    try match goal with | |- ?Δ ⊢ _ =>  box_tac_aux Δ 0 end; simpl.
+    try match goal with | |- ?Δ ⊢iSL _ =>  box_tac_aux Δ 0 end; simpl.

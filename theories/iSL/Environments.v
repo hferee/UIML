@@ -122,7 +122,7 @@ Lemma make_conj_spec x y :
   {x ⊼ y = (x ∧ y)}.
 Proof.
 unfold make_conj.
-repeat (match goal with |- context  [match ?x with | _  => _ end] => destruct x end; try tauto).
+repeat (match goal with |- context  [match ?x with | _  => _ end] => destruct x end; subst; try tauto).
 Qed.
 
 Lemma occurs_in_make_conj v x y : occurs_in v (x ⊼ y) -> occurs_in v x \/ occurs_in v y.
