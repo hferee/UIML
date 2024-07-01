@@ -16,8 +16,11 @@ match φ with
   | _ => [φ]
 end.
 
+Definition fold_simp_or l :=
+  foldl simp_or ⊥ (nodup form_eq_dec l).
+
 Definition simp_or_form φ :=
-   foldl simp_or ⊥ (nodup form_eq_dec (flatten_or φ)).
+  fold_simp_or (flatten_or φ).
 
 Definition simp_and φ ψ :=
   if decide (φ =⊥) then ⊥
@@ -85,40 +88,13 @@ Proof.
   apply H.
 Qed.
 
-Lemma simp_or_form_equiv_L φ ψ:
-(φ ≼ ψ) -> 
-φ ≼ simp_or_form ψ.
-Proof. 
-Admitted.
 
-
-Lemma simp_or_form_equiv_R φ ψ:
-(φ ≼ ψ) -> 
-simp_or_form φ ≼  ψ.
-Admitted.
-
-
-Lemma simp_and_form_equiv_L φ ψ:
-(φ ≼ ψ) -> 
-φ ≼ simp_and_form ψ.
-Proof. 
-Admitted.
-
-
-Lemma simp_and_form_equiv_R φ ψ:
-(φ ≼ ψ) -> 
-simp_and_form φ ≼  ψ.
-Proof.
-Admitted.
-
-
-Lemma simp_equiv_or_L φ ψ : 
-  (φ  ≼ simp φ) -> (ψ  ≼ simp ψ) ->
-  (φ ∨ ψ) ≼ simp (φ ∨ ψ).
+Lemma simp_or_equiv_L φ ψ φ' ψ' : 
+  (φ ≼ φ') -> (ψ ≼ ψ') ->
+  (φ ∨ ψ) ≼ simp_or φ' ψ'.
 Proof.
 intros Hφ Hψ.
 simpl. unfold simp_or. 
-apply simp_or_form_equiv_L.
 case decide as [Hbot |].
 - apply OrL.
   + rewrite Hbot in Hφ.
@@ -133,7 +109,7 @@ case decide as [Hbot |].
     * apply top_provable.
     * case decide as [Htop |].
       -- apply top_provable.
-      -- case decide; [intro Heq | intro ]; apply OrL.
+      -- case decide; [intro Heq | intro]; apply OrL.
             ** apply Hφ.
             ** rewrite Heq.
                apply Hψ.
@@ -143,13 +119,13 @@ case decide as [Hbot |].
                apply Hψ.
 Qed.
 
-Lemma simp_equiv_or_R φ ψ : 
-  (simp φ ≼ φ) -> (simp ψ ≼ ψ) ->
-  simp (φ ∨ ψ) ≼ (φ ∨ ψ).
+
+Lemma simp_or_equiv_R φ ψ φ' ψ': 
+  (φ' ≼ φ) -> (ψ' ≼ ψ) ->
+  simp_or φ' ψ' ≼ (φ ∨ ψ).
 Proof.
 intros Hφ Hψ.
 simpl. unfold simp_or. 
-apply simp_or_form_equiv_R.
 case decide as [].
 - apply OrR2.
   apply Hψ.
@@ -174,6 +150,132 @@ case decide as [].
                apply Hψ.
 Qed.
 
+Lemma elem_of_app2  (A: Type) (v: A) l1 l2 :
+v ∈ l1 ++ l2 -> {v ∈ l1} + {v ∈ l2}.
+Proof.
+Search elem_of.
+Admitted.
+
+Search Exists.
+
+
+Lemma flatten_or_L φ θ:
+  (φ ≼ θ) ->
+  (forall ψ, ψ ∈ flatten_or φ -> ψ ≼ θ).
+Proof.
+  induction φ; intro; simpl; intros; try (apply elem_of_list_singleton in H0; rewrite H0; apply H).
+  apply elem_of_app2 in H0.
+  apply OrL_rev in H as [Hφ1 Hφ2].
+  destruct H0 as [HA|HB].
+    - apply IHφ1; [apply Hφ1 | apply HA].
+    - apply IHφ2; [apply Hφ2 | apply HB].
+Qed.
+
+Lemma disjunction_L Δ (θ:form) :
+  ((forall φ, φ ∈ Δ -> (φ ≼ θ)) -> (fold_simp_or Δ ≼ θ)) *
+  ((fold_simp_or Δ ≼ θ) -> (forall φ, φ ∈ Δ -> (φ ≼ θ))).
+Proof.
+unfold disjunction.
+assert(Hcut :
+  (forall ψ, (ψ ≼ θ) -> (forall φ, φ ∈ Δ -> (φ ≼ θ)) ->
+    ((foldl simp_or ψ (nodup form_eq_dec Δ)) ≼ θ)) *
+  (forall ψ,(((foldl simp_or ψ (nodup form_eq_dec Δ)) ≼ θ) ->
+    (ψ ≼ θ) * (∀ φ : form, φ ∈ Δ → (φ ≼ θ))))).
+{
+  induction Δ; simpl; split; intros ψ Hψ.
+  - intro. apply Hψ.
+  - split; trivial. intros φ Hin. contradict Hin. auto with *.
+  - intro Hall. case in_dec; intro; apply (fst IHΔ); auto with *. 
+    assert (Hsimp_or: simp_or ψ a ≼ ψ ∨ a) by (apply simp_or_equiv_R; apply generalised_axiom).
+    apply (cut2 _ (ψ ∨ a) _); [ apply simp_or_equiv_R; apply generalised_axiom |
+                                apply OrL; [apply Hψ| apply Hall; auto with *]].
+  - case in_dec in Hψ; apply IHΔ in Hψ;
+    destruct Hψ as [Hψ Hind].
+    + split; trivial;  intros φ Hin; destruct (decide (φ = a)); auto with *.
+        subst. apply Hind. now apply elem_of_list_In.
+    + assert (Hor: ψ ∨ a ≼ θ) by (eapply (cut2 (ψ ∨ a) _ _); [ apply simp_or_equiv_L; apply generalised_axiom| 
+                                                            apply Hψ ]).
+
+        clear Hψ. apply OrL_rev in Hor as [Hψ Ha].
+        split; trivial; intros φ Hin; destruct (decide (φ = a)); auto with *.
+}
+split; apply Hcut. constructor 2.
+Qed.
+
+
+Lemma simp_or_form_equiv_R φ ψ:
+(φ ≼ ψ) -> 
+simp_or_form φ ≼ ψ.
+Proof.
+intro H.
+unfold simp_or_form.
+apply disjunction_L.
+apply flatten_or_L.
+apply H.
+Qed.
+
+
+Lemma flatten_or_R φ θ:
+  (φ ≼ θ) -> Exists  (fun ψ => (φ ≼ ψ) -> True) (flatten_or θ).
+Proof.
+  intro H.
+  induction θ; simpl; auto with *.
+  apply Exists_app.
+Admitted.
+
+Lemma disjunction_R Δ φ ψ: (ψ ∈ Δ) -> (φ ≼ ψ) -> (φ ≼ fold_simp_or Δ).
+Proof.
+intros Hin Hprov. unfold disjunction. revert Hin.
+assert(Hcut : forall θ, ((φ ≼ θ) + (ψ ∈ Δ)) -> φ ≼ foldl simp_or θ (nodup form_eq_dec Δ)).
+{
+  induction Δ; simpl; intros θ [Hθ | Hin].
+  - assumption.
+  - contradict Hin; auto with *.
+  - case in_dec; intro; apply IHΔ; left; trivial. 
+    eapply (cut2 _ (θ ∨ a) _); [apply OrR1; apply Hθ|
+                                eapply simp_or_equiv_L; apply generalised_axiom].
+  - apply elem_of_cons in Hin.
+    destruct (decide (ψ = a)).
+    + subst. case in_dec; intro; apply IHΔ.
+        * right. now apply elem_of_list_In.
+        * left. 
+    eapply (cut2 _ (θ ∨ a) _); [apply OrR2; apply Hprov|
+                                eapply simp_or_equiv_L; apply generalised_axiom].
+    + case in_dec; intro; apply IHΔ; right; tauto.
+}
+intro Hin. apply Hcut; now right.
+Qed.  
+
+Lemma simp_or_form_equiv_L φ ψ:
+(φ ≼ ψ) -> 
+φ ≼ simp_or_form ψ.
+Proof. 
+intro H.
+unfold simp_or_form.
+eapply disjunction_R.
+Admitted.
+
+
+Lemma simp_equiv_or_L φ ψ : 
+  (φ  ≼ simp φ) -> (ψ  ≼ simp ψ) ->
+  (φ ∨ ψ) ≼ simp (φ ∨ ψ).
+Proof.
+intros Hφ Hψ.
+simpl. apply simp_or_form_equiv_L.
+apply simp_or_equiv_L; [apply Hφ | apply Hψ].
+Qed.
+
+Lemma simp_equiv_or_R φ ψ : 
+  (simp φ ≼ φ) -> (simp ψ ≼ ψ) ->
+  simp (φ ∨ ψ) ≼ (φ ∨ ψ).
+Proof.
+intros Hφ Hψ.
+simpl. apply simp_or_form_equiv_R.
+apply simp_or_equiv_R; [apply Hφ | apply Hψ].
+Qed.
+
+
+
 Lemma simp_equiv_or φ ψ: 
   (φ ≼ simp φ) * (simp φ ≼ φ) ->
   (ψ ≼ simp ψ) * (simp ψ ≼ ψ) ->
@@ -182,6 +284,21 @@ Proof.
 intros IHφ IHψ.
 split; [ apply simp_equiv_or_L | apply simp_equiv_or_R]; try apply IHφ ; try apply IHψ.
 Qed.
+
+
+Lemma simp_and_form_equiv_L φ ψ:
+(φ ≼ ψ) -> 
+φ ≼ simp_and_form ψ.
+Proof. 
+Admitted.
+
+
+Lemma simp_and_form_equiv_R φ ψ:
+(φ ≼ ψ) -> 
+simp_and_form φ ≼  ψ.
+Proof.
+Admitted.
+
 
 Lemma simp_equiv_and_L φ ψ : 
   (φ  ≼ simp φ) -> (ψ  ≼ simp ψ) ->
@@ -248,6 +365,8 @@ case decide as [].
          ++ apply AndL.
             apply AndR; [|exch 0]; apply weakening; [apply Hφ | apply Hψ].
 Qed.
+
+
 
 
 Lemma simp_equiv_and φ ψ: 
