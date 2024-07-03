@@ -30,8 +30,8 @@ iE and iA are given box-free formulas as input.*)
        method iE s =  catch_e (fun () -> s |> eval |> fail_on_modality |> isl_E v |> string_of_formula)
        method islA s = catch_e (fun () -> s |> eval |> isl_simplified_A v |> string_of_formula)
        method islE s = catch_e (fun () -> s |> eval |> isl_simplified_E v |> string_of_formula)
-       method k s = catch_e (fun () -> s |> eval |> isl_E v |> string_of_formula ~classical: true)
-       method gl s = catch_e (fun () -> s |> eval |> isl_E v |> string_of_formula ~classical: true)
+       method k s = catch_e (fun () -> s |> eval |> gl_UI v |> string_of_formula ~classical: true)
+       method gl s = catch_e (fun () -> s |> eval |> k_UI v |> string_of_formula ~classical: true)
        method parse s = catch_e (fun () -> s |> eval |> string_of_formula)
      end);;
 
