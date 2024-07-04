@@ -9,9 +9,6 @@ Definition obviously_smaller φ ψ :=
   else if decide (φ = ψ) then Lt
   else Eq.
 
-
-
-
 Definition simp_or φ ψ := 
 match obviously_smaller φ ψ with
   | Lt => ψ
@@ -24,8 +21,8 @@ Infix "⊻" := simp_or (at level 65).
 
 Definition simp_ors φ ψ :=
 match (φ,ψ) with
-  |(φ1 ∨ φ2, ψ) => φ1 ⊻ (ψ ⊻ φ2)
-  |(φ, ψ1 ∨ ψ2) => φ ⊻ (ψ1 ⊻ ψ2)
+  |(φ1 ∨ φ2, ψ) => ψ ⊻ (φ1 ∨ φ2)
+  |(φ, ψ1 ∨ ψ2) => φ ⊻ (ψ1 ∨ ψ2)
   |(φ, ψ) => φ ⊻ ψ
 end.
 
@@ -300,7 +297,7 @@ Qed.
 
 
 Lemma simp_or_comm_ctx_L  a φ ψ :
-  (φ ⊻ ψ ≼ a)  ->  ψ ⊻  φ≼ a.
+  (φ ⊻ ψ ≼ a)  ->  ψ ⊻ φ ≼ a.
 Proof.
   intro H.
   eapply cut2.
@@ -316,21 +313,9 @@ Lemma simp_ors_equiv_L φ ψ φ' ψ':
 Proof.
 intros Hφ Hψ.
 destruct φ';
-try (
-  simpl; destruct ψ'; eapply simp_or_equiv_L; try assumption;
-  apply (cut2 _ ( ψ'1 ∨ ψ'2) _);
-  [ assumption | apply simp_or_equiv_L; apply generalised_axiom]
-).
-destruct ψ';
-  simpl;
-  apply simp_or_assoc_ctx_R_R;
-  apply simp_or_comm_ctx_R;
-  apply simp_or_assoc_ctx_R_R;
-  (eapply simp_or_equiv_L;
-  [ apply simp_or_comm_ctx_R; eapply cut2;
-    [ apply Hφ |
-      apply simp_or_equiv_L; apply generalised_axiom]|
-  assumption ]).
+simpl; destruct ψ';
+try (eapply simp_or_equiv_L; assumption);
+apply simp_or_comm_ctx_R; (apply simp_or_equiv_L; assumption).
 Qed.
 
 Lemma simp_equiv_or_L φ ψ : 
@@ -348,22 +333,10 @@ Lemma simp_ors_equiv_R φ ψ φ' ψ':
   simp_ors φ' ψ' ≼ φ ∨ ψ.
 Proof.
 intros Hφ Hψ.
-destruct φ'; 
-try (
-  simpl; destruct ψ'; apply simp_or_equiv_R; try assumption;
-  apply (cut2 _ ( ψ'1 ∨ ψ'2) _);
-  [apply simp_or_equiv_R; apply generalised_axiom | assumption]
-).
+destruct φ';
 destruct ψ';
-  simpl;
-  apply simp_or_assoc_ctx_R_L;
-  apply simp_or_comm_ctx_L;
-  apply simp_or_assoc_ctx_R_L;
-  (eapply simp_or_equiv_R;
-  [ apply simp_or_comm_ctx_L; eapply cut2;
-    [ apply simp_or_equiv_R; apply generalised_axiom|
-      apply Hφ ]|
-    assumption ]).
+try (eapply simp_or_equiv_R; assumption);
+apply simp_or_comm_ctx_L; (apply simp_or_equiv_R; assumption).
 Qed.
 
 Lemma simp_equiv_or_R φ ψ: 
@@ -667,11 +640,6 @@ destruct φ;
 try (
   simpl; destruct ψ; 
   (apply vars_incl_simp_or; try assumption; apply vars_incl_simp_or_equiv_or; assumption)
-).
-destruct ψ; simpl; apply vars_incl_simp_or_equiv_or; apply or_vars_incl_L in Hφ;
-(apply or_vars_incl_R; 
-  [ apply Hφ|
-  apply vars_incl_simp_or_equiv_or; apply or_vars_incl_R; [apply Hψ| apply Hφ]]
 ).
 Qed.
 
