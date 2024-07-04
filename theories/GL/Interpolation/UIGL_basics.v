@@ -3,16 +3,6 @@
 
   Require Import GLS_export.
 
-Section Arithmetic.
-
-  Lemma lt_decT : forall m n, (m < n) + ((m < n) -> False).
-  Proof.
-  induction m ; destruct n. 1,3: right ; intro ; lia. left ; lia.
-  destruct (IHm n). left ; lia. right ; intro ; lia.
-  Qed.
-
-  End Arithmetic.
-
   Section Logic_Abrv.
 
   (* Conjunction of a list of formulas. *)

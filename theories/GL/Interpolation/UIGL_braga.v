@@ -253,7 +253,7 @@ Arguments imap {X} {Y} _ {D} _ {l}.
     rewrite J0. rewrite J1. auto.
   Qed.
 
-  Lemma GUI_tot : forall s : Seq, {A : MPropF | GUI s A}.
+  Definition GUI_tot : forall s : Seq, {A : MPropF | GUI s A}.
   Proof.
   apply (LexSeq_ind (fun x => existsT A : MPropF, GUI x A)).
   intros s IH. destruct (empty_seq_dec s).
@@ -269,7 +269,7 @@ Arguments imap {X} {Y} _ {D} _ {l}.
         assert (J10: (forall z : Seq, In z (Canopy (nodupseq (XBoxed_list (top_boxes (fst s)), []%list))) -> existsT A : MPropF, (GN p GUI s) z A)).
          { intros. destruct (dec_init_rules z).
          -- exists Top. apply GN_init_seq ; auto.
-         -- destruct (lt_decT (length (usable_boxes z)) (length (usable_boxes s))).
+         -- destruct (Compare_dec.lt_dec (length (usable_boxes z)) (length (usable_boxes s))).
              ** destruct (IH z). unfold LexSeq. apply DLW_wf_lex.lex_cons ; auto. exists x0. apply GN_less_ub ; auto.
              ** assert (J100: (forall x0 : Seq, In x0 (GLR_prems (nodupseq z)) -> existsT A : MPropF, GUI x0 A)).
                  intros. apply IH with (s1:=x0) ; auto. unfold LexSeq. apply DLW_wf_lex.lex_cons ; auto. apply InT_In_Seq in H2. apply GLR_prems_less_ub in H2.
@@ -288,7 +288,7 @@ Arguments imap {X} {Y} _ {D} _ {l}.
         apply LexSeq_nodupseq ; auto.
         epose (@imap _ _ GUI (fun (x : Seq) => In x (Canopy (nodupseq s))) H (Canopy (nodupseq s))). simpl in s0. destruct s0 ; auto.
         exists (list_conj x). apply GUI_not_critic ; auto.
-Qed.
+Defined.
 
   Fact GUI_inv_empty_seq {s A} : GUI s A -> s = ([],[]) -> Bot = A.
   Proof. intros. pose (GUI_empty_seq H0). apply (GUI_fun _ _ _ g H). Qed.
@@ -343,7 +343,7 @@ Qed.
   intros. destruct (dec_init_rules s).
   - assert (is_init s) ; auto. exists Top. apply GN_init_seq ; auto.
   - assert (is_init s -> False) ; auto.
-    destruct (lt_decT (length (usable_boxes s)) (length (usable_boxes s0))).
+    destruct (Compare_dec.lt_dec (length (usable_boxes s)) (length (usable_boxes s0))).
     + exists (UI p s). apply GN_less_ub ; auto ; apply UI_GUI ; auto.
     + assert (J100: (forall x0 : Seq, In x0 (GLR_prems (nodupseq s)) -> existsT A : MPropF, GUI p x0 A)).
        intros. apply GUI_tot.

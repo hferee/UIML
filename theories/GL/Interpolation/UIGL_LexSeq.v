@@ -40,11 +40,11 @@ Require Import UIGL_irred_short.
 
   Variable (P : Seq -> Type).
 
-  Theorem LexSeq_ind : (forall s0, (forall s1, LexSeq s1 s0 -> P s1) -> P s0) -> (forall s, P s).
+  Definition LexSeq_ind : (forall s0, (forall s1, LexSeq s1 s0 -> P s1) -> P s0) -> (forall s, P s).
   Proof.
   intros. induction s as [ s0 IHs0 ] using (well_founded_induction_type wf_LexSeq).
   apply X; intros; apply IHs0 ; auto.
-  Qed.
+  Defined.
 
   End LexSeq_ind.
 
@@ -168,11 +168,11 @@ Require Import UIGL_irred_short.
 
   Section empty_seq.
 
-  Lemma empty_seq_dec : forall (s: Seq), (s = ([],[])) + (s <> ([],[])).
+  Definition empty_seq_dec : forall (s: Seq), (s = ([],[])) + (s <> ([],[])).
   Proof.
   intros. destruct s. destruct l ; destruct l0 ; auto.
   all: right ; intro H ; inversion H.
-  Qed.
+  Defined.
 
   Lemma not_init_empty_seq : is_init ([],[]) -> False.
   Proof.

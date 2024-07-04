@@ -94,7 +94,7 @@ Require Import UIGL_UI_prelims.
        (* If x0 is initial. *)
        assert (is_init x0) ; unfold is_init ; auto. pose (GN_inv_init _ g). rewrite <- e in H1 ; auto. simpl in H1. inversion H1.
        (* If x0 is not initial. *)
-       destruct (lt_decT (length (usable_boxes x0)) (length (usable_boxes (l, l0)))).
+       destruct (Compare_dec.lt_dec (length (usable_boxes x0)) (length (usable_boxes (l, l0)))).
        (* If x0 has less usable boxes than (XBoxed_list (top_boxes l), []). *)
        assert ((forall (x : Seq) (l m : MPropF), (fun (s1 : Seq) (A : MPropF) => UI p s1 = A) x l -> (fun (s1 : Seq) (A : MPropF) => UI p s1 = A) x m -> l = m)).
        intros. subst. auto. assert ((is_init x0 -> False)) ; auto.
@@ -111,7 +111,7 @@ Require Import UIGL_UI_prelims.
        intros. subst. auto.
        assert (J1: Gimap (GUI p) (GLR_prems (nodupseq x0)) (map (UI p) (GLR_prems (nodupseq x0)))).
        apply Gimap_map ; auto. intros ; apply UI_GUI ; auto. assert ((is_init x0 -> False)) ; auto.
-       pose (@GN_inv_noinit_nolessub p _ _ _ _ g H3 f1 J1).
+       pose (@GN_inv_noinit_nolessub p _ _ _ _ g H3 n0 J1).
        rewrite <- e in H1. clear e. clear J1. clear H0. simpl in H1. repeat rewrite app_nil_r in H1. apply in_app_or in H1.
        destruct H1. apply propvar_subform_list_disj in H0. apply propvar_subform_list_restr_list_prop in H0. destruct H0 ; split ; auto.
        apply propvar_subform_list_Canopy with (A:=# q) in H2 ; auto. simpl in H2. rewrite app_nil_r in H2.

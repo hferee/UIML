@@ -127,11 +127,11 @@ Section Arithmetic.
 
   Variable (P : Seq -> Type).
 
-  Theorem LtSeq_ind : (forall s0, (forall s1, LtSeq s1 s0 -> P s1) -> P s0) -> (forall s, P s).
+  Definition LtSeq_ind : (forall s0, (forall s1, LtSeq s1 s0 -> P s1) -> P s0) -> (forall s, P s).
   Proof.
   intros. induction s as [ s0 IHs0 ] using (well_founded_induction_type wf_LtSeq).
   apply X; intros; apply IHs0 ; auto.
-  Qed.
+  Defined.
 
   End LtSeq_ind.
 
@@ -191,11 +191,11 @@ Section Arithmetic.
 
   Section empty_seq.
 
-  Lemma empty_seq_dec : forall (s: Seq), (s = ([],[])) + (s <> ([],[])).
+  Definition empty_seq_dec : forall (s: Seq), (s = ([],[])) + (s <> ([],[])).
   Proof.
   intros. destruct s. destruct l ; destruct l0 ; auto.
   all: right ; intro H ; inversion H.
-  Qed.
+  Defined.
 
   Lemma not_init_empty_set : is_init ([],[]) -> False.
   Proof.

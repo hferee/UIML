@@ -113,7 +113,7 @@ Require Import UIGL_UI_inter.
       epose (wkn_LI _ [] (fst leaf) (snd leaf)). destruct leaf ; simpl ; simpl in w. apply w.
       pose (GLS_wkn_L X0 J0 J1). destruct s1. auto.
       (* If leaf is not initial. *)
-      destruct (lt_decT (length (usable_boxes leaf)) (length (usable_boxes s0))).
+      destruct (Compare_dec.lt_dec (length (usable_boxes leaf)) (length (usable_boxes s0))).
       (* If leaf has less usable boxes than (XBoxed_list (top_boxes (fst s0)), []). *)
       unfold N. destruct (N_pwc p s0 leaf).
       simpl. assert (J0: is_init leaf -> False). auto.
@@ -128,7 +128,7 @@ Require Import UIGL_UI_inter.
       intros. subst. auto.
       assert (J1: Gimap (GUI p) (GLR_prems (nodupseq leaf)) (map (UI p) (GLR_prems (nodupseq leaf)))).
       apply Gimap_map ; auto. intros ; apply UI_GUI ; auto.
-      pose (@GN_inv_noinit_nolessub p _ _ _ _ g J0 f1 J1).
+      pose (@GN_inv_noinit_nolessub p _ _ _ _ g J0 n0 J1).
       rewrite <- e ; auto. clear e. clear J1. clear H0. apply OrL. 2: apply OrL.
       1-3: apply list_disj_L ; intros. 1-2: unfold restr_list_prop in H0.
       apply InT_In in H0. apply In_remove_In_list in H0.

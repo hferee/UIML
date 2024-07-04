@@ -83,7 +83,7 @@ induction l.
     apply in_cons. assumption.
 Qed.
 
-Lemma In_pos_top_imps_split_l : forall l (A : MPropF) n, In (A, S n) (pos_top_imps l) -> 
+Definition In_pos_top_imps_split_l : forall l (A : MPropF) n, In (A, S n) (pos_top_imps l) -> 
           existsT2 l0 l1, (l = l0 ++ A :: l1) /\
                           (length l0 = n) /\
                           (l0 = fst (nth_split n (remove_nth (S n) A l))) /\
@@ -171,7 +171,7 @@ induction l.
         rewrite H0. clear H. clear H0. rewrite effective_remove_nth.
         pose (nth_split_idR (Box a :: x) x0). simpl (length (Box a :: x)) in e2.
         rewrite <- e2. reflexivity.
-Qed.
+Defined.
 
 Lemma In_l_imp_In_pos_top_imps : forall l (A B : MPropF), In (Imp A B) l ->
                                     existsT2 n, In ((Imp A B), n) (pos_top_imps l).
@@ -215,7 +215,7 @@ Qed.
    there is only finitely many premises via ImpR applied on this implication. But we
    need to do it for all implications on the right of this sequent. *)
 
-Lemma ImpR_help01 : forall prem s l, InT prem (prems_Imp_R l s) ->
+Definition ImpR_help01 : forall prem s l, InT prem (prems_Imp_R l s) ->
                   (existsT2 n A B Γ0 Γ1 Δ0 Δ1,
                         (In ((Imp A B), S n) l) /\
                         (prem = (Γ0 ++ A :: Γ1, Δ0 ++ B :: Δ1)) /\
@@ -257,9 +257,9 @@ intros prem s. destruct s. destruct prem. induction l3 ; intros X.
       exists x2. exists x3. exists x4. exists x5. repeat split ; try tauto. apply in_cons. tauto.
     + pose (IHl3 X). destruct s as (x & x0 & x1 & x2 & x3 & x4 & x5 & p). decompose record p. exists x. exists x0. exists x1.
       exists x2. exists x3. exists x4. exists x5. repeat split ; try tauto. apply in_cons. tauto.
-Qed.
+Defined.
 
-Lemma ImpR_help1 : forall prem s, InT prem (prems_Imp_R (pos_top_imps (snd s)) s) -> ImpRRule [prem] s.
+Definition ImpR_help1 : forall prem s, InT prem (prems_Imp_R (pos_top_imps (snd s)) s) -> ImpRRule [prem] s.
 Proof.
 intros prem s X. pose (ImpR_help01 _ _ _ X). destruct s0. destruct s.
 destruct s0. destruct s as (B & Γ0 & Γ1 & Δ0 & Δ1 & i & e2 & e3 & e4 & e5).
@@ -269,18 +269,18 @@ apply In_pos_top_imps_split_l in i. destruct i. destruct s as (x2 & H1 & H2 & H3
 subst.
 rewrite <- H4. rewrite effective_remove_nth. rewrite <- nth_split_idL.
 apply ImpRRule_I.
-Qed.
+Defined.
 
-Lemma ImpR_help002 : forall Γ0 Γ1 Δ0 Δ1 A B,
+Definition ImpR_help002 : forall Γ0 Γ1 Δ0 Δ1 A B,
            InT (Γ0 ++ A :: Γ1, Δ0 ++ B :: Δ1) (listInsertsR_Seqs (Γ0 ++ Γ1) (Δ0 ++ B :: Δ1) A).
 Proof.
 intros. unfold listInsertsR_Seqs. apply InT_map_iff. exists (Γ0 ++ A :: Γ1). split.
 reflexivity. unfold listInserts. apply InT_map_iff. exists (Γ0, Γ1). simpl. split.
 reflexivity. destruct (list_of_splits (Γ0 ++ Γ1)). simpl. pose (i Γ0 Γ1).
 apply In_InT_seqs. apply i0. reflexivity.
-Qed.
+Defined.
 
-Lemma ImpR_help02 : forall Γ0 Γ1 Δ0 Δ1 A B l n,
+Definition ImpR_help02 : forall Γ0 Γ1 Δ0 Δ1 A B l n,
                                 ImpRRule [(Γ0 ++ A :: Γ1, Δ0 ++ B :: Δ1)] (Γ0 ++ Γ1, Δ0 ++ (Imp A B) :: Δ1) ->
                                 (length Δ0 = n) ->
                                 (In ((Imp A B), S n) l) ->
@@ -312,16 +312,16 @@ induction l ; intros.
   * apply In_InT_pair in H1. inversion H1. subst. inversion H3. subst. apply InT_In in H3.
     assert (J1: length Δ0 = length Δ0). reflexivity.
     pose (IHl _ H J1 H3). simpl. destruct n0. assumption. assumption.
-Qed.
+Defined.
 
-Lemma ImpR_help2 : forall prem s, ImpRRule [prem] s -> InT prem (prems_Imp_R (pos_top_imps (snd s)) s).
+Definition ImpR_help2 : forall prem s, ImpRRule [prem] s -> InT prem (prems_Imp_R (pos_top_imps (snd s)) s).
 Proof.
 intros. inversion H. subst. simpl.
 pose (@ImpR_help02 Γ0 Γ1 Δ0 Δ1 A B (pos_top_imps (Δ0 ++ A --> B :: Δ1)) (length Δ0)). apply i ; try assumption.
 reflexivity. apply Good_pos_in_pos_top_imps.
-Qed.
+Defined.
 
-Lemma finite_ImpR_premises_of_S : forall (s : Seq), existsT2 listImpRprems,
+Definition finite_ImpR_premises_of_S : forall (s : Seq), existsT2 listImpRprems,
               (forall prems, ((ImpRRule prems s) -> (InT prems listImpRprems)) *
                              ((InT prems listImpRprems) -> (ImpRRule prems s))).
 Proof.
@@ -333,4 +333,4 @@ intros. split ; intro.
   pose (@ImpR_help2 (Γ0 ++ A :: Γ1, Δ0 ++ B :: Δ1) (Γ0 ++ Γ1, Δ0 ++ A --> B :: Δ1)). simpl in i. apply i.
   assumption.
 - apply InT_map_iff in H. destruct H. destruct p. subst. apply ImpR_help1. simpl. assumption.
-Qed.
+Defined.

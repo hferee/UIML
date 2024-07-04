@@ -275,7 +275,7 @@ Require Import UIGL_UIDiam_N.
          assert (J2: derrec_height x1 = derrec_height x1). auto.
          assert (J3: (fst (nodupseq k) ++ X0, snd (nodupseq k) ++ Y0) = (fst (nodupseq k) ++ X0, snd (nodupseq k) ++ Y0)). auto.
          pose (Canopy_hp_inv_ctx (nodupseq k) _ _ x1 X0 Y0 J2 J3 _ H0). destruct s.
-         destruct (lt_decT (derrec_height x2) (S (dersrec_height d))).
+         destruct (Compare_dec.lt_dec (derrec_height x2) (S (dersrec_height d))).
          (* Use PIH. *)
          pose (fold_Canopy _ _ H0). destruct s ; subst.
          exfalso. apply f. apply Canopy_critical in H0 ; auto. apply critical_nodupseq in H0 ; auto.
@@ -433,7 +433,7 @@ Require Import UIGL_UIDiam_N.
          assert (J2: derrec_height x1 = derrec_height x1). auto.
          assert (J3: (fst (nodupseq k) ++ X0, snd (nodupseq k) ++ Y0) = (fst (nodupseq k) ++ X0, snd (nodupseq k) ++ Y0)). auto.
          pose (Canopy_hp_inv_ctx (nodupseq k) _ _ x1 X0 Y0 J2 J3 _ H0). destruct s.
-         destruct (lt_decT (derrec_height x2) (S (dersrec_height d))).
+         destruct (Compare_dec.lt_dec (derrec_height x2) (S (dersrec_height d))).
          (* Use PIH. *)
          pose (fold_Canopy _ _ H0). destruct s ; subst.
          exfalso. apply f. apply Canopy_critical in H0 ; auto. apply critical_nodupseq in H0 ; auto.
@@ -724,7 +724,7 @@ Require Import UIGL_UIDiam_N.
          assert (J2: derrec_height x1 = derrec_height x1). auto.
          assert (J3: (fst (nodupseq k) ++ X0, snd (nodupseq k) ++ Y0) = (fst (nodupseq k) ++ X0, snd (nodupseq k) ++ Y0)). auto.
          pose (Canopy_hp_inv_ctx (nodupseq k) _ _ x1 X0 Y0 J2 J3 _ H). destruct s.
-         destruct (lt_decT (derrec_height x2) (S (dersrec_height d))).
+         destruct (Compare_dec.lt_dec (derrec_height x2) (S (dersrec_height d))).
          (* Use PIH. *)
          pose (fold_Canopy _ _ H). destruct s ; subst.
          exfalso. apply f. apply Canopy_critical in H ; auto. apply critical_nodupseq in H ; auto.

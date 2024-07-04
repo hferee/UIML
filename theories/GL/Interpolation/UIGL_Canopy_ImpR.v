@@ -14,24 +14,17 @@
 
   (* Operation to remove and replace an element in a list. *)
 
-  Fixpoint replace (A B : MPropF) (l : list MPropF) : list MPropF :=
-    match l with
-      | [] => []
-      | C :: t => if (eq_dec_form A C) then B :: replace A B t else C :: (replace A B t)
-    end.
+  Definition replace (A B : MPropF) (l : list MPropF) : list MPropF :=
+  let subst_form A B C :=   if (eq_dec_form A C) then B else C in
+  map (subst_form A B) l.
 
   Lemma replace_app : forall l0 l1 A B, replace A B (l0 ++ l1) = replace A B l0 ++ replace A B l1.
-  Proof.
-  induction l0 ; simpl ; auto. intros. destruct (eq_dec_form A a).
-  subst. simpl. rewrite IHl0 ; auto. simpl. rewrite IHl0 ; auto.
-  Qed.
+  Proof. intros. apply map_app. Qed.
 
   Lemma in_not_touched_replace : forall (l : list MPropF) [A B C : MPropF], In C l -> C <> A ->
               In C (replace A B l).
   Proof.
-  induction l ; simpl ; intros ; auto. destruct (eq_dec_form A a) ; subst.
-  destruct H. exfalso ; auto. apply in_cons ; auto.
-  destruct H ; subst. apply in_eq. apply in_cons ; auto.
+  intros. apply in_map_iff. exists C. destruct (eq_dec_form A C) ; subst; tauto.
   Qed.
 
   Lemma in_replace : forall l A B C, A <> B -> In C (replace A B l) -> (In C l \/ C = B) /\ A <> C.
@@ -84,6 +77,8 @@
   Proof.
   intros. pose (count_occ_n_imp_subformLF l A B). lia.
   Qed.
+
+  Global Opaque eq_dec_form.
 
   Lemma n_imp_subformLF_replace : forall l A B, n_imp_subformLF (replace (A --> B) B l) =
         (n_imp_subformLF l - ((count_occ eq_dec_form l (A --> B)) * S (n_imp_subformF A))).

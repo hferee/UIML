@@ -31,7 +31,7 @@ match l with
       end
 end.
 
-Lemma ImpL_help002 : forall Γ0 Γ1 Δ0 Δ1 A B,
+Definition ImpL_help002 : forall Γ0 Γ1 Δ0 Δ1 A B,
            InT [(Γ0 ++ Γ1, Δ0 ++ A :: Δ1); (Γ0 ++ B :: Γ1, Δ0 ++ Δ1)]
                (flatten_list (map (fun y : list MPropF * list MPropF => map
                (fun z : list MPropF * list MPropF => [y; z]) [(Γ0 ++ B :: Γ1, Δ0 ++ Δ1)])
@@ -61,9 +61,9 @@ apply i ; clear i.
   (proj1_sigT2 (list_of_splits (Δ0 ++ Δ1))) (Δ0 ++ A :: Δ1)). destruct p. clear s.
   apply i. clear i. exists (Δ0,Δ1). simpl. split. reflexivity. destruct (list_of_splits (Δ0 ++ Δ1)).
   simpl. pose (i Δ0 Δ1). apply In_InT_seqs. rewrite <- i0. reflexivity.
-Qed.
+Defined.
 
-Lemma ImpL_help02 : forall Γ0 Γ1 Δ0 Δ1 A B l n,
+Definition ImpL_help02 : forall Γ0 Γ1 Δ0 Δ1 A B l n,
             ImpLRule [(Γ0 ++ Γ1, Δ0 ++ A :: Δ1); (Γ0 ++ B :: Γ1, Δ0 ++ Δ1)] (Γ0 ++ (Imp A B) :: Γ1, Δ0 ++ Δ1) ->
             (length Γ0 = n) ->
             (In ((Imp A B), S n) l) ->
@@ -109,17 +109,17 @@ induction l ; intros.
   * subst. apply In_InT_pair in H1. inversion H1. subst. inversion H2. subst. apply InT_In in H2.
     assert (J1: length Γ0 = length Γ0). reflexivity.
     pose (IHl _ H J1 H2). simpl. destruct n0. assumption. assumption.
-Qed.
+Defined.
 
-Lemma ImpL_help2 : forall prem1 prem2 s, ImpLRule [prem1; prem2] s ->
+Definition ImpL_help2 : forall prem1 prem2 s, ImpLRule [prem1; prem2] s ->
                       InT [prem1; prem2] (prems_Imp_L (pos_top_imps (fst s)) s).
 Proof.
 intros. inversion H. subst. simpl.
 pose (@ImpL_help02 Γ0 Γ1 Δ0 Δ1 A B (pos_top_imps (Γ0 ++ (Imp A B) :: Γ1)) (length Γ0)). apply i ; try assumption.
 reflexivity. apply Good_pos_in_pos_top_imps.
-Qed.
+Defined.
 
-Lemma ImpL_help01 : forall prems s l, InT prems (prems_Imp_L l s) ->
+Definition ImpL_help01 : forall prems s l, InT prems (prems_Imp_L l s) ->
                   (existsT2 n prem1 prem2 A B Γ0 Γ1 Δ0 Δ1,
                         (prems = [prem1; prem2]) /\
                         (In ((Imp A B), S n) l) /\
@@ -203,9 +203,9 @@ intros prems s. destruct s. induction l1 ; intros X.
     + pose (IHl1 X). repeat destruct s. repeat destruct p. exists x. exists x0. exists x1.
       exists x2. exists x3. exists x4. exists x5. exists x6. exists x7.
       repeat split ; try tauto. apply in_cons. tauto.
-Qed.
+Defined.
 
-Lemma ImpL_help1 : forall prems s, InT prems (prems_Imp_L (pos_top_imps (fst s)) s) ->
+Definition ImpL_help1 : forall prems s, InT prems (prems_Imp_L (pos_top_imps (fst s)) s) ->
                                          ImpLRule prems s.
 Proof.
 intros prem s X. pose (s0 := @ImpL_help01 _ _ _ X). destruct s0 as (n&Hn&A&B&Γ0&Γ1&Δ0& Δ1&e1&Heq&i&p). destruct s as (l&l0). simpl in X.
@@ -221,10 +221,10 @@ remember (fst (nth_split (length l0) (remove_nth (S (length l0)) (B --> Γ0) l))
 remember (snd (nth_split (length l0) (remove_nth (S (length l0)) (B --> Γ0) l))) as Γ1'.
 rewrite Heq1, Heq2.
 apply ImpLRule_I.
-Qed.
+Defined.
 
 
-Lemma finite_ImpL_premises_of_S : forall (s : Seq), existsT2 listImpLprems,
+Definition finite_ImpL_premises_of_S : forall (s : Seq), existsT2 listImpLprems,
               (forall prems, ((ImpLRule prems s) -> (InT prems listImpLprems)) *
                              ((InT prems listImpLprems) -> (ImpLRule prems s))).
 Proof.
@@ -235,6 +235,6 @@ intros. split ; intro.
   pose (@ImpL_help2 (Γ0 ++ Γ1, Δ0 ++ A :: Δ1) (Γ0 ++ B :: Γ1, Δ0 ++ Δ1) (Γ0 ++ A --> B :: Γ1, Δ0 ++ Δ1)). apply i.
   assumption.
 - pose (@ImpL_help1 prems (l, l0)). apply i. assumption.
-Qed.
+Defined.
 
 

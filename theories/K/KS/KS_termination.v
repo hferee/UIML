@@ -128,7 +128,7 @@ induction l ; intros.
     assert (J2: InT a (a :: r :: l)). apply InT_eq.
     assert (J3: InT x (a :: r :: l)). apply InT_cons. assumption.
     (* The next assert decides on le between mhd of a and mhd of x. *)
-    pose (dec_le
+    pose (le_dec
       (derrec_height (proj1_sigT2 (Prem_mhd (proj1_sigT2 (InT_list_of_premises_exists_prems concl _ (H1 a J2)))
       (H3 a J2) a (H2 a J2))))
       (derrec_height
@@ -160,7 +160,7 @@ induction l ; intros.
       unfold is_mhd in i0. pose (i0 x1).
       destruct (Prem_mhd' (proj1_sigT2 (InT_list_of_premises_exists_prems concl _ (H1' prem' H4)))
            (H3' prem' H4) prem' (H2' prem' H4)). simpl in H6. unfold is_mhd in i2. pose (i2 x3). lia.
-    + exists a. exists J2. intros. apply le_False_lt in f.
+    + exists a. exists J2. intros.
       inversion J1.
       { subst. destruct (Prem_mhd (proj1_sigT2 (InT_list_of_premises_exists_prems concl _ (H1 prem' J1))) 
         (H3 prem' J1) prem' (H2 prem' J1)). simpl.
@@ -179,8 +179,8 @@ induction l ; intros.
           (Prem_mhd' (proj1_sigT2 (InT_list_of_premises_exists_prems concl _ (H1' prem' H4)))
              (H3' prem' H4) prem' (H2' prem' H4))) <= derrec_height x3). apply l0.
        destruct (Prem_mhd' (proj1_sigT2 (InT_list_of_premises_exists_prems concl _ (H1' prem' H4)))
-             (H3' prem' H4) prem' (H2' prem' H4)). simpl in H0. simpl in f. unfold is_mhd in i2.
-       pose (i2 x2). lia. }
+             (H3' prem' H4) prem' (H2' prem' H4)). simpl in H0. unfold is_mhd in i2.
+       pose (i2 x2). simpl in *. lia. }
 Qed.
 
 Lemma term_IH_help : forall concl,

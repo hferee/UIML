@@ -217,7 +217,7 @@ intros x l. induction l.
   * assert (In x l). inversion H. subst. exfalso. apply n. reflexivity. assumption.
     apply IHl in H0. destruct H0. destruct s. subst. exists ([a] ++ x0). exists x1.
     auto.
-Qed.
+Defined.
 
 
 Lemma InT_dec : forall l (a : MPropF) , (InT a l) + ((InT a l) -> False).
@@ -233,21 +233,21 @@ induction l.
       { apply f. assumption. }
 Qed.
 
-Lemma eq_dec_listsF : forall (l0 l1 : list MPropF), {l0 = l1} + {l0 <> l1}.
+Definition eq_dec_listsF : forall (l0 l1 : list MPropF), {l0 = l1} + {l0 <> l1}.
 Proof.
 apply list_eq_dec. apply eq_dec_form.
-Qed.
+Defined.
 
-Lemma eq_dec_seqs : forall (s0 s1 : rel (list MPropF)), {s0 = s1} + {s0 <> s1}.
+Definition eq_dec_seqs : forall (s0 s1 : rel (list MPropF)), {s0 = s1} + {s0 <> s1}.
 Proof.
 intros. destruct s0. destruct s1. destruct (eq_dec_listsF l l1) ; destruct (eq_dec_listsF l0 l2).
 - subst. left. reflexivity.
 - subst. right. intro. inversion H. auto.
 - subst. right. intro. inversion H. auto.
 - subst. right. intro. inversion H. auto.
-Qed.
+Defined.
 
-Lemma seqs_in_splitT : forall (x : rel (list MPropF)) l,
+Definition seqs_in_splitT : forall (x : rel (list MPropF)) l,
        In x l -> existsT2 l1 l2, l = l1 ++ x :: l2.
 Proof.
 intros x l. induction l.
@@ -257,15 +257,15 @@ intros x l. induction l.
   * assert (In x l). inversion H. subst. exfalso. apply n. reflexivity. assumption.
     apply IHl in H0. destruct H0. destruct s. subst. exists ([a] ++ x0). exists x1.
     auto.
-Qed.
+Defined.
 
-Lemma In_InT_seqs : forall (seq : rel (list MPropF)) seqs, In seq seqs -> InT seq seqs.
+Definition In_InT_seqs : forall (seq : rel (list MPropF)) seqs, In seq seqs -> InT seq seqs.
 Proof.
 intros seq seqs. induction seqs.
 - intro. inversion H.
 - intro. apply seqs_in_splitT in H. destruct H. destruct s. rewrite e. apply InT_or_app.
   right. apply InT_eq.
-Qed.
+Defined.
 
 Lemma list_split_form : forall (A B : MPropF) l0 l1 l2 l3, (l0 ++ A :: l1 = l2 ++ B :: l3) ->
                           ((A = B) * (l0 = l2) * (l1 = l3)) +

@@ -252,7 +252,7 @@ Require Import UIGL_Canopy_nodupseq_perm.
                  1-2: intro ; apply In_remove_list_In_list in H5 ; auto. rewrite H5 in H3. auto.
                  pose (IHl2 (remove eq_dec_form a l1) _ _ J0 H0 H4 J1 J). destruct e. destruct H5.
                  exists x ; split ; auto. intro. apply H6. apply in_in_remove ; auto. intro ; subst. auto.
-          -- assert (In a l3 -> False). intro. apply f0 ; auto. rewrite permut_remove_remove_list in H3.
+          -- assert (In a l3 -> False). intro. apply n0 ; auto. rewrite permut_remove_remove_list in H3.
               rewrite notin_remove in H3 ; auto.
               assert (incl (remove eq_dec_form a l1) l2). intro. intros. apply in_remove in H5. destruct H5.
               apply H1 in H5. inversion H5 ; subst ; auto. exfalso ; apply H6 ; auto.

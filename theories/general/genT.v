@@ -240,8 +240,8 @@ Inductive InT A (a : A) : list A -> Type :=
   | InT_eq' : forall b l, b = a -> @InT A a (b :: l)
   | InT_cons : forall b l, @InT A a l -> @InT A a (b :: l).
 
-Lemma InT_eq: forall A a l, @InT A a (a :: l).
-Proof.  intros. apply InT_eq'. reflexivity. Qed.
+Definition InT_eq: forall A a l, @InT A a (a :: l).
+Proof.  intros. apply InT_eq'. reflexivity. Defined.
 
 Definition InT_2nd A (a b : A) l := InT_cons a (InT_eq b l).
 
@@ -300,10 +300,10 @@ split. reflexivity.  apply InT_eq.
 subst. apply IHl in X0. cD. exists X0. subst. split. reflexivity. 
 apply InT_cons. exact X2. Qed.
 
-Lemma InT_map_iffT: forall (A B : Type) (f : A -> B) (l : list A) (y : B),
+Definition InT_map_iffT: forall (A B : Type) (f : A -> B) (l : list A) (y : B),
        iffT (InT y (map f l)) (sigT (fun x => prod (f x = y) (InT x l))).
 Proof. intros. apply pair. apply InT_mapE.
-intro. cD. subst. apply InT_map. exact X1. Qed.
+intro. cD. subst. apply InT_map. exact X1. Defined.
 
 Definition InT_mapI A B f l y := iffT_D2 (@InT_map_iffT A B f l y).
 

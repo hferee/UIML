@@ -84,7 +84,7 @@ Qed.
 
   Definition critical_Seq (s : Seq) := is_Prime ((fst s) ++ (snd s)).
 
-  Lemma is_Prime_dec : forall l, (is_Prime l) + (is_Prime l -> False).
+  Definition is_Prime_dec : forall l, (is_Prime l) + (is_Prime l -> False).
   Proof.
   unfold is_Prime. induction l ; simpl ; auto.
   left. intros. inversion H. destruct IHl. destruct a as [n | | |].
@@ -93,12 +93,12 @@ Qed.
   assert (a1 --> a2 = a1 --> a2 \/ In (a1 --> a2) l). left ; auto. apply H in H0.
   destruct H0. destruct H0. inversion H0. destruct H0. destruct H0 ; inversion H0.
   inversion H0. right. intros. apply f. intros. apply H. auto.
-  Qed.
+  Defined.
 
-  Lemma critical_Seq_dec (s : Seq) : (critical_Seq s) + (critical_Seq s -> False).
+  Definition critical_Seq_dec (s : Seq) : (critical_Seq s) + (critical_Seq s -> False).
   Proof.
   unfold critical_Seq. destruct s ; simpl. apply is_Prime_dec.
-  Qed.
+  Defined.
 
   (* We show that all sequents in Canopy are critical. *)
 
@@ -427,7 +427,7 @@ Qed.
     apply IHs with (q:= q) (leaf:=leaf) in J0 ; auto.
   Qed.
 
-  Lemma Id_InT_Canopy : forall s, InT s (Canopy s) -> Canopy s = [s].
+  Definition Id_InT_Canopy : forall s, InT s (Canopy s) -> Canopy s = [s].
   Proof.
   intros. destruct (critical_Seq_dec s).
   - remember (finite_ImpRules_premises_of_S s) as J.
@@ -441,7 +441,7 @@ Qed.
        assert (In (A --> B) ((Γ0 ++ A --> B :: Γ1) ++ Δ0 ++ Δ1)). apply in_or_app ; left ; apply in_or_app ; right ; apply in_eq.
        apply c in H0. destruct H0. destruct H0. inversion H0. destruct H0. destruct H0 ; inversion H0. inversion H0.
   - exfalso. apply Canopy_critical in H. auto.
-  Qed.
+  Defined.
 
   Lemma critical_Seq_InT_Canopy : forall s, critical_Seq s -> InT s (Canopy s).
   Proof.

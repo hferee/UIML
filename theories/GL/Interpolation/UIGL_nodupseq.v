@@ -234,7 +234,7 @@ Theorem LexSeq_nodupseq_case: forall s, LexSeq (nodupseq s) s +
 Proof.
 intro s. pose (ub_nodupseq s). pose (n_imp_subformS_nodupseq s).
 unfold LexSeq. unfold less_thanS ;unfold GLS_termination_measure.measure. rewrite <- e.
-destruct (lt_decT (n_imp_subformS (nodupseq s)) (n_imp_subformS s)).
+destruct (Compare_dec.lt_dec (n_imp_subformS (nodupseq s)) (n_imp_subformS s)).
 - left. apply DLW_wf_lex.lex_skip. apply DLW_wf_lex.lex_cons ; auto.
 - right. split ; auto. lia.
 Qed.
@@ -350,12 +350,14 @@ intros s0 s1 H. unfold GLR_prems in *. destruct (finite_GLR_premises_of_S (nodup
 apply InT_flatten_list_InT_elem in H. destruct H. destruct p0. apply p in i0. inversion i0 ; subst.
 destruct s0 ; simpl in *. unfold nodupseq in * ; subst ; simpl in *. inversion i ; subst. 2: inversion H0. simpl.
 assert (InT (Box A) l0). apply In_InT. apply (nodup_In eq_dec_form). rewrite <- H2. apply in_or_app ; right ; apply in_eq.
-apply InT_split in H. destruct H. destruct s. subst. exists (XBoxed_list (top_boxes l) ++ [Box A], [A]). repeat split ; simpl ; auto.
+apply InT_split in H. destruct H. destruct s. subst. 
+exists (XBoxed_list (top_boxes l) ++ [Box A], [A]). repeat split ; simpl ; auto.
 pose (nobox_gen_ext_top_boxes_identity X). rewrite e ; auto. apply nodup_app.
 rewrite <- nodup_top_boxes. rewrite nodup_XBoxed_list. auto.
+
 apply InT_trans_flatten_list with (bs:=[(XBoxed_list (top_boxes l) ++ [Box A], [A])]). apply InT_eq.
-destruct (finite_GLR_premises_of_S (l, x0 ++ Box A :: x1)) ; simpl in *. apply p0.
-apply GLRRule_I. intros B HB. apply in_top_boxes in HB. destruct HB. destruct s. destruct s.
+apply (@GLR_help2 (XBoxed_list (top_boxes l) ++ [Box A], [A])  (l, x0 ++ Box A :: x1)).
+apply GLRRule_I. intros B HB. apply in_top_boxes in HB. destruct HB as [x2 [x3 [x4 p1]]].
 destruct p1 ; subst. eexists ; auto. apply top_boxes_nobox_gen_ext.
 Qed.
 

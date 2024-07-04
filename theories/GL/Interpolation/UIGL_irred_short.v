@@ -175,7 +175,7 @@ Section irred.
       | right Hxf => let (m,hm) := flatmap Girred irred_pwc (λ _ h, h) in
                      exist _ m _
       end)); auto.
-  Qed.
+  Defined.
 
   (** Now we can instanciate for _ ∈ f _ is well founded 
       and define irred as a total function *)

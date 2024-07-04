@@ -6,47 +6,8 @@ Require Import Lia.
 Require Import KS_calc.
 
 Lemma NoDup_incl_lengthT : forall (l l' : list MPropF), NoDup l -> incl l l' ->
-          ((length l < length l') + (length l = length l')).
-Proof.
-induction l.
-- intros. destruct l'.
-  * right. auto.
-  * left. simpl. lia.
-- induction l' ; intros.
-  * exfalso. assert (In a (a :: l)). apply in_eq. pose (H0 a H1). inversion i.
-  * simpl. destruct (eq_dec_form a a0).
-    + subst. assert (NoDup l). inversion H. assumption. assert (incl l l').
-      unfold incl. intros. assert (In a (a0 :: l)). apply in_cons. assumption.
-      apply H0 in H3. inversion H3. subst. exfalso. inversion H. apply H6. assumption. assumption.
-      pose (IHl _ H1 H2). destruct s. left. lia. right. lia.
-    + destruct (In_dec l a0).
-      { destruct (In_dec l' a0).
-        - assert (NoDup l). inversion H. assumption. assert (incl l l'). unfold incl.
-          intros. assert (In a1 (a :: l)). apply in_cons. assumption. apply H0 in H3.
-          inversion H3. subst. assumption. assumption. pose (IHl _ H1 H2). destruct s.
-          left. lia. right. lia.
-        - assert (NoDup l). inversion H. assumption. assert (incl l (a0 :: l')).
-          unfold incl. intros. assert (In a1 (a :: l)). apply in_cons. assumption.
-          apply H0 in H3. assumption. assert (In a l'). assert (In a (a :: l)).
-          apply in_eq. apply H0 in H3. inversion H3. subst. exfalso. apply n. reflexivity.
-          assumption. apply in_split in H3. destruct (Nat.eq_dec (length l) (length l')).
-          * subst. right. auto.
-          * left. destruct H3. destruct H3. subst.
-            rewrite app_length. simpl. assert (incl l (a0 :: x ++ x0)). unfold incl.
-            intros. assert (In a1 (a :: l)). apply in_cons. assumption. apply H0 in H4.
-            inversion H4. subst. apply in_eq. apply in_app_or in H5. destruct H5.
-            apply in_cons. apply in_or_app. auto. inversion H5. subst. exfalso. inversion H.
-            apply H8. assumption. apply in_cons. apply in_or_app. auto.
-            rewrite app_length in n0. simpl in n0.
-            pose (IHl _ H1 H3). destruct s. 
-            + simpl in l0. rewrite app_length in l0. lia.
-            + exfalso. apply n0. simpl in e. rewrite app_length in e. lia.  }
-      { assert (incl l l'). unfold incl. intros. assert (In a1 (a :: l)). apply in_cons. assumption.
-        apply H0 in H2. inversion H2. subst. exfalso. apply f. assumption. assumption.
-        assert (NoDup l). inversion H. assumption. pose (IHl _ H2 H1). destruct s.
-        - left. lia.
-        - right. lia. }
-Qed.
+          {length l < length l'} + {length l = length l'}.
+Proof. intros. apply Compare_dec.le_lt_eq_dec, NoDup_incl_length; assumption. Qed.
 
 (* Then the definition we were initially looking for can be reached: *)
 

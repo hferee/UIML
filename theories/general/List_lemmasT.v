@@ -816,7 +816,7 @@ Proof.
   subst. exists (a :: l2'), a'.  firstorder. 
 Qed.
 
-Lemma InT_app_or : forall {T : Type} (l1 l2 : list T) A,
+Definition InT_app_or : forall {T : Type} (l1 l2 : list T) A,
       InT A (l1 ++ l2) -> InT A l1 + InT A l2.
 Proof.
 induction l1. intros. rewrite app_nil_l in X. right. assumption.
@@ -824,9 +824,9 @@ intros. remember ((a :: l1) ++ l2) as l. destruct X.
 subst. inversion Heql. left. apply InT_eq. inversion Heql.
 subst. apply IHl1 in X. destruct X. left. apply InT_cons. assumption.
 right. assumption.
-Qed.
+Defined.
 
-Lemma InT_or_app : forall {T : Type} (l1 l2 : list T) A,
+Definition InT_or_app : forall {T : Type} (l1 l2 : list T) A,
        (InT A l1 + InT A l2) -> InT A (l1 ++ l2).
 Proof.
 induction l1. intros. rewrite app_nil_l. destruct X. inversion i.
@@ -835,7 +835,7 @@ intros. destruct X. remember (a:: l1) as l. destruct i.
 inversion Heql. subst. apply InT_eq. inversion Heql. subst.
 simpl. apply InT_cons. apply IHl1. left. assumption.
 simpl. apply InT_cons. apply IHl1. right. assumption.
-Qed.
+Defined.
 
 
 

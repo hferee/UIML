@@ -163,7 +163,7 @@ Qed.
 
   Definition critical_Seq (s : Seq) := is_Prime ((fst s) ++ (snd s)).
 
-  Lemma is_Prime_dec : forall l, (is_Prime l) + (is_Prime l -> False).
+  Definition is_Prime_dec : forall l, (is_Prime l) + (is_Prime l -> False).
   Proof.
   unfold is_Prime. induction l ; simpl ; auto.
   left. intros. inversion H. destruct IHl. destruct a as [n| | |].
@@ -172,12 +172,12 @@ Qed.
   assert ((Imp a1 a2 = Imp a1 a2) \/ In (Imp a1 a2) l). left ; auto. apply H in H0.
   destruct H0. destruct H0. inversion H0. destruct H0. destruct H0 ; inversion H0.
   inversion H0. right. intros. apply f. intros. apply H. auto.
-  Qed.
+  Defined.
 
-  Lemma critical_Seq_dec (s : Seq) : (critical_Seq s) + (critical_Seq s -> False).
+  Definition critical_Seq_dec (s : Seq) : (critical_Seq s) + (critical_Seq s -> False).
   Proof.
   unfold critical_Seq. destruct s ; simpl. apply is_Prime_dec.
-  Qed.
+  Defined.
 
   (* We show that all sequents in Canopy are critical. *)
 

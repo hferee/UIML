@@ -38,7 +38,7 @@ Theorem gen_rec_UI_imp : forall s sr p X Y,
     apply Gimap_map. intros. apply UI_GUI ; auto.
     assert (J41: Gimap (GUI p) (GLR_prems (nodupseq (nodupseq ([],[])))) (map (UI p) (GLR_prems (nodupseq (nodupseq ([],[])))))).
     apply Gimap_map. intros. apply UI_GUI ; auto.
-    destruct (lt_decT (length (usable_boxes ([],[]))) (length (usable_boxes sr))).
+    destruct (Compare_dec.lt_dec (length (usable_boxes ([],[]))) (length (usable_boxes sr))).
     + assert (J0: GUI p (nodupseq ([],[])) (UI p (nodupseq ([],[])))). apply UI_GUI ; auto. apply UI_GUI in J0.
        rewrite ub_nodupseq in l.
        epose (GN_inv_noinit_lessub p g f l (UI_spec p _)). rewrite <- e. rewrite H0.
@@ -46,7 +46,7 @@ Theorem gen_rec_UI_imp : forall s sr p X Y,
        apply dlCons. 2: apply dlNil. simpl.
        pose (AndL (X, Bot :: Y) Bot Top). simpl in g0. apply g0. clear g0.
        apply derI with []. 2: apply dlNil. apply BotL ; apply (BotLRule_I []).
-    +  rewrite ub_nodupseq in f0. pose (GN_inv_noinit_nolessub _ g f f0 J41). rewrite <- e. clear e. simpl.
+    +  rewrite ub_nodupseq in n. pose (GN_inv_noinit_nolessub _ g f n J41). rewrite <- e. clear e. simpl.
         unfold nodupseq in * ; simpl in *. destruct (GLR_prems ([], [])) eqn:E; simpl.
         { apply derI with (ps:=[([] ++ (And (Or ⊥ (Or ⊥ ⊥)) Top) :: X, [] ++ Bot :: Y)]). apply ImpR. apply ImpRRule_I.
           apply dlCons. 2: apply dlNil. simpl.
@@ -85,7 +85,7 @@ Theorem gen_rec_UI_imp : forall s sr p X Y,
       apply Gimap_map. intros. apply UI_GUI ; auto.
       assert (J41: Gimap (GUI p) (GLR_prems (nodupseq (nodupseq s))) (map (UI p) (GLR_prems (nodupseq (nodupseq s))))).
       apply Gimap_map. intros. apply UI_GUI ; auto.
-      destruct (lt_decT (length (usable_boxes s)) (length (usable_boxes sr))).
+      destruct (Compare_dec.lt_dec (length (usable_boxes s)) (length (usable_boxes sr))).
       (* If s has less usable boxes than sr. *)
       + assert (J0: GUI p (nodupseq s) (UI p (nodupseq s))). apply UI_GUI ; auto. apply UI_GUI in J0.
          rewrite ub_nodupseq in l.
@@ -95,7 +95,7 @@ Theorem gen_rec_UI_imp : forall s sr p X Y,
          pose (AndL (X, UI p s :: Y) (UI p (nodupseq s)) Top). simpl in g0. apply g0. clear g0.
          apply UI_nodupseq.
       (* If s does not have less usable boxes than sr. *)
-      +  rewrite ub_nodupseq in f0. pose (GN_inv_noinit_nolessub _ g J40 f0 J41). rewrite <- e. clear e.
+      +  rewrite ub_nodupseq in n. pose (GN_inv_noinit_nolessub _ g J40 n J41). rewrite <- e. clear e.
           assert (J0: GUI p s (UI p s)). apply UI_GUI ; auto.
           assert (J1: Gimap (GUI p) (GLR_prems (nodupseq s)) (map (UI p) (GLR_prems (nodupseq s)))). apply Gimap_map. intros.
           apply UI_GUI ; auto.

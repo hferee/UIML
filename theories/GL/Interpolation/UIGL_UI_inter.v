@@ -147,7 +147,7 @@ Require Import UIGL_UI_prelims.
            assert (incl (usable_boxes x0) (usable_boxes x)). intros A HA. apply InT_In. apply In_InT in HA.
            apply (PermutationTS_usable_boxes _ _ (PermutationTS_sym _ _ p0)) ; auto.
            epose (NoDup_incl_length (NoDup_usable_boxes x0) H6). lia.
-           destruct (lt_decT (length (usable_boxes x0)) (length (usable_boxes s))).
+           destruct (Compare_dec.lt_dec (length (usable_boxes x0)) (length (usable_boxes s))).
            (* The sequent x0 has less usable boxes than s. *)
            pose (N_spec p s x0).
            epose (@GN_inv_noinit_lessub _ _ _ _ _ g H3 l J200). rewrite <- e ; auto.
@@ -159,7 +159,7 @@ Require Import UIGL_UI_prelims.
            pose (N_spec p s x0).
            assert (J410: Gimap (GUI p) (GLR_prems (nodupseq x0)) (map (UI p) (GLR_prems (nodupseq x0)))).
            apply Gimap_map ; auto. intros. apply UI_GUI ; auto.
-           epose (@GN_inv_noinit_nolessub _ _ _ _ _ g H3 f1 J410). rewrite <- e ; auto.
+           epose (@GN_inv_noinit_nolessub _ _ _ _ _ g H3 n J410). rewrite <- e ; auto.
            assert (J42: (length (usable_boxes x) < length (usable_boxes sp)) -> False). lia.
            pose (N_spec p sp x).
            assert (J43: Gimap (GUI p) (GLR_prems (nodupseq x)) (map (UI p) (GLR_prems (nodupseq x)))).
@@ -330,7 +330,7 @@ Require Import UIGL_UI_prelims.
            assert (J300: GUI p x (UI p x)). apply UI_GUI ; auto.
            pose (Canopy_critical _ _ i).
            pose (ub_nodupseq s).
-           destruct (lt_decT (length (usable_boxes x)) (length (usable_boxes s))).
+           destruct (Compare_dec.lt_dec (length (usable_boxes x)) (length (usable_boxes s))).
            (* The sequent x0 has less usable boxes than s. *)
            pose (N_spec p s x).
            epose (@GN_inv_noinit_lessub _ _ _ _ _ g H3 l J300). rewrite <- e0 ; auto.
@@ -342,7 +342,7 @@ Require Import UIGL_UI_prelims.
            pose (N_spec p s x).
            assert (J410: Gimap (GUI p) (GLR_prems (nodupseq x)) (map (UI p) (GLR_prems (nodupseq x)))).
            apply Gimap_map ; auto. intros ; apply UI_GUI ; auto.
-           epose (@GN_inv_noinit_nolessub _ _ _ _ _ g H3 f1 J410). rewrite <- e0 ; auto.
+           epose (@GN_inv_noinit_nolessub _ _ _ _ _ g H3 n J410). rewrite <- e0 ; auto.
            assert (J42: (length (usable_boxes x) < length (usable_boxes (nodupseq s))) -> False). lia.
            pose (N_spec p (nodupseq s) x).
            assert (J43: Gimap (GUI p) (GLR_prems (nodupseq x)) (map (UI p) (GLR_prems (nodupseq x)))).
@@ -471,7 +471,7 @@ Qed.
            assert (J300: GUI p x (UI p x)). apply UI_GUI ; auto.
            pose (Canopy_critical _ _ i).
            pose (ub_nodupseq s).
-           destruct (lt_decT (length (usable_boxes x)) (length (usable_boxes s))).
+           destruct (Compare_dec.lt_dec (length (usable_boxes x)) (length (usable_boxes s))).
            (* The sequent x0 has less usable boxes than s. *)
            pose (N_spec p s x).
            epose (@GN_inv_noinit_lessub _ _ _ _ _ g H3 l J300). rewrite <- e0 ; auto.
@@ -483,7 +483,7 @@ Qed.
            pose (N_spec p s x).
            assert (J410: Gimap (GUI p) (GLR_prems (nodupseq x)) (map (UI p) (GLR_prems (nodupseq x)))).
            apply Gimap_map ; auto. intros ; apply UI_GUI ; auto.
-           epose (@GN_inv_noinit_nolessub _ _ _ _ _ g H3 f1 J410). rewrite <- e0 ; auto.
+           epose (@GN_inv_noinit_nolessub _ _ _ _ _ g H3 n J410). rewrite <- e0 ; auto.
            assert (J42: (length (usable_boxes x) < length (usable_boxes (nodupseq s))) -> False). lia.
            pose (N_spec p (nodupseq s) x).
            assert (J43: Gimap (GUI p) (GLR_prems (nodupseq x)) (map (UI p) (GLR_prems (nodupseq x)))).
@@ -538,7 +538,7 @@ Qed.
      assert (J400: GUI p (nodupseq s1) (UI p (nodupseq s1))). apply UI_GUI ; auto.
      assert (critical_Seq (nodupseq s1)). apply (critical_nodupseq s1) ; auto.
      pose (ub_nodupseq s1).
-     destruct (lt_decT (length (usable_boxes s1)) (length (usable_boxes s0))).
+     destruct (Compare_dec.lt_dec (length (usable_boxes s1)) (length (usable_boxes s0))).
      (* The sequent x0 has less usable boxes than s. *)
      * pose (N_spec p s0 s1).
        epose (@GN_inv_noinit_lessub _ _ _ _ _ g H0 l J300). rewrite <- e0 ; auto.
@@ -550,7 +550,7 @@ Qed.
      * pose (N_spec p s0 s1).
        assert (J410: Gimap (GUI p) (GLR_prems (nodupseq s1)) (map (UI p) (GLR_prems (nodupseq s1)))).
        apply Gimap_map ; auto. intros ; apply UI_GUI ; auto.
-       epose (@GN_inv_noinit_nolessub _ _ _ _ _ g H0 f0 J410). rewrite <- e0 ; auto.
+       epose (@GN_inv_noinit_nolessub _ _ _ _ _ g H0 n J410). rewrite <- e0 ; auto.
        assert (J42: (length (usable_boxes (nodupseq s1)) < length (usable_boxes s0)) -> False). rewrite <- ub_nodupseq ; auto.
        pose (N_spec p s0 (nodupseq s1)).
        assert (J43: Gimap (GUI p) (GLR_prems (nodupseq (nodupseq s1))) (map (UI p) (GLR_prems (nodupseq (nodupseq s1))))).

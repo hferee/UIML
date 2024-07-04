@@ -31,7 +31,7 @@ intros. apply in_splitT in H. destruct H. destruct s. subst. apply InT_or_app. r
 apply InT_eq.
 Qed.
 
-Lemma In_InT_pair : forall (A : MPropF) (n : nat) l, In (A, n) l -> InT (A, n) l.
+Definition In_InT_pair : forall (A : MPropF) (n : nat) l, In (A, n) l -> InT (A, n) l.
 Proof.
 induction l.
 - intro. inversion H.
@@ -40,7 +40,7 @@ induction l.
   right. intro. apply n1. inversion H0. auto. right. intro. inversion H0.
   auto. destruct H0. subst. apply InT_eq. apply InT_cons. apply IHl.
   inversion H. exfalso. auto. assumption.
-Qed.
+Defined.
 
 Lemma dec_le : forall n m, (n <= m) + ((n <= m) -> False).
 Proof.
@@ -51,7 +51,7 @@ induction n.
   * right. intro. apply f. lia.
 Qed.
 
-Lemma InT_map_iff : forall {A B : Type} (f : A -> B) (l : list A) (y : B),
+Definition InT_map_iff : forall {A B : Type} (f : A -> B) (l : list A) (y : B),
        (InT y (map f l) -> (existsT2 x : A, (f x = y) * InT x l)) *
        ((existsT2 x : A, (f x = y) * InT x l) -> InT y (map f l)).
 Proof.
@@ -66,7 +66,7 @@ induction l.
     destruct p. inversion i0. subst. rewrite <- e. rewrite <- H0. apply InT_eq.
     subst. assert (existsT2 x : A, (f x = y) * InT x l). exists (proj1_sigT2 X).
     split ; assumption. apply i in X1. apply InT_cons. assumption.
-Qed.
+Defined.
 
 Fixpoint top_imps (l : list MPropF) : list MPropF :=
 match l with
@@ -96,7 +96,7 @@ induction n.
     rewrite <- Nat.succ_le_mono. assumption.
 Qed.
 
-Lemma top_boxes_nobox_gen_ext : forall l, nobox_gen_ext (top_boxes l) l.
+Definition top_boxes_nobox_gen_ext : forall l, nobox_gen_ext (top_boxes l) l.
 Proof.
 induction l.
 - simpl. apply univ_gen_ext_nil.
@@ -105,7 +105,7 @@ induction l.
   * apply univ_gen_ext_extra. intro. inversion X. inversion H. assumption.
   * apply univ_gen_ext_extra. intro. inversion X. inversion H. assumption.
   * apply univ_gen_ext_cons. assumption.
-Qed.
+Defined.
 
 Lemma nobox_gen_ext_top_boxes_identity : forall l0 l1, nobox_gen_ext l0 l1 ->
                                                        is_Boxed_list l0 ->
@@ -136,7 +136,7 @@ Fixpoint flatten_list {A : Type} (l : list (list A)) : list A :=
   end
 .
 
-Lemma InT_flatten_list_InT_elem {A : Type} : forall (l : list (list A)) b,
+Definition InT_flatten_list_InT_elem {A : Type} : forall (l : list (list A)) b,
         InT b (flatten_list l) -> (existsT2 bs, (InT b bs) * (InT bs l)).
 Proof.
 induction l.
@@ -144,7 +144,7 @@ induction l.
 - intros. simpl in X. apply InT_app_or in X. destruct X.
   * exists a. split ; [assumption | apply InT_eq].
   * pose (IHl b). apply s in i. destruct i. destruct p. exists x. split ; [assumption | apply InT_cons ; assumption].
-Qed.
+Defined.
 
 Lemma redundant_flatten_list : forall ls (s : Seq), map (fun z : list MPropF * list MPropF => [z;s]) ls =
 flatten_list (map (fun y : list MPropF * list MPropF => [[y;s]]) ls).
@@ -154,7 +154,7 @@ induction ls.
 - simpl. intros. rewrite IHls. reflexivity.
 Qed.
 
-Lemma InT_trans_flatten_list {A : Type} : forall (l : list (list A)) bs b,
+Definition InT_trans_flatten_list {A : Type} : forall (l : list (list A)) bs b,
         (InT b bs) -> (InT bs l) -> (InT b (flatten_list l)).
 Proof.
 induction l.
@@ -162,7 +162,7 @@ induction l.
 - intros. inversion X0.
   * subst. simpl. apply InT_or_app. auto.
   * subst. simpl. apply InT_or_app. right. pose (IHl bs b X X1) ; assumption.
-Qed.
+Defined.
 
 (* The next lemma claims that for each sequent s there is a derivation of that sequent. *)
 
@@ -183,7 +183,7 @@ Definition is_mhd (s: Seq) (D0 : KS_drv s): Prop :=
 (* The next lemma says that given a list and an element, there are only finitely many
    ways to insert this element in a list. *)
 
-Lemma list_of_splits : forall (l : list MPropF), existsT2 listSplits,
+Definition list_of_splits : forall (l : list MPropF), existsT2 listSplits,
                             forall l1 l2, ((l1 ++ l2 = l) <-> In (l1, l2) listSplits).
 Proof.
 induction l.
@@ -201,7 +201,7 @@ induction l.
     destruct H. destruct H. inversion H. subst. simpl. pose (i (fst x0) (snd x0)).
     destruct i0. assert ((fst x0, snd x0) = x0). destruct x0. simpl. reflexivity.
     rewrite H3 in H2. apply H2 in H0. rewrite H0. reflexivity.
-Qed.
+Defined.
 
 Definition listInserts l (A : MPropF) := map (fun y => (fst y) ++ A :: (snd y)) (proj1_sigT2 (list_of_splits l)).
 

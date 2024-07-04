@@ -157,7 +157,7 @@
          apply H7 in H8. unfold subform_boxesS in H8 ; simpl in H8. auto.
          exists C. repeat split. unfold subform_boxesS ; simpl. apply in_or_app ; left.
          apply In_incl_subform_boxes with (A:=A --> B). apply in_or_app ; simpl ; auto. simpl. apply remove_list_is_in ; auto.
-         intro. apply f. apply in_or_app ; left. apply in_app_or in H7. destruct H7. rewrite subform_boxesLF_dist_app ; apply in_or_app ; left.
+         intro. apply n. apply in_or_app ; left. apply in_app_or in H7. destruct H7. rewrite subform_boxesLF_dist_app ; apply in_or_app ; left.
          apply subform_boxesLF_top_boxes. pose (in_top_boxes _ _ H7). destruct s ; destruct s ; destruct s ; destruct p1 ; subst.
          repeat rewrite top_boxes_distr_app ; simpl. rewrite subform_boxesLF_dist_app ; apply remove_list_is_in ; simpl ; auto.
          rewrite subform_boxesLF_dist_app ; apply remove_list_is_in.
@@ -178,7 +178,7 @@
          apply remove_list_incr_decr ; auto. 1-2: apply NoDup_subform_boxesS.
          exists (Box B). repeat  split. apply in_or_app ; simpl ; auto. unfold subform_boxesS ; simpl.
          rewrite subform_boxesLF_dist_app ; apply in_or_app ; left ; apply remove_list_is_in ; simpl ; apply in_or_app ; left ; apply remove_list_is_in ; apply in_eq.
-         rewrite top_boxes_distr_app in f ; auto.
+         rewrite top_boxes_distr_app in n ; auto.
          intros a G. apply in_app_or in G ; apply in_or_app ; simpl ; destruct G ; auto.
          unfold subform_boxesS ; simpl.
          intros a G. apply in_app_or in G ; destruct G. rewrite subform_boxesLF_dist_app in H4. apply in_app_or in H4 ; destruct H4.
@@ -222,11 +222,11 @@
          apply In_remove_list_In_list_not_In_remove_list in H8. destruct H8.
          rewrite subform_boxesLF_dist_app ; apply remove_list_is_in ; apply remove_list_is_in ; auto.
          apply In_remove_list_In_list_not_In_remove_list in H8. destruct H8. apply remove_list_is_in ; auto.
-         intro. apply f. apply H8. unfold subform_boxesS ; simpl. apply in_or_app ; left.
+         intro. apply n. apply H8. unfold subform_boxesS ; simpl. apply in_or_app ; left.
          rewrite subform_boxesLF_dist_app ; apply remove_list_is_in ; simpl ; apply in_or_app ; left ; apply in_or_app ; auto.
          exists (C). repeat  split. unfold subform_boxesS ; simpl. apply in_or_app ; left.
          rewrite subform_boxesLF_dist_app ; apply remove_list_is_in ; simpl ; apply in_or_app ; left ; apply in_or_app ; auto.
-         intro. apply f. apply in_or_app ; left. apply subform_boxesLF_top_boxes. assert (In C (top_boxes (Γ0 ++ B :: Γ1))).
+         intro. apply n. apply in_or_app ; left. apply subform_boxesLF_top_boxes. assert (In C (top_boxes (Γ0 ++ B :: Γ1))).
          repeat rewrite top_boxes_distr_app. apply in_or_app ; apply in_app_or in H8 ; destruct H8 ; auto. right. destruct B ; simpl ; auto.
          pose (in_top_boxes _ _ H9). destruct s ; destruct s ; destruct s ; destruct p1 ; subst. rewrite e0.
          repeat rewrite top_boxes_distr_app ; simpl. rewrite subform_boxesLF_dist_app ; apply remove_list_is_in ; simpl ; auto. auto.

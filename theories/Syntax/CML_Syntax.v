@@ -36,7 +36,9 @@ Fixpoint subformlist (φ : MPropF) : list MPropF :=match φ with
 Lemma eq_dec_form : forall x y : MPropF, {x = y} + {x <> y}.
 Proof.
 repeat decide equality.
-Qed.
+Defined.
+
+Global Opaque eq_dec_form.
 
 Fixpoint size (φ : MPropF) : nat :=
 match φ with

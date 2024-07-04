@@ -7,18 +7,7 @@ Require Import existsT.
 
 Require Import CML_Syntax.
 
-Lemma In_dec : forall l (a : MPropF) , (In a l) + ((In a l) -> False).
-Proof.
-induction l.
-- right. intro. destruct H.
-- intro a0. pose (IHl a0). destruct s.
-  * left. apply in_cons. assumption.
-  * destruct (eq_dec_form a a0).
-    + subst. left. apply in_eq.
-    + right. intro. inversion H.
-      { apply n. assumption. }
-      { apply f. assumption. }
-Qed.
+Definition In_dec l (a : MPropF)  := in_dec eq_dec_form a l.
 
 (* Let us prove some lemmas about remove. *)
 
@@ -472,7 +461,7 @@ induction l3 ; intros.
     * rewrite keep_list_delete_head_not_In. 2: assumption. apply Nat.le_le_succ_r.
       apply IHl3. assumption.
   + repeat rewrite keep_list_delete_head_not_In. apply le_n_S. apply IHl3 ; auto.
-    intro. apply f. apply H. assumption. assumption.
+    intro. apply n. apply H. assumption. assumption.
 Qed.
 
 Lemma remove_list_incr_decr1 : forall (l3 l1 l2: list (MPropF)),
@@ -495,7 +484,7 @@ induction l3.
       { rewrite keep_list_delete_head_not_In. 2: assumption. apply le_n_S.
         unfold lt in H4. apply Nat.lt_le_incl. assumption. }
     + rewrite keep_list_delete_head_not_In. 2: assumption. rewrite keep_list_delete_head_not_In.
-      unfold lt in H4. apply le_n_S. assumption. intro. apply f. apply H0. assumption.
+      unfold lt in H4. apply le_n_S. assumption. intro. apply n0. apply H0. assumption.
 Qed.
 
 Lemma remove_list_incr_decr2 : forall (l4 l3 l1 : list (MPropF)),
@@ -567,7 +556,7 @@ repeat destruct H1. destruct H4. destruct (In_dec l4 x).
 - assert (H6: (exists A, In A l2 /\ In A l4 /\ (In A l1 -> False))).
   exists x. repeat split ; assumption. pose (@remove_list_incr_decr1 l4 l1 l2 H6 H2).
   unfold lt in l0. apply Nat.le_trans with (m:=length (remove_list l1 l4)) ; assumption.
-- assert ((incl l3 l4) -> False). intros. apply f. apply H6. assumption.
+- assert ((incl l3 l4) -> False). intros. apply n. apply H6. assumption.
   assert ((exists A, (In A l3) /\ ((In A l1) -> False) /\ ((In A l4) -> False))). exists x. auto.
   pose (@remove_list_incr_decr3 l4 l2 l1 H2). pose (@remove_list_incr_decr4 l4 l3 l1 H H0 H3 H6 H7).
   unfold lt in l5. apply le_n_S in l0.
@@ -599,9 +588,9 @@ induction l1.
     pose (IHl1 (remove eq_dec_form a (x0 ++ x))). rewrite e.
     auto. split. intro. intro. apply in_not_touched_remove. assert (In a0 (a :: l1)). apply in_cons.
     assumption. apply H in H2. apply in_app_or in H2. destruct H2. apply in_or_app. right. assumption.
-    inversion H2. subst. exfalso. apply f. assumption. apply in_or_app. left. assumption.
-    intro. subst. apply f. assumption. intro. intro. pose (In_remove_diff (x0 ++ x) _ _ H1).
+    inversion H2. subst. exfalso. apply n. assumption. apply in_or_app. left. assumption.
+    intro. subst. apply n. assumption. intro. intro. pose (In_remove_diff (x0 ++ x) _ _ H1).
     pose (In_remove_In_list a0 a (x0 ++ x) H1). assert (In a0 (x ++ a :: x0)). apply in_app_or in i0.
     destruct i0. apply in_or_app. right. apply in_cons. assumption. apply in_or_app. left. assumption.
-    apply H0 in H2. inversion H2. exfalso. apply n. symmetry. assumption. assumption.
+    apply H0 in H2. inversion H2. exfalso. apply n0. symmetry. assumption. assumption.
 Qed.

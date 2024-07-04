@@ -9,53 +9,9 @@ Require Import DLW_wf_lex.
 
 Set Implicit Arguments.
 
-Lemma eq_dec_nat : forall (n m : nat), {n = m} + {n <> m}.
-Proof.
-decide equality.
-Qed.
-
 Lemma NoDup_incl_lengthT : forall (l l' : list MPropF), NoDup l -> incl l l' ->
-          ((length l < length l') + (length l = length l')).
-Proof.
-induction l.
-- intros. destruct l'.
-  * right. auto.
-  * left. simpl. lia.
-- induction l' ; intros.
-  * exfalso. assert (In a (a :: l)). apply in_eq. pose (H0 a H1). inversion i.
-  * simpl. destruct (eq_dec_form a a0).
-    + subst. assert (NoDup l). inversion H. assumption. assert (incl l l').
-      unfold incl. intros. assert (In a (a0 :: l)). apply in_cons. assumption.
-      apply H0 in H3. inversion H3. subst. exfalso. inversion H. apply H6. assumption. assumption.
-      pose (IHl _ H1 H2). destruct s. left. lia. right. lia.
-    + destruct (In_dec l a0).
-      { destruct (In_dec l' a0).
-        - assert (NoDup l). inversion H. assumption. assert (incl l l'). unfold incl.
-          intros. assert (In a1 (a :: l)). apply in_cons. assumption. apply H0 in H3.
-          inversion H3. subst. assumption. assumption. pose (IHl _ H1 H2). destruct s.
-          left. lia. right. lia.
-        - assert (NoDup l). inversion H. assumption. assert (incl l (a0 :: l')).
-          unfold incl. intros. assert (In a1 (a :: l)). apply in_cons. assumption.
-          apply H0 in H3. assumption. assert (In a l'). assert (In a (a :: l)).
-          apply in_eq. apply H0 in H3. inversion H3. subst. exfalso. apply n. reflexivity.
-          assumption. apply in_split in H3. destruct (eq_dec_nat (length l) (length l')).
-          * subst. right. auto.
-          * left. destruct H3. destruct H3. subst.
-            rewrite app_length. simpl. assert (incl l (a0 :: x ++ x0)). unfold incl.
-            intros. assert (In a1 (a :: l)). apply in_cons. assumption. apply H0 in H4.
-            inversion H4. subst. apply in_eq. apply in_app_or in H5. destruct H5.
-            apply in_cons. apply in_or_app. auto. inversion H5. subst. exfalso. inversion H.
-            apply H8. assumption. apply in_cons. apply in_or_app. auto.
-            rewrite app_length in n0. simpl in n0.
-            pose (IHl _ H1 H3). destruct s. 
-            + simpl in l0. rewrite app_length in l0. lia.
-            + exfalso. apply n0. simpl in e. rewrite app_length in e. lia.  }
-      { assert (incl l l'). unfold incl. intros. assert (In a1 (a :: l)). apply in_cons. assumption.
-        apply H0 in H2. inversion H2. subst. exfalso. apply f. assumption. assumption.
-        assert (NoDup l). inversion H. assumption. pose (IHl _ H2 H1). destruct s.
-        - left. lia.
-        - right. lia. }
-Qed.
+          {length l < length l'} + {length l = length l'}.
+Proof. intros. apply Compare_dec.le_lt_eq_dec, NoDup_incl_length; assumption. Qed.
 
 
 (* First, let us define a the second part of our measure. This number is simply
@@ -572,7 +528,7 @@ apply remove_list_incr_decr.
 Qed.
 
 Theorem ImpR_applic_less_Imp_same_usable_boxes : forall prem concl, ImpRRule [prem] concl ->
-                   prod (sum (length (usable_boxes prem) < length(usable_boxes concl))
+                   prod (sumbool (length (usable_boxes prem) < length(usable_boxes concl))
                     (length (usable_boxes prem) = length(usable_boxes concl)))
                    (n_imp_subformS (prem) < n_imp_subformS (concl)).
 Proof.
@@ -626,10 +582,10 @@ intros prem concl RA. inversion RA. subst. split.
 Qed.
 
 Theorem ImpL_applic_less_Imp_same_usable_boxes : forall prem1 prem2 concl, ImpLRule [prem1 ; prem2] concl ->
-                   prod (prod (sum (length (usable_boxes prem1) < length(usable_boxes concl))
+                   prod (prod (sumbool (length (usable_boxes prem1) < length(usable_boxes concl))
                     (length (usable_boxes prem1) = length(usable_boxes concl)))
                    (n_imp_subformS (prem1) < n_imp_subformS (concl)))
-                   (prod (sum (length (usable_boxes prem2) < length(usable_boxes concl))
+                   (prod (sumbool (length (usable_boxes prem2) < length(usable_boxes concl))
                     (length (usable_boxes prem2) = length(usable_boxes concl)))
                    (n_imp_subformS (prem2) < n_imp_subformS (concl))).
 Proof.
@@ -679,7 +635,7 @@ intros prem1 prem2 concl RA. inversion RA. subst. split.
     apply in_or_app. right. apply not_removed_remove_list. simpl. destruct (In_dec (subform_boxesF A) a).
     apply in_or_app. left. apply in_or_app. auto. apply in_or_app. right.
     apply not_removed_remove_list. assumption. intro. apply in_app_or in H3. destruct H3.
-    apply f. auto. apply In_remove_list_In_list_not_In_remove_list in H3. destruct H3. auto.
+    apply n1. auto. apply In_remove_list_In_list_not_In_remove_list in H3. destruct H3. auto.
     assumption. apply In_remove_list_In_list_not_In_remove_list in H. destruct H.
     destruct (In_dec (subform_boxesLF (Γ0 ++ A --> B :: Γ1)) a). apply in_or_app. auto.
     apply in_or_app. right. apply not_removed_remove_list. assumption. assumption.
@@ -743,11 +699,11 @@ induction l0 ; intros.
   destruct (IHl0 l1).
   + pose (lex_length l). destruct (decT_lt a n).
       * left. apply lex_cons ; auto.
-      * destruct (eq_dec_nat a n) ; subst.
+      * destruct (Nat.eq_dec a n) ; subst.
         left. apply lex_skip ; auto.
         right. intro. inversion H ; subst ; auto.
   + destruct (decT_lt a n).
-      * destruct (eq_dec_nat (length l0) (length l1)). left. apply lex_cons ; auto.
+      * destruct (Nat.eq_dec (length l0) (length l1)). left. apply lex_cons ; auto.
         right. intro. inversion H ; auto.
       * right. intro. inversion H ; auto.
 Qed.

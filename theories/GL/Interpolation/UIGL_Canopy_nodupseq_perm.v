@@ -115,13 +115,7 @@ lia. exfalso ; auto. simpl. destruct (eq_dec_form a A). exfalso ; auto. simpl. p
 Qed.
 
 Lemma Permutation_replace : forall l0 l1 A B, Permutation l0 l1 -> Permutation (replace A B l0) (replace A B l1).
-Proof.
-induction 1 ; simpl ; auto.
-- destruct (eq_dec_form A x) ; subst ; auto.
-- destruct (eq_dec_form A y) ; subst ; auto. destruct (eq_dec_form y x) ; subst ; auto.
-  apply perm_swap. destruct (eq_dec_form A x). apply perm_swap. apply perm_swap.
-- apply (perm_trans IHPermutation1 IHPermutation2).
-Qed.
+Proof. intros. apply Permutation_map. assumption. Qed.
 
 Lemma Canopy_nodupseq_perm_gen : forall s0 s1 leaf1,
         (existsT2 l0 l1, (PermutationTS s0 (l0 ++ fst s1, l1 ++ snd s1)) * (incl l0 (fst s1)) * (incl l1 (snd s1))) ->
@@ -191,14 +185,14 @@ Proof.
             assert (J20: 0 < count_occ eq_dec_form (x1 ++ A --> B :: x2) (A --> B)). apply count_occ_In. apply in_or_app ; right ; simpl ; auto.
             assert (J21: (In (A --> B) ((remove eq_dec_form (A --> B) x0 ++ Δ0) ++ B :: Δ1) -> False)).
             intros. apply in_app_or in H1 ; destruct H1. apply in_app_or in H1 ; destruct H1. apply remove_not_in_anymore in H1 ; auto.
-            apply f ; apply in_or_app ; auto. inversion H1. assert (size B = size (A --> B)). rewrite <- H2 ; auto. simpl in H3 ; lia.
-            apply f ; apply in_or_app ; auto. assert (J43: count_occ eq_dec_form (x1 ++ A --> B :: x2) (A --> B) = count_occ eq_dec_form (x1 ++ A --> B :: x2) (A --> B)) ; auto.
+            apply n ; apply in_or_app ; auto. inversion H1. assert (size B = size (A --> B)). rewrite <- H2 ; auto. simpl in H3 ; lia.
+            apply n ; apply in_or_app ; auto. assert (J43: count_occ eq_dec_form (x1 ++ A --> B :: x2) (A --> B) = count_occ eq_dec_form (x1 ++ A --> B :: x2) (A --> B)) ; auto.
             pose (Permutation_repeat_extract _ (x1 ++ A --> B :: x2) _ _ (A --> B) B J20 J43 J21).
             repeat rewrite <- app_assoc ; simpl. repeat rewrite <- app_assoc in p1 ; simpl in p1. apply p1 ; clear p1.
             assert ((remove eq_dec_form (A --> B) x0 ++ Δ0 ++ Δ1) = (remove eq_dec_form (A --> B) (x0 ++ Δ0 ++ A --> B :: Δ1))).
             repeat rewrite remove_app. simpl. destruct (eq_dec_form (A --> B) (A --> B)). pose (notin_remove eq_dec_form Δ0).
-            pose (notin_remove eq_dec_form Δ1). rewrite e0. rewrite e1 ; auto. 1-2: intro ; apply f ; apply in_or_app ; auto.
-            exfalso ; apply n ; auto. rewrite H1. apply Permutation_remove ; apply Permutation_PermutationT in H0 ; auto.
+            pose (notin_remove eq_dec_form Δ1). rewrite e0. rewrite e1 ; auto. 1-2: intro ; apply n ; apply in_or_app ; auto.
+            exfalso ; apply n0 ; auto. rewrite H1. apply Permutation_remove ; apply Permutation_PermutationT in H0 ; auto.
             intros C HC. apply in_or_app. apply in_app_or in HC ; destruct HC. right. simpl. apply repeat_spec in H1 ; auto.
             apply i0 in H1. simpl. apply in_app_or in H1 ; destruct H1 ; auto.
             intros C HC. apply in_or_app ; simpl. apply in_app_or in HC ; destruct HC. right. apply repeat_spec in H1 ; auto.
@@ -249,7 +243,7 @@ Proof.
             pose (remove_n_imp_subformLF_decomp (x2 ++ A --> B :: x4) (A --> B)). rewrite n_imp_subformLF_dist_app in e ; simpl in e.
             assert (n_imp_subformLF (remove eq_dec_form (A --> B) (x2 ++ x4)) + (count_occ eq_dec_form (x2 ++ A --> B :: x4) (A --> B) * n_imp_subformF A + n_imp_subformLF l0) <
             n_imp_subformLF l0 +  (n_imp_subformLF x2 + S (n_imp_subformF A + n_imp_subformF B + n_imp_subformLF x4))).
-            rewrite e. repeat rewrite remove_app. simpl. destruct (eq_dec_form (A --> B) (A --> B)). lia. exfalso ; apply n ; auto. lia.
+            rewrite e. repeat rewrite remove_app. simpl. destruct (eq_dec_form (A --> B) (A --> B)). lia. exfalso ; apply n0 ; auto. lia.
             pose (IH _ J1 (Γ0 ++ Γ1, Δ0 ++ A :: Δ1) leaf1). simpl in s. destruct s ; simpl ; auto.
             exists (remove eq_dec_form (A --> B) x). clear p0.
             exists (repeat A (pred (count_occ eq_dec_form (x2 ++ A --> B :: x4) (A --> B))) ++ x0).
@@ -257,12 +251,12 @@ Proof.
             pose (Permutation_remove (x2 ++ x4) (x ++ Γ0 ++ Γ1) (A --> B)).
             assert (remove eq_dec_form (A --> B) x ++ Γ0 ++ Γ1 = remove eq_dec_form (A --> B) (x ++ Γ0 ++ Γ1)).
             repeat rewrite remove_app. pose (notin_remove eq_dec_form Γ0). pose (notin_remove eq_dec_form Γ1).
-            rewrite e. rewrite e0 ; auto. 1-2: intro ; apply f ; apply in_or_app ; auto. rewrite H1. apply p0.
+            rewrite e. rewrite e0 ; auto. 1-2: intro ; apply n ; apply in_or_app ; auto. rewrite H1. apply p0.
             epose (Permutation_app_inv x2 x4 (x ++ Γ0) Γ1 (A --> B)). repeat rewrite <- app_assoc in p1. apply p1 ; apply Permutation_PermutationT ; auto.
             apply perm_trans with (l':=((A :: repeat A (Init.Nat.pred (count_occ eq_dec_form (x2 ++ A --> B :: x4) (A --> B))) ++ x0) ++ Δ0 ++ Δ1)).
             assert (A :: repeat A (Init.Nat.pred (count_occ eq_dec_form (x2 ++ A --> B :: x4) (A --> B))) = repeat A (count_occ eq_dec_form (x2 ++ A --> B :: x4) (A --> B))).
-            remember (count_occ eq_dec_form (x2 ++ A --> B :: x4) (A --> B)) as n ; destruct n ; auto ; simpl. exfalso. symmetry in Heqn ; apply count_occ_not_In in Heqn.
-            apply Heqn. apply in_or_app ; simpl ; auto. rewrite <- H1. simpl. apply perm_skip. repeat rewrite <- app_assoc ; simpl.
+            remember (count_occ eq_dec_form (x2 ++ A --> B :: x4) (A --> B)) as n' ; destruct n' ; auto ; simpl. exfalso. symmetry in Heqn' ; apply count_occ_not_In in Heqn'.
+            apply Heqn'. apply in_or_app ; simpl ; auto. rewrite <- H1. simpl. apply perm_skip. repeat rewrite <- app_assoc ; simpl.
             apply Permutation_app_head ; apply Permutation_PermutationT ; auto.
             epose (@Permutation_cons_app _ ((repeat A (Init.Nat.pred (count_occ eq_dec_form (x2 ++ A --> B :: x4) (A --> B))) ++ x0) ++ Δ0 ++ Δ1)
             (repeat A (Init.Nat.pred (count_occ eq_dec_form (x2 ++ A --> B :: x4) (A --> B))) ++ x0 ++ Δ0) Δ1 A).
@@ -316,7 +310,7 @@ Proof.
             assert (replace (A --> B) B x ++ Γ0 ++ B :: Γ1 = replace (A --> B) B (x ++ Γ0 ++ A --> B :: Γ1)).
             repeat rewrite replace_app. simpl. destruct (eq_dec_form (A --> B) (A --> B)) ; auto. 2: exfalso ; auto.
             pose (notin_replace Γ0). pose (notin_replace Γ1). rewrite e0. rewrite e1. auto.
-            1-2: intro ; apply f ; apply in_or_app ; auto. rewrite H1. apply p0 ; apply Permutation_PermutationT ; auto.
+            1-2: intro ; apply n ; apply in_or_app ; auto. rewrite H1. apply p0 ; apply Permutation_PermutationT ; auto.
             intros C HC. apply in_or_app. apply in_replace in HC. destruct HC. simpl ; destruct H1 ; auto.
             apply i0 in H1. apply in_app_or in H1 ; destruct H1 ; auto.
             inversion H1 ; [ exfalso ; subst ; auto | auto]. intro. assert (size (A --> B) = size B). rewrite H1 ; auto. simpl in H3 ; lia.

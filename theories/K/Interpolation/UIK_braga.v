@@ -174,7 +174,7 @@ Arguments imap {X} {Y} _ {D} _ {l}.
     subst. rewrite J0. auto.
   Qed.
 
-  Lemma GUI_tot : forall s : Seq, {A : MPropF | GUI s A}.
+  Definition GUI_tot : forall s : Seq, {A : MPropF | GUI s A}.
   Proof.
   apply (LtSeq_ind (fun x => existsT A : MPropF, GUI x A)).
   intros s IH. destruct (empty_seq_dec s).
@@ -199,7 +199,7 @@ Arguments imap {X} {Y} _ {D} _ {l}.
       apply InT_In_Seq ; auto. subst. exfalso. apply f. apply InT_In_Seq in H ; apply Canopy_critical in H ; auto.
       epose (@imap _ _ GUI (fun (x : Seq) => In x (Canopy s)) H (Canopy s)). simpl in s0. destruct s0 ; auto.
       exists (list_conj x). apply GUI_not_critic ; auto.
-  Qed.
+  Defined.
 
   Fact GUI_inv_empty_seq {s A} : GUI s A -> s = ([],[]) -> Bot = A.
   Proof. intros. pose (GUI_empty_seq H0). apply (GUI_fun _ _ _ g H). Qed.
