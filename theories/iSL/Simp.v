@@ -10,7 +10,9 @@ Definition obviously_smaller φ ψ :=
   else Eq.
 
 
-Definition choose_or φ ψ :=
+
+
+Definition simp_or φ ψ := 
 match obviously_smaller φ ψ with
   | Lt => ψ
   | Gt => φ
@@ -18,10 +20,15 @@ match obviously_smaller φ ψ with
  end.
 
 
-Definition simp_or φ ψ := 
+Infix "⊻" := simp_or (at level 65).
+
+Definition simp_ors φ ψ :=
 match (φ,ψ) with
-  |(φ,ψ) => choose_or φ ψ
+  |(φ1 ∨ φ2, ψ) => φ1 ⊻ (ψ ⊻ φ2)
+  |(φ, ψ1 ∨ ψ2) => φ ⊻ (ψ1 ⊻ ψ2)
+  |(φ, ψ) => φ ⊻ ψ
 end.
+
 
 Definition simp_and φ ψ :=
   if decide (φ =⊥) then ⊥
@@ -40,10 +47,10 @@ Definition simp_imp φ ψ :=
 
 Fixpoint simp φ :=
 match φ with
-| φ ∨ ψ => simp_or (simp φ) (simp ψ)
-| φ ∧ ψ => simp_and (simp φ) (simp ψ)
-| φ → ψ => simp_imp (simp φ) (simp ψ)
-| _ => φ
+  | φ ∨ ψ => simp_ors (simp φ) (simp ψ)
+  | φ ∧ ψ => simp_and (simp φ) (simp ψ)
+  | φ → ψ => simp_imp (simp φ) (simp ψ)
+  | _ => φ
 end.
 
 
@@ -112,9 +119,7 @@ case decide in H.
     * rewrite e. apply top_provable.
     * case decide in H.
       -- contradict H; auto.
-      -- case decide in H.
-         ++ contradict H; auto.
-         ++ contradict H; auto.
+      -- case decide in H; contradict H; auto.
 Qed.
 
 Lemma or_congruence φ ψ φ' ψ':
@@ -128,12 +133,40 @@ apply OrL.
 Qed.
 
 
-Lemma choose_or_equiv_L φ ψ φ' ψ' : 
+Lemma or_comm φ ψ:
+  φ ∨ ψ ≼  ψ ∨ φ.
+Proof.
+apply OrL; [apply OrR2 | apply OrR1]; apply generalised_axiom.
+Qed.
+
+
+Lemma or_assoc_L φ ψ ϴ :
+  (φ ∨ (ψ ∨ ϴ)  ≼ (φ ∨ ψ) ∨ ϴ).
+Proof.
+  apply OrL.
+  - apply OrR1; apply OrR1; apply generalised_axiom.
+  - apply OrL.
+    + apply OrR1; apply OrR2; apply generalised_axiom.
+    + apply OrR2; apply generalised_axiom.
+Qed.
+
+
+Lemma or_assoc_R φ ψ ϴ :
+  ((φ ∨ ψ) ∨ ϴ  ≼ φ ∨ (ψ ∨ ϴ)).
+Proof.
+  apply OrL.
+  - apply OrL.
+    + apply OrR1; apply generalised_axiom.
+    + apply OrR2; apply OrR1; apply generalised_axiom.
+  - apply OrR2; apply OrR2; apply generalised_axiom.
+Qed.
+
+Lemma simp_or_equiv_L φ ψ φ' ψ' : 
   (φ ≼ φ') -> (ψ ≼ ψ') ->
-  (φ ∨ ψ) ≼ choose_or φ' ψ'.
+  (φ ∨ ψ) ≼ simp_or φ' ψ'.
 Proof.
 intros Hφ Hψ.
-unfold choose_or.
+unfold simp_or.
 case (decide (obviously_smaller φ' ψ' = Lt)); [intro HLt | intro Hneq1].
 - rewrite HLt. apply OrL.
   + eapply cut2. 
@@ -153,21 +186,14 @@ case (decide (obviously_smaller φ' ψ' = Lt)); [intro HLt | intro Hneq1].
     * destruct (obviously_smaller φ' ψ'); [contradict Hneq3 | contradict Hneq1 |contradict Hneq2]; trivial.
 Qed.
 
-Lemma simp_or_equiv_L φ ψ φ' ψ' : 
-  (φ ≼ φ') -> (ψ ≼ ψ') ->
-  (φ ∨ ψ) ≼ simp_or φ' ψ'.
-Proof.
-intros Hφ Hψ.
-simpl. unfold simp_or. 
-now apply choose_or_equiv_L.
-Qed.
 
-Lemma choose_or_equiv_R φ ψ φ' ψ' : 
+
+Lemma simp_or_equiv_R φ ψ φ' ψ' : 
   (φ' ≼ φ) -> (ψ' ≼ ψ) ->
-  choose_or φ' ψ' ≼  φ ∨ ψ.
+  simp_or φ' ψ' ≼  φ ∨ ψ.
 Proof.
 intros Hφ Hψ.
-unfold choose_or.
+unfold simp_or.
 case (decide (obviously_smaller φ' ψ' = Lt)); [intro HLt | intro Hneq1].
 - rewrite HLt. apply OrR2; assumption.
 - case (decide (obviously_smaller φ' ψ' = Gt)); [intro HGt| intro Hneq2].
@@ -177,30 +203,175 @@ case (decide (obviously_smaller φ' ψ' = Lt)); [intro HLt | intro Hneq1].
     * destruct (obviously_smaller φ' ψ'); [contradict Hneq3 | contradict Hneq1 |contradict Hneq2]; trivial.
 Qed.
 
-Lemma simp_or_equiv_R φ ψ φ' ψ': 
-  (φ' ≼ φ) -> (ψ' ≼ ψ) ->
-  simp_or φ' ψ' ≼ (φ ∨ ψ).
+
+
+Lemma simp_or_assoc_L φ ψ ϴ :
+  (φ ⊻ (ψ ⊻ ϴ)  ≼ (φ ⊻  ψ) ⊻ ϴ).
 Proof.
-intros Hφ Hψ.
-simpl. unfold simp_or. 
-now apply choose_or_equiv_R.
+  apply (cut2 _ (φ ∨ (ψ ∨ ϴ)) _).
+  - apply simp_or_equiv_R.
+    + apply generalised_axiom.
+    + apply simp_or_equiv_R; apply generalised_axiom.
+  -apply (cut2 _ ((φ ∨ ψ) ∨ ϴ) _).
+    + apply or_assoc_L.
+    + apply simp_or_equiv_L.
+      * apply simp_or_equiv_L; apply generalised_axiom.
+      * apply generalised_axiom.
 Qed.
 
+
+Lemma simp_or_assoc_R φ ψ ϴ :
+  ((φ ⊻ ψ) ⊻ ϴ  ≼ φ ⊻  (ψ ⊻ ϴ)).
+Proof.
+  apply (cut2 _ ((φ ∨ ψ) ∨ ϴ) _).
+  - apply simp_or_equiv_R.
+    + apply simp_or_equiv_R; apply generalised_axiom.
+    + apply generalised_axiom.
+  -apply (cut2 _ (φ ∨ (ψ ∨ ϴ)) _).
+    + apply or_assoc_R.
+    + apply simp_or_equiv_L.
+      * apply generalised_axiom.
+      * apply simp_or_equiv_L; apply generalised_axiom.
+Qed.
+
+Lemma simp_or_assoc_ctx_R_R  a φ ψ ϴ :
+  (a ≼ (φ ⊻ ψ) ⊻ ϴ)  -> a ≼ φ ⊻ (ψ ⊻ ϴ). 
+Proof.
+  intro H.
+  eapply cut2.
+  apply H.
+  apply simp_or_assoc_R.
+Qed.
+
+
+Lemma simp_or_assoc_ctx_L_R  a φ ψ ϴ :
+  (a ≼ φ ⊻ (ψ ⊻ ϴ))  -> a ≼ (φ ⊻ ψ) ⊻ ϴ. 
+Proof.
+  intro H.
+  eapply cut2.
+  apply H.
+  apply simp_or_assoc_L.
+Qed.
+
+
+Lemma simp_or_assoc_ctx_R_L  a φ ψ ϴ :
+  ((φ ⊻ ψ) ⊻ ϴ ≼ a)  -> φ ⊻ (ψ ⊻ ϴ) ≼ a.
+Proof.
+  intro H.
+  eapply cut2.
+  apply simp_or_assoc_L.
+  apply H.
+Qed.
+
+
+Lemma simp_or_assoc_ctx_L_L  a φ ψ ϴ :
+  (φ ⊻ (ψ ⊻ ϴ) ≼ a)  -> (φ ⊻ ψ) ⊻ ϴ ≼ a.
+Proof.
+  intro H.
+  eapply cut2.
+  apply simp_or_assoc_R.
+  apply H.
+Qed.
+
+
+
+Lemma simp_or_comm φ ψ :
+  (φ ⊻ ψ) ≼ (ψ ⊻  φ).
+Proof.
+  apply (cut2 _ (φ ∨ ψ) _).
+  - apply simp_or_equiv_R; apply generalised_axiom.
+  - apply (cut2 _ (ψ ∨ φ) _).
+    + apply or_comm.
+    + apply simp_or_equiv_L; apply generalised_axiom.
+Qed.
+
+
+
+
+Lemma simp_or_comm_ctx_R  a φ ψ :
+  (a ≼ φ ⊻ ψ)  -> a ≼ ψ ⊻ φ.
+Proof.
+  intro H.
+  eapply cut2.
+  apply H.
+  apply simp_or_comm.
+Qed.
+
+
+
+Lemma simp_or_comm_ctx_L  a φ ψ :
+  (φ ⊻ ψ ≼ a)  ->  ψ ⊻  φ≼ a.
+Proof.
+  intro H.
+  eapply cut2.
+  apply simp_or_comm.
+  apply H.
+Qed.
+
+
+
+Lemma simp_ors_equiv_L φ ψ φ' ψ':
+  (φ ≼ φ') -> (ψ ≼ ψ') ->
+  (φ ∨ ψ) ≼ simp_ors φ' ψ'.
+Proof.
+intros Hφ Hψ.
+destruct φ';
+try (
+  simpl; destruct ψ'; eapply simp_or_equiv_L; try assumption;
+  apply (cut2 _ ( ψ'1 ∨ ψ'2) _);
+  [ assumption | apply simp_or_equiv_L; apply generalised_axiom]
+).
+destruct ψ';
+  simpl;
+  apply simp_or_assoc_ctx_R_R;
+  apply simp_or_comm_ctx_R;
+  apply simp_or_assoc_ctx_R_R;
+  (eapply simp_or_equiv_L;
+  [ apply simp_or_comm_ctx_R; eapply cut2;
+    [ apply Hφ |
+      apply simp_or_equiv_L; apply generalised_axiom]|
+  assumption ]).
+Qed.
 
 Lemma simp_equiv_or_L φ ψ : 
   (φ  ≼ simp φ) -> (ψ  ≼ simp ψ) ->
   (φ ∨ ψ) ≼ simp (φ ∨ ψ).
 Proof.
 intros Hφ Hψ.
-apply simp_or_equiv_L; [apply Hφ | apply Hψ].
+apply simp_ors_equiv_L; [apply Hφ | apply Hψ].
 Qed.
 
-Lemma simp_equiv_or_R φ ψ : 
+
+
+Lemma simp_ors_equiv_R φ ψ φ' ψ':
+  (φ' ≼ φ) -> (ψ' ≼ ψ ) ->
+  simp_ors φ' ψ' ≼ φ ∨ ψ.
+Proof.
+intros Hφ Hψ.
+destruct φ'; 
+try (
+  simpl; destruct ψ'; apply simp_or_equiv_R; try assumption;
+  apply (cut2 _ ( ψ'1 ∨ ψ'2) _);
+  [apply simp_or_equiv_R; apply generalised_axiom | assumption]
+).
+destruct ψ';
+  simpl;
+  apply simp_or_assoc_ctx_R_L;
+  apply simp_or_comm_ctx_L;
+  apply simp_or_assoc_ctx_R_L;
+  (eapply simp_or_equiv_R;
+  [ apply simp_or_comm_ctx_L; eapply cut2;
+    [ apply simp_or_equiv_R; apply generalised_axiom|
+      apply Hφ ]|
+    assumption ]).
+Qed.
+
+Lemma simp_equiv_or_R φ ψ: 
   (simp φ ≼ φ) -> (simp ψ ≼ ψ) ->
   simp (φ ∨ ψ) ≼ (φ ∨ ψ).
 Proof.
 intros Hφ Hψ.
-apply simp_or_equiv_R; [apply Hφ | apply Hψ].
+apply simp_ors_equiv_R; [apply Hφ | apply Hψ].
 Qed.
 
 Lemma simp_equiv_or φ ψ: 
@@ -211,7 +382,6 @@ Proof.
 intros IHφ IHψ.
 split; [ apply simp_equiv_or_L | apply simp_equiv_or_R]; try apply IHφ ; try apply IHψ.
 Qed.
-
 
 
 Lemma simp_equiv_and_L φ ψ : 
@@ -439,13 +609,28 @@ Proof.
   intuition.
 Qed.
 
+Lemma vars_incl_simp_or_equiv_or φ ψ V:
+  vars_incl (Or φ ψ) V ->
+  vars_incl (simp_or φ ψ) V.
+Proof.
+intro H.
+unfold simp_or. 
+apply or_vars_incl_L in H.
+case (decide (obviously_smaller φ ψ = Lt)); [intro HLt | intro Hneq1].
+- rewrite HLt; apply H.
+- case (decide (obviously_smaller φ ψ = Gt)); [intro HGt| intro Hneq2].
+  + rewrite HGt; apply H.
+  + case (decide (obviously_smaller φ ψ = Eq)); [intro HEq| intro Hneq3].
+    * rewrite HEq. apply or_vars_incl_R; apply H.
+    * destruct (obviously_smaller φ ψ); [contradict Hneq3 | contradict Hneq1 |contradict Hneq2]; trivial.
+Qed.
 
-Lemma vars_incl_choose_or φ ψ V :
+Lemma vars_incl_simp_or φ ψ V :
   vars_incl φ V -> vars_incl ψ V ->
-  vars_incl (choose_or φ ψ) V.
+  vars_incl (φ ⊻ ψ) V.
 Proof.
 intros Hφ Hψ.
-unfold choose_or. 
+unfold simp_or. 
 case (decide (obviously_smaller φ ψ = Lt)); [intro HLt | intro Hneq1].
 - now rewrite HLt.
 - case (decide (obviously_smaller φ ψ = Gt)); [intro HGt| intro Hneq2].
@@ -454,6 +639,42 @@ case (decide (obviously_smaller φ ψ = Lt)); [intro HLt | intro Hneq1].
     * rewrite HEq. apply or_vars_incl_R; assumption.
     * destruct (obviously_smaller φ ψ); [contradict Hneq3 | contradict Hneq1 |contradict Hneq2]; trivial.
 Qed.
+
+
+
+Lemma vars_incl_simp_or_assoc φ ψ ϴ V :
+  vars_incl (Or φ (Or ψ ϴ)) V ->
+  vars_incl (Or (Or φ  ψ)  ϴ) V.
+Proof.
+intro H.
+unfold vars_incl.
+intros x H2.
+simpl in H2.
+apply or_assoc in H2.
+apply H.
+simpl.
+apply H2.
+Qed.
+
+
+
+Lemma vars_incl_simp_ors φ ψ V :
+  vars_incl φ V -> vars_incl ψ V ->
+  vars_incl (simp_ors φ ψ) V.
+Proof.
+intros Hφ Hψ.
+destruct φ; 
+try (
+  simpl; destruct ψ; 
+  (apply vars_incl_simp_or; try assumption; apply vars_incl_simp_or_equiv_or; assumption)
+).
+destruct ψ; simpl; apply vars_incl_simp_or_equiv_or; apply or_vars_incl_L in Hφ;
+(apply or_vars_incl_R; 
+  [ apply Hφ|
+  apply vars_incl_simp_or_equiv_or; apply or_vars_incl_R; [apply Hψ| apply Hφ]]
+).
+Qed.
+
 
 Lemma vars_incl_simp φ V :
   vars_incl φ V -> vars_incl (simp φ) V.
@@ -482,7 +703,7 @@ induction φ; auto.
                   apply IHφ2; eapply and_vars_incl_L];
                apply H.
 - simpl. unfold simp_or. 
-  apply vars_incl_choose_or;
+  apply vars_incl_simp_ors;
   [ apply IHφ1; apply (or_vars_incl_L _  φ2)|
   apply IHφ2; apply (or_vars_incl_L  φ1 _) ];
   assumption.
