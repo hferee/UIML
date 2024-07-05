@@ -38,13 +38,26 @@ match (φ,ψ) with
   |(φ, ψ) => φ ⊻ ψ
 end.
 
-Definition simp_and φ ψ :=
-  if decide (φ =⊥) then ⊥
-  else if decide (ψ = ⊥) then ⊥
-  else if decide (φ = ⊤) then ψ
-  else if decide (ψ = ⊤) then φ
-  else if decide (φ = ψ) then φ
-  else φ ∧ ψ.
+Definition choose_and φ ψ :=
+match obviously_smaller φ ψ with
+  | Lt => φ
+  | Gt => ψ
+  | Eq => φ ∧ ψ
+ end.
+
+Definition simp_and φ ψ := 
+match (φ, ψ) with
+  | (φ, ψ1 ∧ ψ2) => 
+      match obviously_smaller φ ψ1 with
+      | Lt => φ ∧ ψ2
+      | Gt => ψ1 ∧ ψ2
+      | Eq => φ ∧ (ψ1 ∧ ψ2)
+      end
+  |(φ,ψ) => choose_and φ ψ
+end.
+
+
+Infix "⊼" := simp_and (at level 60).
 
 Definition simp_imp φ ψ :=
   if decide (φ = ⊤) then ψ
@@ -218,7 +231,7 @@ apply H.
 apply or_assoc_L.
 Qed.
 
-Lemma choose_or_eqiv_L φ ψ φ' ψ':
+Lemma choose_or_equiv_L φ ψ φ' ψ':
   (φ ≼ φ') -> (ψ ≼ ψ') ->
   (φ ∨ ψ) ≼ choose_or φ' ψ'.
 Proof.
@@ -249,7 +262,7 @@ Lemma simp_or_equiv_L φ ψ φ' ψ' :
 Proof.
 intros Hφ Hψ.
 unfold simp_or.
-destruct ψ'; try (apply choose_or_eqiv_L; assumption).
+destruct ψ'; try (apply choose_or_equiv_L; assumption).
 case (decide (obviously_smaller φ' ψ'1 = Lt)); [intro HLt | intro Hneq1].
 - rewrite HLt. apply OrL.
   + eapply cut2. 
@@ -436,37 +449,127 @@ split; [ apply simp_equiv_or_L | apply simp_equiv_or_R]; try apply IHφ ; try ap
 Qed.
 
 
+
+Lemma and_congruence φ ψ φ' ψ':
+  (φ ≼ φ') -> (ψ ≼ ψ') ->
+  (φ ∧ ψ) ≼ φ' ∧ ψ'.
+Proof.
+intros Hφ Hψ.
+apply AndL.
+apply AndR.
+- apply weakening. apply Hφ. 
+- exch 0. apply weakening. apply Hψ. 
+Qed.
+
+
+Lemma and_comm φ ψ:
+  φ ∧ ψ ≼  ψ ∧ φ.
+Proof.
+apply AndL; apply AndR; [exch 0|]; apply weakening; apply generalised_axiom.
+Qed.
+
+
+Lemma and_comm_ctx_L φ ψ ϴ:
+  (φ ∧ ψ ≼ ϴ) -> ψ ∧ φ ≼ ϴ.
+Proof.
+intro H.
+eapply cut2.
+apply and_comm.
+assumption.
+Qed.
+
+Lemma choose_and_equiv_L φ ψ φ' ψ':
+  (φ ≼ φ') -> (ψ ≼ ψ') ->
+  (φ ∧ ψ) ≼ choose_and φ' ψ'.
+Proof.
+intros Hφ Hψ.
+unfold choose_and.
+case (decide (obviously_smaller φ' ψ' = Lt)); [intro HLt | intro Hneq1].
+- rewrite HLt. apply AndL. apply weakening. apply Hφ.
+- case (decide (obviously_smaller φ' ψ' = Gt)); [intro HGt| intro Hneq2].
+  + rewrite HGt. apply AndL. exch 0. apply weakening. apply Hψ.
+  + case (decide (obviously_smaller φ' ψ' = Eq)); [intro HEq| intro Hneq3].
+    * rewrite HEq. apply and_congruence; [apply Hφ | apply Hψ].
+    * destruct (obviously_smaller φ' ψ'); [contradict Hneq3 | contradict Hneq1 |contradict Hneq2]; trivial.
+Qed.
+
+
+Lemma choose_and_equiv_R φ ψ φ' ψ':
+  (φ' ≼ φ) -> (ψ' ≼ ψ) ->
+  choose_and φ' ψ' ≼  φ ∧ ψ.
+Proof.
+intros Hφ Hψ.
+unfold choose_and.
+case (decide (obviously_smaller φ' ψ' = Lt)); [intro HLt | intro Hneq1].
+- rewrite HLt. apply AndR.
+  + assumption.
+  + eapply cut2.
+    * apply obviously_smaller_compatible_LT. apply HLt.
+    * assumption.
+- case (decide (obviously_smaller φ' ψ' = Gt)); [intro HGt| intro Hneq2].
+  + rewrite HGt. apply AndR.
+    * eapply cut2.
+      -- apply obviously_smaller_compatible_GT. apply HGt.
+      -- assumption.
+    * assumption.
+  + case (decide (obviously_smaller φ' ψ' = Eq)); [intro HEq| intro Hneq3].
+    * rewrite HEq. apply and_congruence; [apply Hφ | apply Hψ].
+    * destruct (obviously_smaller φ' ψ'); [contradict Hneq3 | contradict Hneq1 |contradict Hneq2]; trivial.
+Qed.
+
+
+
+
+Lemma simp_and_equiv_L φ ψ φ' ψ' : 
+  (φ ≼ φ') -> (ψ ≼ ψ') ->
+  (φ ∧ ψ) ≼ simp_and φ' ψ'.
+Proof.
+intros Hφ Hψ.
+unfold simp_and.
+destruct ψ'; try (apply choose_and_equiv_L; assumption).
+case (decide (obviously_smaller φ' ψ'1 = Lt)); [intro HLt | intro Hneq1].
+- rewrite HLt. apply and_congruence.
+  + assumption.
+  + apply AndR_rev in Hψ; apply Hψ.
+- case (decide (obviously_smaller φ' ψ'1 = Gt)); [intro HGt| intro Hneq2].
+  + rewrite HGt. apply AndL. exch 0. apply weakening. assumption.
+  + case (decide (obviously_smaller φ' ψ'1 = Eq)); [intro HEq| intro Hneq3].
+    * rewrite HEq. apply and_congruence; [apply Hφ | apply Hψ].
+    * destruct (obviously_smaller φ' ψ'1); [contradict Hneq3 | contradict Hneq1 |contradict Hneq2]; trivial.
+Qed.
+
+Lemma simp_and_equiv_R φ ψ φ' ψ' : 
+  (φ' ≼ φ) -> (ψ' ≼ ψ) ->
+  simp_and φ' ψ' ≼  φ ∧ ψ.
+Proof.
+intros Hφ Hψ.
+unfold simp_and.
+destruct ψ'; try (apply choose_and_equiv_R; assumption).
+case (decide (obviously_smaller φ' ψ'1 = Lt)); [intro HLt | intro Hneq1].
+- rewrite HLt. apply AndR.
+  + apply AndL. apply weakening; assumption.
+  + apply (cut2 _ ( ψ'1 ∧ ψ'2) _).
+    * apply and_congruence; 
+      [now apply obviously_smaller_compatible_LT | apply generalised_axiom].
+    * assumption.
+- case (decide (obviously_smaller φ' ψ'1 = Gt)); [intro HGt| intro Hneq2].
+  + rewrite HGt. apply AndR.
+    * apply AndL. apply weakening. eapply cut2.
+      -- apply obviously_smaller_compatible_GT; apply HGt.
+      -- assumption.
+    * assumption.
+  + case (decide (obviously_smaller φ' ψ'1 = Eq)); [intro HEq| intro Hneq3].
+    * rewrite HEq. apply and_congruence; [apply Hφ | apply Hψ].
+    * destruct (obviously_smaller φ' ψ'1); [contradict Hneq3 | contradict Hneq1 |contradict Hneq2]; trivial.
+Qed.
+
 Lemma simp_equiv_and_L φ ψ : 
   (φ  ≼ simp φ) -> (ψ  ≼ simp ψ) ->
   (φ ∧ ψ) ≼ simp (φ ∧ ψ).
 Proof.
 intros Hφ Hψ.
-simpl. unfold simp_and. 
-case decide as [Hbot |].
-- rewrite Hbot in Hφ.
-  apply AndL. apply weakening.
-  apply exfalso. apply Hφ.
-- case decide as [Hbot |].
-  + rewrite Hbot in Hψ.
-    apply AndL. exch 0. apply weakening.
-    apply Hψ.
-  + case decide as [].
-    * apply AndL.
-      exch 0. apply weakening.
-      apply Hψ.
-    * case decide as [].
-      -- apply AndL.
-         apply weakening.
-         apply Hφ.
-      -- apply AndL.
-         case decide as [].
-         ++ apply weakening.
-            apply Hφ.
-         ++ apply AndR.
-            ** apply weakening.
-               apply Hφ.
-            ** exch 0. apply weakening.
-               apply Hψ.
+simpl. unfold simp_and.
+apply simp_and_equiv_L; assumption.
 Qed.
 
 
@@ -475,29 +578,8 @@ Lemma simp_equiv_and_R φ ψ :
   simp (φ ∧ ψ) ≼  φ ∧ ψ.
 Proof.
 intros Hφ Hψ.
-simpl. unfold simp_and. 
-case decide as [].
-- apply exfalso. apply ExFalso.
-- case decide as [].
-  + apply exfalso. apply ExFalso.
-  + case decide as [Htop |].
-    * apply AndR.
-      -- rewrite Htop in Hφ.
-         apply weakening.
-         eapply TopL_rev.
-         apply Hφ.
-      -- apply Hψ.
-    * case decide as [Htop |].
-      -- apply AndR. 
-         ++ apply Hφ.
-         ++ rewrite Htop in Hψ.
-            apply weakening.
-            eapply TopL_rev.
-            apply Hψ.
-      -- case decide as [ Heq | Hneq].
-         ++ apply AndR; [ apply Hφ| rewrite Heq ; apply Hψ].
-         ++ apply AndL.
-            apply AndR; [|exch 0]; apply weakening; [apply Hφ | apply Hψ].
+simpl. unfold simp_and.
+apply simp_and_equiv_R; assumption.
 Qed.
 
 Lemma simp_equiv_and φ ψ: 
@@ -723,32 +805,48 @@ apply or_vars_incl_R.
 Qed.
 
 
+Lemma vars_incl_choose_and φ ψ V:
+  vars_incl (And φ ψ) V ->
+  vars_incl (choose_and φ ψ) V.
+Proof.
+intros H.
+unfold choose_and. 
+destruct (obviously_smaller φ ψ).
+- assumption.
+- now apply (and_vars_incl_L  _ ψ).
+- now apply (and_vars_incl_L  φ _).
+Qed.
+
+
+Lemma vars_incl_simp_or_equiv_and φ ψ V:
+  vars_incl (And φ ψ) V ->
+  vars_incl (φ ⊼ ψ) V.
+Proof.
+intros H.
+unfold simp_and.
+destruct ψ; try (now apply vars_incl_choose_and).
+destruct (obviously_smaller φ ψ1).
+- assumption.
+- apply and_vars_incl_R.
+  + now apply (and_vars_incl_L _ (Or ψ1 ψ2)).
+  + apply and_vars_incl_L in H. 
+    apply (and_vars_incl_L ψ1 _).
+    apply H.
+- now apply (and_vars_incl_L  φ _).
+Qed.
+
+
 Lemma vars_incl_simp φ V :
   vars_incl φ V -> vars_incl (simp φ) V.
 Proof.
 intro H.
 induction φ; auto.
 - simpl. unfold simp_and. 
-  case decide as [].
-  + apply bot_vars_incl.
-  + case decide as [].
-    * apply bot_vars_incl.
-    * case decide as [].
-      --  apply IHφ2.
-          eapply and_vars_incl_L.
-          apply H.
-      -- case decide as [].
-         ++ apply IHφ1.
-            apply (and_vars_incl_L _  φ2).
-            apply H.
-         ++ case decide as [].
-            ** apply IHφ1.
-               apply (and_vars_incl_L _  φ2).
-               apply H.
-            ** apply and_vars_incl_R; 
-               [ apply IHφ1; apply (and_vars_incl_L _  φ2)|
-                  apply IHφ2; eapply and_vars_incl_L];
-               apply H.
+  apply vars_incl_simp_or_equiv_and.
+  apply and_vars_incl_R;
+  [ apply IHφ1; apply (or_vars_incl_L _  φ2)|
+  apply IHφ2; apply (or_vars_incl_L  φ1 _) ];
+  assumption.
 - simpl. unfold simp_or. 
   apply vars_incl_simp_ors;
   [ apply IHφ1; apply (or_vars_incl_L _  φ2)|
