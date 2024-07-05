@@ -35,6 +35,7 @@ jobs:
               ./install.sh -y
               make -j 4
               make -j 4 doc
+              dune exec benchmark > benchmark.md
             endGroup
           uninstall: |
             startGroup "Clean project"
@@ -46,6 +47,12 @@ jobs:
         with:
           name: docs-artifact
           path: docs
+
+      - name: Upload benchmark
+        uses: actions/upload-artifact@master
+        with:
+          name: benchmark
+          path: benchmark.md
 
       - name: Revert permissions
         # to avoid a warning at cleanup time
