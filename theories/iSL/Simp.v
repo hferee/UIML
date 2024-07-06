@@ -884,43 +884,18 @@ Proof.
   - auto.
 Qed.
 
-Lemma and_vars_incl_L φ ψ V:
-  vars_incl (And φ ψ) V ->
-  vars_incl φ V * vars_incl ψ V.
+Lemma or_vars_incl φ ψ V:
+  (vars_incl (Or φ ψ) V ->
+  vars_incl φ V * vars_incl ψ V) *
+  ( vars_incl φ V -> vars_incl ψ V ->
+  vars_incl (Or φ ψ) V).
 Proof.
-  intros H.
+split.
+- intros H.
   split; intros x H1; apply H; simpl; auto.
+- unfold vars_incl. simpl. intuition.
 Qed.
 
-
-Lemma and_vars_incl_R φ ψ V:
-  vars_incl φ V ->
-  vars_incl ψ V ->
-  vars_incl (And φ ψ) V.
-Proof.
-  unfold vars_incl.
-  simpl.
-  intuition.
-Qed.
-
-Lemma or_vars_incl_L φ ψ V:
-  vars_incl (Or φ ψ) V ->
-  vars_incl φ V * vars_incl ψ V.
-Proof.
-  intros H.
-  split; intros x H1; apply H; simpl; auto.
-Qed.
-
-
-Lemma or_vars_incl_R φ ψ V:
-  vars_incl φ V ->
-  vars_incl ψ V ->
-  vars_incl (Or φ ψ) V.
-Proof.
-  unfold vars_incl.
-  simpl.
-  intuition.
-Qed.
 
 Lemma vars_incl_choose_or φ ψ V:
   vars_incl (Or φ ψ) V ->
@@ -930,8 +905,8 @@ intros H.
 unfold choose_or. 
 destruct (obviously_smaller φ ψ).
 - assumption.
-- now apply (or_vars_incl_L  φ _).
-- now apply (or_vars_incl_L  _ ψ).
+- now apply (or_vars_incl  φ _).
+- now apply (or_vars_incl  _ ψ).
 Qed.
 
 Lemma vars_incl_simp_or_equiv_or φ ψ V:
@@ -943,11 +918,11 @@ unfold simp_or.
 destruct ψ; try (now apply vars_incl_choose_or).
 destruct (obviously_smaller φ ψ1).
 - assumption.
-- now apply (or_vars_incl_L  φ _).
-- apply or_vars_incl_R.
-  + now apply (or_vars_incl_L _ (Or ψ1 ψ2)).
-  + apply or_vars_incl_L in H. 
-    apply (or_vars_incl_L ψ1 _).
+- now apply (or_vars_incl  φ _).
+- apply or_vars_incl.
+  + now apply (or_vars_incl _ (Or ψ1 ψ2)).
+  + apply or_vars_incl in H. 
+    apply (or_vars_incl ψ1 _).
     apply H.
 Qed.
 
@@ -957,17 +932,31 @@ Lemma vars_incl_simp_ors φ ψ V :
 Proof.
 generalize ψ.
 induction φ; intro ψ0; destruct ψ0; intros Hφ Hψ;
-try ( apply vars_incl_simp_or_equiv_or; apply or_vars_incl_R; assumption).
+try ( apply vars_incl_simp_or_equiv_or; apply or_vars_incl; assumption).
 simpl.
 apply vars_incl_simp_or_equiv_or.
-apply or_vars_incl_R.
-- now apply (or_vars_incl_L _ φ2 _). 
+apply or_vars_incl.
+- now apply (or_vars_incl _ φ2 _). 
 - apply vars_incl_simp_or_equiv_or.
-  apply or_vars_incl_R.
-  + now apply (or_vars_incl_L _ ψ0_2 _). 
+  apply or_vars_incl.
+  + now apply (or_vars_incl _ ψ0_2 _). 
   +  apply IHφ2.
-    * now apply (or_vars_incl_L  φ1 _ _). 
-    * now apply (or_vars_incl_L  ψ0_1 _ _). 
+    * now apply (or_vars_incl  φ1 _ _). 
+    * now apply (or_vars_incl  ψ0_1 _ _). 
+Qed.
+
+
+Lemma and_vars_incl φ ψ V:
+  (vars_incl (And φ ψ) V ->
+  vars_incl φ V * vars_incl ψ V)*
+  ( vars_incl φ V ->
+  vars_incl ψ V ->
+  vars_incl (And φ ψ) V).
+Proof.
+split.
+- intros H.
+  split; intros x H1; apply H; simpl; auto.
+- unfold vars_incl. simpl. intuition.
 Qed.
 
 
@@ -979,8 +968,8 @@ intros H.
 unfold choose_and. 
 destruct (obviously_smaller φ ψ).
 - assumption.
-- now apply (and_vars_incl_L  _ ψ).
-- now apply (and_vars_incl_L  φ _).
+- now apply (and_vars_incl  _ ψ).
+- now apply (and_vars_incl  φ _).
 Qed.
 
 
@@ -993,12 +982,12 @@ unfold simp_and.
 destruct ψ; try (now apply vars_incl_choose_and).
 destruct (obviously_smaller φ ψ1).
 - assumption.
-- apply and_vars_incl_R.
-  + now apply (and_vars_incl_L _ (Or ψ1 ψ2)).
-  + apply and_vars_incl_L in H. 
-    apply (and_vars_incl_L ψ1 _).
+- apply and_vars_incl.
+  + now apply (and_vars_incl _ (Or ψ1 ψ2)).
+  + apply and_vars_incl in H. 
+    apply (and_vars_incl ψ1 _).
     apply H.
-- now apply (and_vars_incl_L  φ _).
+- now apply (and_vars_incl  φ _).
 Qed.
 
 Lemma vars_incl_simp_ands φ ψ V :
@@ -1007,17 +996,17 @@ Lemma vars_incl_simp_ands φ ψ V :
 Proof.
 generalize ψ.
 induction φ; intro ψ0; destruct ψ0; intros Hφ Hψ;
-try ( apply vars_incl_simp_and_equiv_and; apply and_vars_incl_R; assumption).
+try ( apply vars_incl_simp_and_equiv_and; apply and_vars_incl; assumption).
 simpl.
 apply vars_incl_simp_and_equiv_and.
-apply and_vars_incl_R.
-- now apply (and_vars_incl_L _ φ2 _). 
+apply and_vars_incl.
+- now apply (and_vars_incl _ φ2 _). 
 - apply vars_incl_simp_and_equiv_and.
-  apply and_vars_incl_R.
-  + now apply (and_vars_incl_L _ ψ0_2 _). 
+  apply and_vars_incl.
+  + now apply (and_vars_incl _ ψ0_2 _). 
   +  apply IHφ2.
-    * now apply (and_vars_incl_L  φ1 _ _). 
-    * now apply (and_vars_incl_L  ψ0_1 _ _). 
+    * now apply (and_vars_incl  φ1 _ _). 
+    * now apply (and_vars_incl  ψ0_1 _ _). 
 Qed.
 
 Lemma vars_incl_simp φ V :
@@ -1027,26 +1016,26 @@ intro H.
 induction φ; auto.
 - simpl. unfold simp_or. 
   apply vars_incl_simp_ands;
-  [ apply IHφ1; apply (and_vars_incl_L _  φ2)|
-  apply IHφ2; apply (and_vars_incl_L  φ1 _) ];
+  [ apply IHφ1; apply (and_vars_incl _  φ2)|
+  apply IHφ2; apply (and_vars_incl  φ1 _) ];
   assumption.
 - simpl. unfold simp_or. 
   apply vars_incl_simp_ors;
-  [ apply IHφ1; apply (or_vars_incl_L _  φ2)|
-  apply IHφ2; apply (or_vars_incl_L  φ1 _) ];
+  [ apply IHφ1; apply (or_vars_incl _  φ2)|
+  apply IHφ2; apply (or_vars_incl  φ1 _) ];
   assumption.
 - simpl. unfold simp_imp. 
   case decide as [].
   + apply IHφ2.
-    eapply and_vars_incl_L.
+    eapply and_vars_incl.
     apply H.
   + case decide as [].
     * apply top_vars_incl.
     * case decide as [].
       -- apply top_vars_incl.
-      -- apply and_vars_incl_R;
-        [ apply IHφ1; apply (and_vars_incl_L _  φ2)|
-          apply IHφ2; eapply and_vars_incl_L];
+      -- apply and_vars_incl;
+        [ apply IHφ1; apply (and_vars_incl _  φ2)|
+          apply IHφ2; eapply and_vars_incl];
           apply H.
 Qed.
 
