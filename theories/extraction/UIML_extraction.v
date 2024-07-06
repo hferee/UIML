@@ -34,11 +34,12 @@ Definition k_UI p s := form_of_MPropF(proj1_sig (K.Interpolation.UIK_braga.GUI_t
 Definition isl_E v f := Ef v f.
 Definition isl_A v f := Af v f.
 
+Definition isl_simp f := simp f.
 
 Definition isl_simplified_E v f := E_simplified v f.
 Definition isl_simplified_A v f := A_simplified v f.
 
 Set Extraction Output Directory "extraction".
 
-Separate Extraction gl_UI k_UI isl_E isl_A isl_simplified_E isl_simplified_A Formulas.weight.
+Separate Extraction gl_UI k_UI isl_E isl_A isl_simplified_E isl_simplified_A Formulas.weight isl_simp.
 
