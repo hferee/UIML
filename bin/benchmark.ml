@@ -95,6 +95,9 @@ let test_cases =
     "((t ∧ r) ∨ (t ∧ s)) ∧ ((r ∧ p) ∧ (p → t))";
     "((t ∧ t) ∨ (t → s)) ∧ (~s ∧ (⊥ → r))";
     "(t ∨ r) → (t ∧ s)";
+    "□((p ∨ q) ∧ (p → r))";
+    "□(p ∨  □ q ∧ t) ∧(t → p)";
+    "□(□(t -> t))";
   ]
 
 let _ = bench test_cases

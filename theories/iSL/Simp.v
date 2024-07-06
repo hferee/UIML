@@ -79,6 +79,7 @@ match φ with
   | φ ∨ ψ => simp_ors (simp φ) (simp ψ)
   | φ ∧ ψ => simp_ands (simp φ) (simp ψ)
   | φ → ψ => simp_imp (simp φ) (simp ψ)
+  | □ φ => □ (simp φ)
   | _ => φ
 end.
 
@@ -820,23 +821,43 @@ intros IHφ IHψ.
 split; [ apply simp_equiv_imp_L | apply simp_equiv_imp_R]; try apply IHφ ; try apply IHψ.
 Qed.
 
+Lemma box_congr φ ψ:
+  (φ ≼ ψ) ->  □ φ ≼  □ ψ.
+Proof. 
+intro H.
+apply BoxR.
+box_tac. apply weakening.
+ms.
+Qed.
+
+Lemma simp_equiv_box φ:
+  (φ ≼ simp φ) * (simp φ ≼ φ) ->
+  (□ φ ≼ □ (simp φ)) * (□ (simp φ) ≼ □ φ).
+Proof.
+intro IHφ.
+split; apply box_congr; apply IHφ.
+Qed.
+
+
 Theorem simp_equiv φ : 
   (φ ≼ (simp φ)) * ((simp φ) ≼ φ).
 Proof.
 remember (weight φ) as w.
 assert(Hle : weight φ  ≤ w) by lia.
 clear Heqw. revert φ Hle.
-induction w; intros φ Hle; [destruct φ ; simpl in Hle; lia|].
-destruct φ; simpl; try (split ; apply generalised_axiom); 
+induction w; intros φ Hle; [destruct φ ; simpl in Hle; lia|];
+destruct φ; simpl; try (split ; apply generalised_axiom);
 [eapply (simp_equiv_and φ1  φ2)|
  eapply (simp_equiv_or φ1  φ2)|
-eapply (simp_equiv_imp φ1  φ2)]; apply IHw;
+ eapply (simp_equiv_imp φ1  φ2)|
+ eapply simp_equiv_box]; apply IHw;
 [assert (Hφ1w: weight φ1 < weight (φ1 ∧ φ2))|
 assert (Hφ1w: weight φ2 < weight (φ1 ∧ φ2))|
 assert (Hφ1w: weight φ1 < weight (φ1 ∨ φ2))|
 assert (Hφ1w: weight φ2 < weight (φ1 ∨ φ2))|
 assert (Hφ1w: weight φ1 < weight (φ1 → φ2))|
-assert (Hφ1w: weight φ2 < weight (φ1 → φ2))]; simpl; lia.
+assert (Hφ1w: weight φ2 < weight (φ1 → φ2))|
+auto with *]; simpl; lia.
 Qed.
 
 Require Import ISL.PropQuantifiers.
