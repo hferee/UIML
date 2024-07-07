@@ -1,6 +1,4 @@
-Require Import ISL.SequentProps.
-Require Import ISL.Sequents.
-Require Import ISL.Environments.
+Require Import ISL.Environments ISL.Sequents ISL.SequentProps ISL.Cut.
 
 Definition simp_or φ ψ := 
   if decide (φ = ⊥) then ψ
