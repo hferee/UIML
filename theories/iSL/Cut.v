@@ -1,24 +1,6 @@
 Require Import ISL.Formulas ISL.Sequents ISL.Order.
 Require Import ISL.SequentProps .
 
-(* TODO: move *)
-Lemma open_boxes_R (Γ : env) (φ ψ : form): (Γ • φ) ⊢ ψ → ((⊗Γ) • φ) ⊢ ψ.
-Proof.
-revert ψ.
-induction Γ using gmultiset_rec; intro ψ.
-- rewrite open_boxes_empty. trivial.
-- intro HP. peapply (open_box_L  (⊗ Γ • φ) x ψ).
-  + apply ImpR_rev, IHΓ, ImpR. peapply HP.
-  + rewrite open_boxes_disj_union, open_boxes_singleton; ms.
-Qed.
-
-Instance proper_env_order:  Proper ((≡@{env}) ==> (≡@{env}) ==>(=)) env_order.
-Proof.
-Admitted.
-
-Lemma env_add_remove : ∀ (Γ: env) (φ : form), (Γ • φ) ∖ {[φ]} =Γ.
-Proof. intros; ms. Qed.
-
 (* From "A New Calculus for Intuitionistic Strong Löb Logic" *)
 Theorem additive_cut Γ φ ψ :
   Γ ⊢ φ  -> Γ • φ ⊢ ψ ->

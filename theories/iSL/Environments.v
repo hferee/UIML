@@ -91,6 +91,9 @@ case (decide (φ = ψ)).
   auto.
 Qed.
 
+Lemma env_add_remove : ∀ (Γ: env) (φ : form), (Γ • φ) ∖ {[φ]} =Γ.
+Proof. intros; ms. Qed.
+
 (** * Conjunction, disjunction, and implication *)
 (** In the construction of propositional quantifiers, we often want to take the conjunction, disjunction, or implication of a (multi)set of formulas. The following results give some small optimizations of this process, by reducing "obvious" conjunctions such as ⊤ ∧ ϕ, ⊥ ∧ ϕ, etc. *)
 

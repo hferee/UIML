@@ -41,11 +41,6 @@ Proof.
   apply ImpR. apply ExFalso.
 Qed.
 
-Theorem cut Γ Γ' φ ψ :
-  Γ ⊢ φ  -> Γ' • φ ⊢ ψ ->
-  Γ ⊎ Γ' ⊢ ψ.
-Admitted.
-
 Lemma preorder_singleton  φ ψ:
   {[φ]} ⊢ ψ -> (φ ≼ ψ).
 Proof.
@@ -319,8 +314,7 @@ Proof.
   intros x H.
   unfold In.
   induction V. 
-  - unfold occurs_in in H.
-    lia.
+  - simpl in H. tauto.
   - auto.
 Qed.
 

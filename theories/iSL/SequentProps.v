@@ -181,6 +181,15 @@ Qed.
 
 Local Hint Resolve env_in_add : proof.
 
+Lemma open_boxes_R (Γ : env) (φ ψ : form): (Γ • φ) ⊢ ψ → ((⊗Γ) • φ) ⊢ ψ.
+Proof.
+revert ψ.
+induction Γ using gmultiset_rec; intro ψ.
+- rewrite open_boxes_empty. trivial.
+- intro HP. peapply (open_box_L  (⊗ Γ • φ) x ψ).
+  + apply ImpR_rev, IHΓ, ImpR. peapply HP.
+  + rewrite open_boxes_disj_union, open_boxes_singleton; ms.
+Qed.
 Lemma AndL_rev Γ φ ψ θ: (Γ•φ ∧ ψ) ⊢ θ  → (Γ•φ•ψ) ⊢ θ.
 Proof.
 intro Hp.
