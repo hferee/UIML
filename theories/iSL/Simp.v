@@ -25,8 +25,14 @@ match (φ, ψ) with
       | Gt => φ ∨ ψ2
       | Eq => φ ∨ (ψ1 ∨ ψ2)
       end
+  | (φ, ψ1 ∧ ψ2) => 
+      match obviously_smaller φ ψ1 with
+      | Gt => φ
+      | _ => φ ∨ (ψ1 ∧ ψ2)
+      end
   |(φ,ψ) => choose_or φ ψ
 end.
+
 
 Infix "⊻" := simp_or (at level 65).
 
@@ -250,8 +256,7 @@ case (decide (obviously_smaller φ' ψ' = Lt)); [intro HLt | intro Hneq1].
   + eapply cut2. 
     * apply Hφ.
     * apply obviously_smaller_compatible_LT; assumption.
-  + assumption.
-- case (decide (obviously_smaller φ' ψ' = Gt)); [intro HGt| intro Hneq2].
+  + assumption. - case (decide (obviously_smaller φ' ψ' = Gt)); [intro HGt| intro Hneq2].
   + rewrite HGt. apply OrL.
     * assumption.
     * eapply cut2.
@@ -271,21 +276,29 @@ Proof.
 intros Hφ Hψ.
 unfold simp_or.
 destruct ψ'; try (apply choose_or_equiv_L; assumption).
-case (decide (obviously_smaller φ' ψ'1 = Lt)); [intro HLt | intro Hneq1].
-- rewrite HLt. apply OrL.
-  + eapply cut2. 
-    * apply Hφ.
-    * apply OrR1. apply obviously_smaller_compatible_LT; assumption.
-  + assumption.
-- case (decide (obviously_smaller φ' ψ'1 = Gt)); [intro HGt| intro Hneq2].
+- case (decide (obviously_smaller φ' ψ'1 = Gt)); [intro HGt | intro Hneq1].
   + rewrite HGt. apply OrL.
-    * apply OrR1; assumption.
+    * assumption.
     * eapply cut2.
-      -- apply Hψ. 
-      -- apply or_congruence; [apply obviously_smaller_compatible_GT; assumption| apply generalised_axiom].
-  + case (decide (obviously_smaller φ' ψ'1 = Eq)); [intro HEq| intro Hneq3].
-    * rewrite HEq. apply or_congruence; [apply Hφ | apply Hψ].
-    * destruct (obviously_smaller φ' ψ'1); [contradict Hneq3 | contradict Hneq1 |contradict Hneq2]; trivial.
+      -- apply Hψ.
+      -- apply AndL; apply weakening; now apply obviously_smaller_compatible_GT.
+  + destruct (obviously_smaller φ' ψ'1);
+    [idtac|idtac|contradict Hneq1; auto]; (apply or_congruence; [apply Hφ | apply Hψ]).
+- (case (decide (obviously_smaller φ' ψ'1 = Lt)); [intro HLt | intro Hneq1]).
+  + rewrite HLt. apply OrL.
+    * eapply cut2. 
+      -- apply Hφ.
+      -- apply OrR1. apply obviously_smaller_compatible_LT; assumption.
+    * assumption.
+  + case (decide (obviously_smaller φ' ψ'1 = Gt)); [intro HGt| intro Hneq2].
+    * rewrite HGt. apply OrL.
+      -- apply OrR1; assumption.
+      -- eapply cut2.
+         ++ apply Hψ. 
+         ++ apply or_congruence; [apply obviously_smaller_compatible_GT; assumption| apply generalised_axiom].
+    * case (decide (obviously_smaller φ' ψ'1 = Eq)); [intro HEq| intro Hneq3].
+      -- rewrite HEq. apply or_congruence; [apply Hφ | apply Hψ].
+      -- destruct (obviously_smaller φ' ψ'1); [contradict Hneq3 | contradict Hneq1 |contradict Hneq2]; trivial.
 Qed.
 
 Lemma choose_or_equiv_R φ ψ φ' ψ' : 
@@ -311,17 +324,21 @@ Proof.
 intros Hφ Hψ.
 unfold simp_or.
 destruct ψ'; try (apply choose_or_equiv_R; assumption).
-case (decide (obviously_smaller φ' ψ'1 = Lt)); [intro HLt | intro Hneq1].
-- rewrite HLt. apply OrR2; assumption.
-- case (decide (obviously_smaller φ' ψ'1 = Gt)); [intro HGt| intro Hneq2].
-  + rewrite HGt. apply OrL.
-    * apply OrR1; assumption.
-    * apply OrL_rev in Hψ.
-      apply OrR2.
-      apply Hψ.
-  + case (decide (obviously_smaller φ' ψ'1 = Eq)); [intro HEq| intro Hneq3].
-    * rewrite HEq. apply or_congruence; [apply Hφ | apply Hψ].
-    * destruct (obviously_smaller φ' ψ'1); [contradict Hneq3 | contradict Hneq1 |contradict Hneq2]; trivial.
+- case (decide (obviously_smaller φ' ψ'1 = Gt)); [intro HGt | intro Hneq1].
+ + rewrite HGt. now apply OrR1.
+ + destruct (obviously_smaller φ' ψ'1);
+    [idtac|idtac|contradict Hneq1; auto]; (apply or_congruence; [apply Hφ | apply Hψ]).
+- case (decide (obviously_smaller φ' ψ'1 = Lt)); [intro HLt | intro Hneq1].
+ + rewrite HLt. apply OrR2; assumption.
+ + case (decide (obviously_smaller φ' ψ'1 = Gt)); [intro HGt| intro Hneq2].
+   * rewrite HGt. apply OrL.
+     -- apply OrR1; assumption.
+     -- apply OrL_rev in Hψ.
+        apply OrR2.
+        apply Hψ.
+   * case (decide (obviously_smaller φ' ψ'1 = Eq)); [intro HEq| intro Hneq3].
+     -- rewrite HEq. apply or_congruence; [apply Hφ | apply Hψ].
+     -- destruct (obviously_smaller φ' ψ'1); [contradict Hneq3 | contradict Hneq1 |contradict Hneq2]; trivial.
 Qed.
 
 Lemma simp_or_comm φ ψ :
@@ -916,14 +933,18 @@ Proof.
 intros H.
 unfold simp_or.
 destruct ψ; try (now apply vars_incl_choose_or).
-destruct (obviously_smaller φ ψ1).
-- assumption.
-- now apply (or_vars_incl  φ _).
-- apply or_vars_incl.
-  + now apply (or_vars_incl _ (Or ψ1 ψ2)).
-  + apply or_vars_incl in H. 
-    apply (or_vars_incl ψ1 _).
-    apply H.
+- destruct (obviously_smaller φ ψ1).
+  + assumption.
+  + assumption.
+  + now apply (or_vars_incl  _ (And ψ1 ψ2)).
+- destruct (obviously_smaller φ ψ1).
+  + assumption.
+  + now apply (or_vars_incl  φ _).
+  + apply or_vars_incl.
+    * now apply (or_vars_incl _ (Or ψ1 ψ2)).
+    * apply or_vars_incl in H. 
+      apply (or_vars_incl ψ1 _).
+      apply H.
 Qed.
 
 Lemma vars_incl_simp_ors φ ψ V :
