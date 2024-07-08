@@ -27,11 +27,12 @@ let time f x =
   { value = fx; time = Sys.time () -. t }
 
 let print_value_results { name; before; after } =
-  Printf.printf "| %s | %d | %d | %.2f | %.4f |\n" name before.value after.value
+  Printf.printf "| %s | %d | %d | %.2f | %.4f | %.4f |\n" name before.value
+    after.value
     (percentage_reduction
        (float_of_int before.value)
        (float_of_int after.value))
-    before.time
+    before.time after.time
 
 let bench_one fs =
   let f = eval fs in
@@ -55,8 +56,9 @@ let bench_one fs =
 let print_bench_value_info benches =
   Printf.printf
     "| Formula | Interpolant weight | Simplified interpolant weight | \
-     Percentage reduction |Interpolant computation time (s)|\n\
-     |--|--|--|--|--|\n";
+     Percentage reduction | Interpolant computation time (s)| Simplification \
+     computation time (s)|\n\
+     |--|--|--|--|--|--|\n";
   List.iter print_value_results benches;
   print_newline ();
 
