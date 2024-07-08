@@ -76,10 +76,13 @@ match (φ,ψ) with
   |(φ, ψ) => φ ⊼ ψ
 end.
 
+
 Definition simp_imp φ ψ :=
-  if decide (φ = ⊤) then ψ
-  else if decide (φ = ⊥) then ⊤
-  else if decide (φ = ψ) then ⊤
+  if decide (obviously_smaller φ ψ = Lt) then ⊤
+  else if decide (obviously_smaller φ ⊥ = Lt) then ⊤
+  else if decide (obviously_smaller ψ ⊤ = Gt) then ⊤
+  else if decide (obviously_smaller φ ⊤ = Gt) then ψ
+  else if decide (obviously_smaller ψ ⊥ = Lt) then ¬φ
   else φ → ψ.
 
 Fixpoint simp φ :=
@@ -219,7 +222,6 @@ apply or_assoc_R.
 assumption.
 Qed.
 
-
 Lemma or_assoc_ctx_R_L φ ψ ϴ a:
   (a ≼ (φ ∨ ψ) ∨ ϴ)  ->a ≼ φ ∨ (ψ ∨ ϴ).
 Proof.
@@ -228,8 +230,6 @@ eapply cut2.
 apply H.
 apply or_assoc_R.
 Qed.
-
-
 
 Lemma or_assoc_ctx_R_R φ ψ ϴ a:
   (a ≼ φ ∨ (ψ ∨ ϴ))  ->a ≼ (φ ∨ ψ) ∨ ϴ.
@@ -667,7 +667,6 @@ assert (H: φ1 ∧ ψ0_1 ∧ φ2 ∧ ψ0_2 ≼ φ1 ⊼ (ψ0_1 ⊼ simp_ands φ2 
 Qed.
 
 
-
 Lemma simp_ands_self_equiv_R φ ψ:
   simp_ands φ ψ ≼ φ ∧ ψ.
 Proof.
@@ -734,33 +733,56 @@ Lemma simp_equiv_imp_L φ ψ :
 Proof.
 intros HφR HψL.
 simpl. unfold simp_imp. 
-case decide as [Htop |].
--  rewrite Htop in HφR.
-  apply weak_ImpL.
-  + eapply TopL_rev. 
-    apply HφR.
-  + apply HψL.
-- case decide as [].
-  + apply weakening.
-    apply top_provable.
-  + case decide as [].
-    * apply ImpR.
-      apply ExFalso.
-    * apply ImpR.
-      exch 0.
-      apply ImpL.
-      -- apply weakening. apply HφR.
-      -- exch 0. apply weakening.
-         apply HψL.
+case decide as [Heq |].
+  - apply top_provable.
+  - case decide as [HφBot |].
+    + apply top_provable.
+    + case decide as [HψTop |].
+      * apply top_provable.
+      * case decide as [HφTop |].
+        -- apply weak_ImpL.
+           ++ eapply additive_cut.
+              ** apply top_provable.
+              ** eapply additive_cut.
+                 --- apply obviously_smaller_compatible_GT; apply HφTop.
+                 --- exch 0. apply weakening. assumption.
+           ++ assumption.
+        -- case decide as [HψBot |].
+           ++ apply ImpR. exch 0. apply ImpL.
+              ** apply weakening. assumption.
+              ** eapply additive_cut.
+                 --- exch 0. apply weakening, HψL.
+                 --- do 2 (exch 0; apply weakening). now apply obviously_smaller_compatible_LT.
+           ++ apply ImpR. exch 0. apply ImpL.
+              ** apply weakening. apply HφR.
+              ** exch 0. apply weakening. apply HψL.
 Qed.
 
-Lemma simp_equiv_imp_R φ ψ : 
-  (φ ≼ simp φ) ->
-  (simp ψ ≼ ψ) ->
-  simp (φ → ψ) ≼ (φ → ψ).
+
+Definition tmp φ ψ :=
+  if decide (φ = ⊤) then ψ
+  else if decide (φ = ⊥) then ⊤
+  else if decide (φ = ψ) then ⊤
+  else φ → ψ.
+
+
+Fixpoint simp2 φ :=
+match φ with
+  | φ ∨ ψ => simp_ors (simp φ) (simp ψ)
+  | φ ∧ ψ => simp_ands (simp φ) (simp ψ)
+  | φ → ψ => tmp (simp2 φ) (simp2 ψ)
+  | □ φ => □ (simp φ)
+  | _ => φ
+end.
+
+
+Lemma tmp_equiv_imp_R φ ψ : 
+  (φ ≼ simp2 φ) ->
+  (simp2 ψ ≼ ψ) ->
+  simp2 (φ → ψ) ≼ (φ → ψ).
 Proof.
 intros HφL HψR.
-simpl. unfold simp_imp.
+simpl. unfold tmp.
 case decide as [Htop |].
 - apply ImpR. 
   apply weakening.
@@ -781,10 +803,55 @@ case decide as [Htop |].
     * apply ImpR.
       exch 0.
       apply ImpL.
-      
       -- apply weakening. apply HφL.
       -- exch 0. apply weakening.
          apply HψR.
+Qed.
+
+
+Lemma simp_equiv_imp_R φ ψ : 
+  (φ ≼ simp φ) ->
+  (simp ψ ≼ ψ) ->
+  simp (φ → ψ) ≼ (φ → ψ).
+Proof.
+intros HφR HψL.
+simpl. unfold simp_imp. 
+case decide as [Heq |].
+  - apply weakening.
+    apply ImpR.
+    eapply cut2.
+    + apply HφR.
+    + eapply cut2.
+      * apply obviously_smaller_compatible_LT. apply Heq.
+      * assumption.
+  - case decide as [HφBot |].
+    + apply weakening.
+      apply ImpR.
+      eapply cut2.
+      * apply HφR.
+      * eapply cut2.
+        -- apply obviously_smaller_compatible_LT. apply HφBot.
+        -- apply ExFalso.
+    + case decide as [HψTop |].
+      * apply weakening.
+        apply ImpR.
+        eapply cut2.
+        -- apply top_provable.
+        -- eapply cut2.
+           ++ apply obviously_smaller_compatible_GT. apply HψTop.
+           ++ assumption.
+      * case decide as [HφTop |].
+        -- apply ImpR. apply weakening. assumption.
+        -- case decide as [HψBot |].
+           ++ apply ImpR. 
+              eapply additive_cut.
+              ** exch 0. apply weak_ImpL.
+                 --- assumption.
+                 --- apply ExFalso.
+              ** apply generalised_axiom.
+           ++ apply ImpR. exch 0. apply ImpL.
+              ** apply weakening. apply HφR.
+              ** exch 0. apply weakening. apply HψL.
 Qed.
 
 Lemma simp_equiv_imp φ ψ: 
@@ -984,6 +1051,40 @@ apply and_vars_incl.
     * now apply (and_vars_incl  ψ0_1 _ _). 
 Qed.
 
+
+
+Lemma imp_vars_incl φ ψ V:
+  (vars_incl (Implies φ ψ) V ->
+  vars_incl φ V * vars_incl ψ V)*
+  ( vars_incl φ V ->
+  vars_incl ψ V ->
+  vars_incl (Implies φ ψ) V).
+Proof.
+split.
+- intros H.
+  split; intros x H1; apply H; simpl; auto.
+- unfold vars_incl. simpl. intuition.
+Qed.
+
+Lemma vars_incl_simp_imp φ ψ V :
+  vars_incl φ V -> vars_incl ψ V ->
+  vars_incl (simp_imp φ ψ) V.
+Proof.
+intros Hφ Hψ.
+simpl. unfold simp_imp. 
+case decide as [].
+  + apply top_vars_incl.
+  + case decide as [].
+    * apply top_vars_incl.
+    * case decide as [].
+      -- apply top_vars_incl.
+      -- case decide as [].
+         ++ assumption.
+         ++ case decide as [].
+            ** apply and_vars_incl; [assumption | apply bot_vars_incl ].
+            ** apply and_vars_incl; assumption.
+Qed.
+
 Lemma vars_incl_simp φ V :
   vars_incl φ V -> vars_incl (simp φ) V.
 Proof.
@@ -999,19 +1100,10 @@ induction φ; auto.
   [ apply IHφ1; apply (or_vars_incl _  φ2)|
   apply IHφ2; apply (or_vars_incl  φ1 _) ];
   assumption.
-- simpl. unfold simp_imp. 
-  case decide as [].
-  + apply IHφ2.
-    eapply and_vars_incl.
-    apply H.
-  + case decide as [].
-    * apply top_vars_incl.
-    * case decide as [].
-      -- apply top_vars_incl.
-      -- apply and_vars_incl;
-        [ apply IHφ1; apply (and_vars_incl _  φ2)|
-          apply IHφ2; eapply and_vars_incl];
-          apply H.
+- simpl. apply vars_incl_simp_imp;
+  [ apply IHφ1; apply (imp_vars_incl _  φ2)|
+  apply IHφ2; apply (imp_vars_incl  φ1 _) ];
+  assumption.
 Qed.
 
 Theorem iSL_uniform_interpolation_simp p V: p ∉ V ->
