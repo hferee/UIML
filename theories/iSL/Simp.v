@@ -1,7 +1,7 @@
 Require Import ISL.Environments ISL.Sequents ISL.SequentProps ISL.Cut.
 
 
-Definition obviously_smaller φ ψ :=
+Definition obviously_smaller (φ : form) ψ :=
   if decide (φ = ⊥) then Lt
   else if decide (ψ = ⊥) then Gt
   else if decide (φ = ⊤) then Gt
