@@ -1,13 +1,25 @@
 Require Import ISL.Environments ISL.Sequents ISL.SequentProps ISL.Cut.
 
 
-Definition obviously_smaller (φ : form) ψ :=
-  if decide (φ = ⊥) then Lt
-  else if decide (ψ = ⊥) then Gt
-  else if decide (φ = ⊤) then Gt
-  else if decide (ψ = ⊤) then Lt
-  else if decide (φ = ψ) then Lt
-  else Eq.
+Fixpoint obviously_smaller (φ : form) (ψ : form) :=
+match (φ, ψ) with 
+  |(Bot, _) => Lt
+  |(_, Bot) => Gt
+  |(Bot → _, _) => Gt
+  |(_, Bot → _) => Lt
+  |(φ ∧ ψ, ϴ) => match (obviously_smaller φ ϴ, obviously_smaller ψ ϴ) with
+      | (Lt, _) | (_, Lt) => Lt
+      | (Gt, Gt) => Gt
+      | _ => Eq
+      end
+  |(φ ∨ ψ, ϴ) => match (obviously_smaller φ ϴ, obviously_smaller ψ ϴ) with
+      | (Gt, _) | (_, Gt) => Gt
+      | (Lt, Lt) => Lt
+      | _ => Eq
+      end
+  |(φ, ψ) => if decide (φ = ψ) then Lt else Eq
+end.
+
 
 Definition choose_or φ ψ :=
 match obviously_smaller φ ψ with
@@ -127,22 +139,65 @@ Proof.
   apply H.
 Qed.
 
+
+(* Some tactics for the obviously_smaller proofs. *)
+
+Ltac eq_clean H e := case decide in H; [rewrite e; apply generalised_axiom | discriminate].
+
+
+Ltac bot_clean  :=
+match goal with
+| [ |- Bot ≼ _] => apply ExFalso
+| [ |- _ ≼ Bot  → _ ] => apply ImpR; apply ExFalso
+| _ => idtac
+end.
+
+
+Ltac induction_auto :=
+match goal with
+| IH : obviously_smaller ?f ?f2 = Lt → ?f ≼ ?f2 , H :  obviously_smaller ?f ?f2 = Lt |- (∅ • ?f) ⊢ ?f2 => 
+    apply IH; assumption
+| IH : obviously_smaller ?f ?f2 = Gt → ?f2 ≼ ?f , H :  obviously_smaller ?f ?f2 = Gt |- (∅ • ?f2) ⊢ ?f => 
+    apply IH; assumption
+
+| IH : obviously_smaller ?f _ = Lt → ?f ≼ _ , H :  obviously_smaller ?f _ = Lt |- ?f ∧ _ ≼ _ => 
+    apply AndL; apply weakening; apply IH; assumption
+| IH : obviously_smaller ?f _ = Lt → ?f ≼ _ , H :  obviously_smaller ?f _ = Lt |- _ ∧ ?f ≼ _ =>
+    apply AndL; exch 0; apply weakening; apply IH; assumption
+
+| IH : obviously_smaller ?f _ = Gt → _ ≼ ?f , H :  obviously_smaller ?f _ = Gt |- _ ≼ ?f ∨ _ => 
+    apply OrR1;  apply IH; assumption
+| IH : obviously_smaller ?f _ = Gt → _ ≼ ?f , H :  obviously_smaller ?f _ = Gt |- _ ≼ _ ∨ ?f => 
+    apply OrR2;  apply IH; assumption
+| _ => idtac
+end.
+
+Ltac imp_clean :=
+match goal with
+| [ H : obviously_smaller _ (?f → _) = Lt |- _ ≼ ?f → _ ] => destruct f; simpl in H; try discriminate; bot_clean
+| [ H : obviously_smaller (?f → _) _ = Lt |- (?f → _) ≼ _ ] => destruct f; simpl in H; discriminate
+| [ H : obviously_smaller _ (?f → _) = Gt |- (?f → _) ≼ _ ] => destruct f; simpl in H; discriminate
+| _ => idtac
+end.
+
+
 Lemma obviously_smaller_compatible_LT φ ψ :
   obviously_smaller φ ψ = Lt -> φ ≼ ψ.
 Proof.
 intro H.
-unfold obviously_smaller in H.
-case decide in H.
-- rewrite e. apply ExFalso.
-- case decide in H.
-  + contradict H; auto.
-  + case decide in H.
-    * contradict H; auto.
-    * case decide in H.
-      -- rewrite e. apply top_provable.
-      -- case decide in H.
-         ++ rewrite e; apply generalised_axiom.
-         ++ contradict H; auto.
+
+induction φ; destruct ψ; try (unfold obviously_smaller in H; try discriminate;  eq_clean H e); bot_clean;
+imp_clean;
+match goal with
+| |- _ ∧ _ ≼ ?f =>
+    case_eq (obviously_smaller φ1 f); case_eq (obviously_smaller φ2 f); intros H0 H1; 
+    simpl in H; rewrite H0 in H; rewrite H1 in H; try discriminate; induction_auto
+| |- _ ∨ _ ≼ ?f =>
+    case_eq (obviously_smaller φ1 f); case_eq (obviously_smaller φ2 f); intros H0 H1; 
+    simpl in H; rewrite H0 in H; rewrite H1 in H; try discriminate;
+    apply OrL; induction_auto
+| _ => idtac
+end; try (destruct φ1; try eq_clean H e; discriminate).
 Qed.
 
 
@@ -150,17 +205,27 @@ Lemma obviously_smaller_compatible_GT φ ψ :
   obviously_smaller φ ψ = Gt -> ψ ≼ φ .
 Proof.
 intro H.
-unfold obviously_smaller in H.
-case decide in H.
-- contradict H; auto.
-- case decide in H.
-  + rewrite e. apply ExFalso.
-  + case decide in H.
-    * rewrite e. apply top_provable.
-    * case decide in H.
-      -- contradict H; auto.
-      -- case decide in H; contradict H; auto.
+induction φ; destruct ψ; try (unfold obviously_smaller in H; try discriminate;  eq_clean H e); bot_clean;
+imp_clean;
+match goal with
+| |-  ?f ≼ _ ∧ _ =>
+    case_eq (obviously_smaller φ1 f); case_eq (obviously_smaller φ2 f); intros H0 H1; 
+    simpl in H; rewrite H0 in H; rewrite H1 in H; try discriminate; apply AndR; induction_auto
+| |- ?f ≼ _∨ _  =>
+    case_eq (obviously_smaller φ1 f); case_eq (obviously_smaller φ2 f); intros H0 H1; 
+    simpl in H; rewrite H0 in H; rewrite H1 in H; try discriminate; induction_auto
+| _ => idtac
+end; 
+match goal with
+| |- (_ → _) ≼ _ → _ => idtac
+| |- (?f → _) ≼ _ => destruct f; discriminate
+| |- (∅ • (?f → _)) ⊢ _ => destruct f; discriminate
+| |- _ ≼ (?f → _) => destruct φ1; try discriminate; bot_clean
+| _ => idtac
+end.
+simpl in H; destruct ψ1; destruct φ1; try eq_clean H e; bot_clean; simpl in H; discriminate.
 Qed.
+
 
 Lemma or_congruence φ ψ φ' ψ':
   (φ ≼ φ') -> (ψ ≼ ψ') -> (φ ∨ ψ) ≼ φ' ∨ ψ'.
