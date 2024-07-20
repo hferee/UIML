@@ -135,3 +135,13 @@ Global Instance irreflexive_form_order : Irreflexive form_order.
 Proof. unfold form_order. intros x y. lia. Qed.
 
 Notation "φ ≺f ψ" := (form_order ψ φ) (at level 149).
+
+
+Fixpoint form_size (φ : form) : nat := match φ with
+| ⊥ => 1
+| Var _ => 1
+| φ ∧ ψ => 1 + form_size φ + form_size ψ
+| φ ∨ ψ => 1 + form_size φ + form_size ψ
+| φ → ψ => 1 + form_size φ + form_size ψ
+| □φ => 1 + form_size φ
+end.

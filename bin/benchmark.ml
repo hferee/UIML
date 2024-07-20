@@ -11,14 +11,6 @@ type bench_info = {
   after : int timed_result;
 }
 
-let rec form_size = function
-  | Var _ -> 1
-  | Bot -> 1
-  | Or (f1, f2) -> 1 + form_size f1 + form_size f2
-  | And (f1, f2) -> 1 + form_size f1 + form_size f2
-  | Implies (f1, f2) -> 1 + form_size f1 + form_size f2
-  | Box f -> 1 + form_size f
-
 let percentage_reduction before after = 100. -. (after /. before *. 100.)
 
 let time f x =
@@ -43,13 +35,13 @@ let bench_one fs =
   [
     {
       name = "A " ^ fs;
-      before = { value = form_size resA.value; time = resA.time };
-      after = { value = form_size simpA.value; time = simpA.time };
+      before = { value = form_size resA.value |> int_of_nat; time = resA.time };
+      after = { value = form_size simpA.value |> int_of_nat; time = simpA.time };
     };
     {
       name = "E " ^ fs;
-      before = { value = form_size resE.value; time = resE.time };
-      after = { value = form_size simpE.value; time = simpE.time };
+      before = { value = form_size resE.value |> int_of_nat; time = resE.time };
+      after = { value = form_size simpE.value |> int_of_nat; time = simpE.time };
     };
   ]
 
@@ -60,15 +52,19 @@ let print_bench_value_info benches =
      computation time (s)|\n\
      |--|--|--|--|--|--|\n";
   List.iter print_value_results benches;
-  print_newline ();
-
-  let sum_before =
-    List.fold_left (fun acc x -> acc + x.before.value) 0 benches
+  let sum_before, sum_after, sum_comp_time, sum_simp_time =
+    List.fold_left
+      (fun (sum_before, sum_after, sum_comp_time, sum_simp_time) bench ->
+        ( sum_before + bench.before.value,
+          sum_after + bench.after.value,
+          bench.before.time +. sum_comp_time,
+          bench.after.time +. sum_simp_time ))
+      (0, 0, 0., 0.) benches
   in
-  let sum_after = List.fold_left (fun acc x -> acc + x.after.value) 0 benches in
-
-  Printf.printf "Average percentage reduction: %.2f\n"
+  Printf.printf "| Total | %d | %d | %.2f | %.4f | %.4f |\n" sum_before
+    sum_after
     (percentage_reduction (float_of_int sum_before) (float_of_int sum_after))
+    sum_comp_time sum_simp_time
 
 let bench l =
   let benches = List.map bench_one l |> List.flatten in
