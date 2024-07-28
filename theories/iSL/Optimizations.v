@@ -1,5 +1,6 @@
 Require Import ISL.Environments ISL.Sequents ISL.SequentProps ISL.Cut.
 
+
 Definition Lindenbaum_Tarski_preorder φ ψ :=
   ∅ • φ ⊢ ψ.
 
@@ -12,7 +13,7 @@ Proof.
 intros H1 H2.
 eapply additive_cut.
 - apply H1.
-- exch 0. apply weakening. apply H2.
+- exch 0. now apply weakening.
 Qed.
 
 
@@ -113,8 +114,8 @@ Proof.
 intros Hφ Hψ.
 apply AndL.
 apply AndR.
-- apply weakening. apply Hφ. 
-- exch 0. apply weakening. apply Hψ. 
+- now apply weakening.
+- exch 0. now apply weakening.
 Qed.
 
 
@@ -125,7 +126,7 @@ Proof.
 intros Hφ Hψ.
 unfold choose_conj.
 case_eq (obviously_smaller φ' ψ'); intro Heq.
-- apply and_congruence; assumption.
+- now apply and_congruence.
 - apply AndL, weakening, Hφ.
 - apply AndL. exch 0. apply weakening, Hψ.
 Qed.
@@ -137,7 +138,7 @@ Proof.
 intros Hφ Hψ.
 unfold choose_conj.
 case_eq (obviously_smaller φ' ψ'); intro Heq.
-- apply and_congruence; assumption.
+- now apply and_congruence.
 - apply AndR.
   + assumption.
   + eapply weak_cut.
@@ -156,16 +157,16 @@ Lemma make_conj_equiv_L φ ψ φ' ψ' :
 Proof.
 intros Hφ Hψ.
 unfold make_conj.
-destruct ψ'; try (apply choose_conj_equiv_L; assumption).
+destruct ψ'; try (now apply choose_conj_equiv_L).
 - case_eq (obviously_smaller φ' ψ'1); intro Heq.
-  + apply and_congruence; assumption.
+  + now apply and_congruence.
   + apply and_congruence.
     * assumption.
     * apply AndR_rev in Hψ; apply Hψ.
-  + apply AndL. exch 0. apply weakening. assumption.
+  + apply AndL. exch 0. now apply weakening.
 - case (decide (obviously_smaller φ' ψ'1 = Lt)); intro.
   + apply AndL. now apply weakening.
-  + apply and_congruence; assumption.
+  + now apply and_congruence.
 Qed.
 
 Lemma make_conj_equiv_R φ ψ φ' ψ' : 
@@ -174,12 +175,12 @@ Proof.
 intros Hφ Hψ.
 unfold make_conj.
 destruct  ψ'.
-- apply choose_and_equiv_R; assumption.
-- apply choose_and_equiv_R; assumption.
+- now apply choose_and_equiv_R.
+- now apply choose_and_equiv_R.
 - case_eq (obviously_smaller φ' ψ'1); intro Heq.
-  + apply and_congruence; assumption.
+  + now apply and_congruence.
   + apply AndR.
-    * apply AndL. apply weakening; assumption.
+    * apply AndL. now apply weakening.
     * apply (weak_cut _ ( ψ'1 ∧ ψ'2) _).
       -- apply and_congruence; 
          [now apply obviously_smaller_compatible_LT | apply generalised_axiom].
@@ -195,9 +196,9 @@ destruct  ψ'.
     * eapply weak_cut.
       -- apply obviously_smaller_compatible_LT; apply HLt.
       -- apply OrL_rev in Hψ; apply Hψ.
-  + apply and_congruence; assumption.
-- apply choose_and_equiv_R; assumption.
-- apply choose_and_equiv_R; assumption.
+  + now apply and_congruence.
+- now apply choose_and_equiv_R.
+- now apply choose_and_equiv_R.
 Qed.
 
 Lemma specialised_weakening Γ φ ψ : (φ ≼ ψ) ->  Γ•φ ⊢ ψ.
@@ -213,7 +214,7 @@ intro H.
 eapply additive_cut.
 - apply specialised_weakening.
   apply make_conj_equiv_R; apply generalised_axiom.
-- exch 0. apply weakening. assumption.
+- exch 0. now apply weakening.
 Qed.
 
 Global Hint Resolve make_conj_sound_L : proof.
@@ -224,7 +225,7 @@ intro H.
 eapply additive_cut.
 - apply specialised_weakening.
   apply make_conj_equiv_L; apply generalised_axiom.
-- exch 0. apply weakening. assumption.
+- exch 0. now apply weakening.
 Qed.
 
 Lemma make_conj_sound_R Γ φ ψ : Γ  ⊢ φ ∧ψ -> Γ ⊢ φ ⊼ ψ.
@@ -232,7 +233,7 @@ Proof.
 intro H.
 eapply additive_cut.
 - apply H.
-- apply make_conj_complete_L. apply generalised_axiom.
+- apply make_conj_complete_L, generalised_axiom.
 Qed.
 
 Global Hint Resolve make_conj_sound_R : proof.
@@ -242,8 +243,201 @@ Proof.
 intro H.
 eapply additive_cut.
 - apply H.
-- apply make_conj_sound_L. apply generalised_axiom.
+- apply make_conj_sound_L, generalised_axiom.
 Qed.
+
+
+
+Lemma or_congruence φ ψ φ' ψ':
+  (φ ≼ φ') -> (ψ ≼ ψ') -> (φ ∨ ψ) ≼ φ' ∨ ψ'.
+Proof.
+intros Hφ Hψ.
+apply OrL.
+- now apply OrR1.
+- now apply OrR2.
+Qed.
+
+Lemma choose_disj_equiv_L φ ψ φ' ψ':
+  (φ ≼ φ') -> (ψ ≼ ψ') -> (φ ∨ ψ) ≼ choose_disj φ' ψ'.
+Proof.
+intros Hφ Hψ.
+unfold choose_disj.
+case_eq (obviously_smaller φ' ψ'); intro Heq.
+- now apply or_congruence.
+- apply OrL.
+  + eapply weak_cut. 
+    * apply Hφ.
+    * now apply obviously_smaller_compatible_LT.
+  + assumption. 
+- apply OrL.
+  + assumption.
+  + eapply weak_cut.
+    * eapply weak_cut.
+      -- apply Hψ.
+      -- apply obviously_smaller_compatible_GT. apply Heq.
+    * apply generalised_axiom.
+Qed.
+
+
+Lemma choose_disj_equiv_R φ ψ φ' ψ' : 
+  (φ' ≼ φ) -> (ψ' ≼ ψ) -> choose_disj φ' ψ' ≼  φ ∨ ψ.
+Proof.
+intros Hφ Hψ.
+unfold choose_disj.
+case_eq (obviously_smaller φ' ψ'); intro Heq;
+[apply or_congruence| apply OrR2| apply OrR1]; assumption.
+Qed.
+
+Lemma make_disj_equiv_L φ ψ φ' ψ' : 
+  (φ ≼ φ') -> (ψ ≼ ψ') -> (φ ∨ ψ) ≼ φ' ⊻ ψ'.
+Proof.
+intros Hφ Hψ.
+unfold make_disj.
+destruct ψ'; try (apply choose_disj_equiv_L; assumption). - case (decide (obviously_smaller φ' ψ'1 = Gt)); [intro HGt | intro Hneq1].
+  + apply OrL.
+    * assumption.
+    * eapply weak_cut.
+      -- apply Hψ.
+      -- apply AndL; apply weakening; now apply obviously_smaller_compatible_GT.
+  + now apply or_congruence.
+- case_eq (obviously_smaller φ' ψ'1); intro Heq.
+  + now apply or_congruence.
+  + apply OrL.
+    * eapply weak_cut. 
+      -- apply Hφ.
+      -- apply OrR1. now apply obviously_smaller_compatible_LT.
+    * assumption.
+  + apply OrL.
+    * now apply OrR1.
+    * eapply weak_cut.
+      -- apply Hψ. 
+      -- apply or_congruence; [apply obviously_smaller_compatible_GT; assumption| apply generalised_axiom].
+Qed.
+
+
+Lemma make_disj_equiv_R φ ψ φ' ψ' : 
+  (φ' ≼ φ) -> (ψ' ≼ ψ) -> φ' ⊻  ψ' ≼  φ ∨ ψ.
+Proof.
+intros Hφ Hψ.
+unfold make_disj.
+destruct ψ'.
+- now apply choose_disj_equiv_R.
+- now apply choose_disj_equiv_R.
+- case (decide (obviously_smaller φ' ψ'1 = Gt)); intro.
+  + now apply OrR1.
+  + now apply or_congruence.
+- case_eq (obviously_smaller φ' ψ'1); intro Heq.
+ + now apply or_congruence.
+ + now apply OrR2.
+ + apply OrL.
+   * now apply OrR1.
+   * apply OrL_rev in Hψ.
+     apply OrR2, Hψ.
+- now apply choose_disj_equiv_R.
+- now apply choose_disj_equiv_R.
+Qed.
+
+
+
+Lemma make_disj_sound_L Γ φ ψ θ : Γ•φ ∨ψ ⊢ θ -> Γ•make_disj φ ψ ⊢ θ.
+Proof.
+intro H.
+eapply additive_cut.
+- apply specialised_weakening.
+  apply make_disj_equiv_R; apply generalised_axiom.
+- exch 0. now apply weakening.
+Qed.
+
+Global Hint Resolve make_disj_sound_L : proof.
+
+Lemma make_disj_complete_L Γ φ ψ θ : Γ•make_disj φ ψ ⊢ θ -> Γ•φ ∨ψ ⊢ θ.
+Proof.
+intro H.
+eapply additive_cut.
+- apply specialised_weakening.
+  apply make_disj_equiv_L; apply generalised_axiom.
+- exch 0. now apply weakening.
+Qed.
+
+Lemma make_disj_sound_R Γ φ ψ : Γ  ⊢ φ ∨ψ -> Γ ⊢ make_disj φ ψ.
+Proof.
+intro H.
+eapply additive_cut.
+- apply H.
+- apply make_disj_complete_L, generalised_axiom.
+Qed.
+
+Global Hint Resolve make_disj_sound_R : proof.
+
+Lemma make_disj_complete_R Γ φ ψ : Γ  ⊢ make_disj φ ψ -> Γ  ⊢ φ ∨ψ.
+Proof.
+intro H.
+eapply additive_cut.
+- apply H.
+- apply make_disj_sound_L, generalised_axiom.
+Qed.
+
+(** * Generalized rules 
+
+In this section we prove that generalizations of or-left and and-right rules
+that take more than two formulas are admissible and invertible in the calculus
+G4ip. This is important in the correctness proof of propositional quantifiers
+because the propositional quantifiers are defined as large disjunctions /
+conjunctions of various individual formulas.
+*)
+
+(** ** Generalized OrL and its invertibility *)
+
+Lemma disjunction_L Γ Δ θ :
+  ((forall φ, φ ∈ Δ -> (Γ•φ ⊢ θ)) -> (Γ•⋁ Δ ⊢ θ)) *
+  ((Γ•⋁ Δ ⊢ θ) -> (forall φ, φ ∈ Δ -> (Γ•φ ⊢ θ))).
+Proof.
+unfold disjunction.
+assert(Hcut :
+  (forall ψ, (Γ•ψ ⊢ θ) -> (forall φ, φ ∈ Δ -> (Γ•φ ⊢ θ)) ->
+    (Γ•foldl make_disj ψ  (nodup form_eq_dec Δ) ⊢ θ)) *
+  (forall ψ,((Γ•foldl make_disj ψ  (nodup form_eq_dec Δ)) ⊢ θ ->
+    (Γ•ψ ⊢ θ) * (∀ φ : form, φ ∈ Δ → (Γ•φ) ⊢ θ)))).
+{
+  induction Δ; simpl; split; intros ψ Hψ.
+  - intro. apply Hψ.
+  - split; trivial. intros φ Hin. contradict Hin. auto with *.
+  - intro Hall. case in_dec; intro; apply (fst IHΔ); auto with *.
+  - case in_dec in Hψ; apply IHΔ in Hψ;
+    destruct Hψ as [Hψ Hind].
+    + split; trivial;  intros φ Hin; destruct (decide (φ = a)); auto with *.
+        subst. apply Hind. now apply elem_of_list_In.
+    + apply make_disj_complete_L in Hψ.
+        apply OrL_rev in Hψ as [Hψ Ha].
+        split; trivial;  intros φ Hin; destruct (decide (φ = a)); auto with *.
+}
+split; apply Hcut. constructor 2.
+Qed.
+
+
+(** ** Generalized OrR *)
+
+Lemma disjunction_R Γ Δ φ : (φ ∈ Δ) -> (Γ  ⊢ φ) -> (Γ  ⊢ ⋁ Δ).
+Proof.
+intros Hin Hprov. unfold disjunction. revert Hin.
+assert(Hcut : forall θ, ((Γ ⊢ θ) + (φ ∈ Δ)) -> Γ ⊢ foldl make_disj θ (nodup form_eq_dec Δ)).
+{
+  induction Δ; simpl; intros θ [Hθ | Hin].
+  - assumption.
+  - contradict Hin; auto with *.
+  - case in_dec; intro; apply IHΔ; left; trivial. apply make_disj_sound_R. now apply OrR1.
+  - apply elem_of_cons in Hin.
+    destruct (decide (φ = a)).
+    + subst. case in_dec; intro; apply IHΔ.
+        * right. now apply elem_of_list_In.
+        *  left. apply make_disj_sound_R. now apply OrR2.
+    + case in_dec; intro; apply IHΔ; right; tauto.
+}
+intro Hin. apply Hcut; now right.
+Qed.  
+
+(** ** Generalized invertibility of AndR *)
+
 
 
 (** ** Generalized AndR *)
@@ -261,8 +455,6 @@ assert(Hcut : forall θ, Γ ⊢ θ -> Γ ⊢ foldl make_conj θ (nodup form_eq_d
 }
 apply Hcut. apply ImpR, ExFalso.
 Qed.
-
-(** ** Generalized invertibility of AndR *)
 
 Lemma conjunction_R2 Γ Δ : (Γ  ⊢ ⋀ Δ) -> (forall φ, φ ∈ Δ -> Γ  ⊢ φ).
 Proof.

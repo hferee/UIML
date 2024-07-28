@@ -859,8 +859,6 @@ Global Hint Resolve imp_cut : proof.
 
 To make the definitions of the propositional quantifiers that we extract from the Coq definition more readable, we introduced functions "make_impl", "make_conj" and "make_disj" in Environments.v which perform obvious simplifications such as reducing φ ∧ ⊥ to ⊥ and φ ∨ ⊥ to φ. The following results show that the definitions of these functions are correct, in the sense that it does not make a difference for provability of a sequent whether one uses the literal conjunction, disjunction, and implication, or its optimized version. *)
 
-
-
 Lemma make_impl_sound_L Γ φ ψ θ: Γ•(φ → ψ) ⊢ θ -> Γ•(φ ⇢ ψ) ⊢ θ.
 Proof.
 destruct (make_impl_spec φ ψ) as  [[[Hm Heq]|[Hm Heq]]|Hm].
@@ -935,104 +933,11 @@ Qed.
 
 Global Hint Resolve make_impl_sound_R : proof.
 
-Lemma make_disj_sound_L Γ φ ψ θ : Γ•φ ∨ψ ⊢ θ -> Γ•make_disj φ ψ ⊢ θ.
-Proof.
-intro Hd. apply OrL_rev in Hd as (Hφ&Hψ). unfold make_disj.
-destruct φ; trivial;
-try (destruct ψ; try case decide; trivial; auto 2 with proof; destruct ψ1; auto 2 with proof; destruct ψ2; auto 2 with proof).
-destruct φ1; destruct φ2; destruct  ψ; trivial; case decide; intro Heq; try inversion Heq; auto 2 with proof ; destruct ψ1; auto 2 with proof;
-destruct ψ2; auto 2 with proof.
-Qed.
-
-Global Hint Resolve make_disj_sound_L : proof.
-
-Lemma make_disj_complete Γ φ ψ θ : Γ•make_disj φ ψ ⊢ θ -> Γ•φ ∨ψ ⊢ θ.
-Proof.
-destruct  (make_disj_spec φ ψ) as [[[[[Hm|Hm]|Hm]|Hm]|Hm]|Hm].
-6: { now rewrite Hm. }
-all : destruct Hm as (Heq&Hm); rewrite Hm; subst; eauto 2 with proof.
-Qed.
 
 
 Lemma OrR_idemp Γ ψ : Γ ⊢ ψ ∨ ψ -> Γ ⊢ ψ.
 Proof. intro Hp. dependent induction Hp; auto with proof. Qed.
 
-Lemma make_disj_sound_R Γ φ ψ : Γ  ⊢ φ ∨ψ -> Γ ⊢ make_disj φ ψ.
-Proof.
-intro Hd.
-destruct (make_disj_spec φ ψ) as  [[[[[Hm|Hm]|Hm]|Hm]|Hm]|Hm].
-6:{ now rewrite Hm. }
-all:(destruct Hm as [Heq Hm]; rewrite Hm; subst; auto using OrR2Bot_rev, OrR1Bot_rev with proof).
-now apply OrR_idemp.
-Qed.
-
-Global Hint Resolve make_disj_sound_R : proof.
-
-Lemma make_disj_complete_R Γ φ ψ : Γ  ⊢ make_disj φ ψ -> Γ  ⊢ φ ∨ψ.
-Proof.
-destruct (make_disj_spec φ ψ) as  [[[[[Hm|Hm]|Hm]|Hm]|Hm]|Hm].
-6:{ now rewrite Hm. }
-all:(destruct Hm as [Heq Hm]; rewrite Hm; subst; auto using exfalso with proof). 
-Qed.
-
-(** * Generalized rules 
-
-In this section we prove that generalizations of or-left and and-right rules
-that take more than two formulas are admissible and invertible in the calculus
-G4ip. This is important in the correctness proof of propositional quantifiers
-because the propositional quantifiers are defined as large disjunctions /
-conjunctions of various individual formulas.
-*)
-
-(** ** Generalized OrL and its invertibility *)
-
-Lemma disjunction_L Γ Δ θ :
-  ((forall φ, φ ∈ Δ -> (Γ•φ ⊢ θ)) -> (Γ•⋁ Δ ⊢ θ)) *
-  ((Γ•⋁ Δ ⊢ θ) -> (forall φ, φ ∈ Δ -> (Γ•φ ⊢ θ))).
-Proof.
-unfold disjunction.
-assert(Hcut :
-  (forall ψ, (Γ•ψ ⊢ θ) -> (forall φ, φ ∈ Δ -> (Γ•φ ⊢ θ)) ->
-    (Γ•foldl make_disj ψ  (nodup form_eq_dec Δ) ⊢ θ)) *
-  (forall ψ,((Γ•foldl make_disj ψ  (nodup form_eq_dec Δ)) ⊢ θ ->
-    (Γ•ψ ⊢ θ) * (∀ φ : form, φ ∈ Δ → (Γ•φ) ⊢ θ)))).
-{
-  induction Δ; simpl; split; intros ψ Hψ.
-  - intro. apply Hψ.
-  - split; trivial. intros φ Hin. contradict Hin. auto with *.
-  - intro Hall. case in_dec; intro; apply (fst IHΔ); auto with *.
-  - case in_dec in Hψ; apply IHΔ in Hψ;
-    destruct Hψ as [Hψ Hind].
-    + split; trivial;  intros φ Hin; destruct (decide (φ = a)); auto with *.
-        subst. apply Hind. now apply elem_of_list_In.
-    + apply make_disj_complete in Hψ.
-        apply OrL_rev in Hψ as [Hψ Ha].
-        split; trivial;  intros φ Hin; destruct (decide (φ = a)); auto with *.
-}
-split; apply Hcut. constructor 2.
-Qed.
-
-
-(** ** Generalized OrR *)
-
-Lemma disjunction_R Γ Δ φ : (φ ∈ Δ) -> (Γ  ⊢ φ) -> (Γ  ⊢ ⋁ Δ).
-Proof.
-intros Hin Hprov. unfold disjunction. revert Hin.
-assert(Hcut : forall θ, ((Γ ⊢ θ) + (φ ∈ Δ)) -> Γ ⊢ foldl make_disj θ (nodup form_eq_dec Δ)).
-{
-  induction Δ; simpl; intros θ [Hθ | Hin].
-  - assumption.
-  - contradict Hin; auto with *.
-  - case in_dec; intro; apply IHΔ; left; trivial. apply make_disj_sound_R. now apply OrR1.
-  - apply elem_of_cons in Hin.
-    destruct (decide (φ = a)).
-    + subst. case in_dec; intro; apply IHΔ.
-        * right. now apply elem_of_list_In.
-        *  left. apply make_disj_sound_R. now apply OrR2.
-    + case in_dec; intro; apply IHΔ; right; tauto.
-}
-intro Hin. apply Hcut; now right.
-Qed.  
 
 Lemma strongness φ : ∅ •  φ ⊢ □ φ.
 Proof.
