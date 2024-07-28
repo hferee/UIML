@@ -1,5 +1,5 @@
 Require Import ISL.Sequents.
-Require Import ISL.SequentProps ISL.Order.
+Require Import ISL.SequentProps ISL.Order ISL.Optimizations.
 Require Import Coq.Program.Equality. (* for dependent induction *)
 
 (** * Overview: Propositional Quantifiers
