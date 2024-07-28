@@ -843,7 +843,7 @@ clear Heqw. revert φ Hle.
 induction w; intros φ Hle; [destruct φ ; simpl in Hle; lia|];
 destruct φ; simpl; try (split ; apply generalised_axiom);
 [eapply (simp_equiv_and φ1 φ2)|
- eapply (simp_equiv_or φ1 φ2)|
+ eapply (simp_equiv_or φ1 φ2) |
  eapply (simp_equiv_imp φ1 φ2)|
  eapply simp_equiv_box];
  apply IHw; 
@@ -1068,6 +1068,81 @@ repeat split.
     * apply (simp_equiv  (Af p φ)).
 Qed.
 
+
+
+Lemma simp_simplifies_conj_disj φ ψ:
+  (form_size (φ ⊼ ψ) ≤  1 + form_size φ + form_size ψ) *
+  (form_size (φ ⊻ ψ) ≤  1 + form_size φ + form_size ψ).
+Proof.
+split;  [unfold simp_and | unfold simp_or]; destruct φ; destruct ψ; 
+repeat match goal with
+  | |- form_size (choose_or _ _) ≤ _ => unfold choose_or
+  | |- form_size (choose_and _ _) ≤ _ => unfold choose_and
+  | |- form_size (match ?x with _ => _ end) ≤  _ => destruct x
+  | _ => simpl; lia
+end.
+Qed.
+
+
+Ltac large_conj_disj_solver :=
+match goal with
+  | |- form_size (?simp_f ?x  (?connector ?φ1 ?φ2)) ≤ _ =>
+    assert (H: form_size (simp_f x (connector φ1 φ2)) ≤ 1 +  (form_size x + (1 + form_size φ1 + form_size φ2))) 
+    by apply simp_simplifies_conj_disj;
+    simpl in H; lia
+  
+  | IHφ2 : ∀ ψ : form, form_size (?simp_f_large ?φ2 ψ) ≤ form_size (?connector ?φ2 ψ)
+    |- form_size (?simp_f ?φ1  (?simp_f ?ψ0_1 (?simp_f_large ?φ2 ?ψ0_2))) ≤ _ =>
+    assert (H1: form_size (simp_f φ1  (simp_f ψ0_1  ( simp_f_large φ2 ψ0_2))) ≤ 1 +  form_size φ1 + form_size (simp_f ψ0_1  (simp_f_large φ2 ψ0_2))) 
+    by apply simp_simplifies_conj_disj;
+    assert (H2: form_size ((simp_f ψ0_1 (simp_f_large φ2 ψ0_2))) ≤ 1 +  form_size (ψ0_1) + form_size (simp_f_large φ2 ψ0_2)) 
+    by apply simp_simplifies_conj_disj;
+    assert ( H3: form_size (simp_f_large φ2 ψ0_2) ≤ 1 + form_size φ2 + form_size ψ0_2) by apply IHφ2;
+    lia
+
+  | _ => lia
+end.
+
+Lemma simp_simplifies_ands φ ψ:
+ form_size (simp_ands φ ψ) ≤  form_size (And φ ψ).
+Proof.
+generalize ψ.
+induction φ; intro ψ0; destruct ψ0; try apply simp_simplifies_conj_disj; simpl;
+large_conj_disj_solver.
+Qed.
+
+Lemma simp_simplifies_ors φ ψ:
+ form_size (simp_ors φ ψ) ≤  form_size (Or φ ψ).
+Proof.
+generalize ψ.
+induction φ; intro ψ0; destruct ψ0; try apply simp_simplifies_conj_disj; simpl;
+large_conj_disj_solver.
+Qed.
+
+Lemma simp_simplifies_imp φ ψ:
+ form_size (simp_imp φ ψ) ≤  form_size (Implies φ ψ).
+Proof.
+unfold simp_or.
+destruct φ; destruct ψ; unfold simp_imp;
+repeat match goal with
+  | |- form_size (if decide _ then _ else _) ≤  _=> case decide; intro
+  | _ => simpl; lia
+end.
+Qed.
+
+Theorem simp_simplifies φ:
+  form_size (simp φ) <= form_size φ.
+Proof.
+induction φ; auto; simpl;
+[ assert (H: form_size (simp_ands (simp φ1) (simp φ2)) ≤ S (form_size (simp φ1) + form_size (simp φ2))) 
+    by apply simp_simplifies_ands|
+  assert (H: form_size (simp_ors (simp φ1) (simp φ2)) ≤ S (form_size (simp φ1) + form_size (simp φ2))) 
+    by apply simp_simplifies_ors|
+  assert (H: form_size (simp_imp (simp φ1) (simp φ2)) ≤ S (form_size (simp φ1) + form_size (simp φ2))) 
+    by apply simp_simplifies_imp|
+  idtac
+]; lia.
+Qed.
 
 
 Require Import String.
