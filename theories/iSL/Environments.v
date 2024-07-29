@@ -102,68 +102,104 @@ Definition irreducible (Γ : env) :=
   ¬ ⊥ ∈ Γ /\
   ∀ φ ψ, ¬ (φ ∧ ψ) ∈ Γ /\ ¬ (φ ∨ ψ) ∈ Γ.
 
-(** We use binary conjunction and disjunction operations which produce simpler equivalent formulas,
-   in particular  by taking ⊥ and ⊤ into account *)
-Definition make_conj x y := match x with
-| ⊥ => ⊥
-|  (⊥→ ⊥)  => y
-| _ => match y with
-    | ⊥ => ⊥
-    | (⊥→ ⊥)  => x
-    | _ =>  if decide (x = y) then x else x ∧ y
-    end
+
+(* Checks "obvious" entailment conditions. If φ ⊢ ψ "obviously" then it returns Lt,
+if ψ ⊢ φ "obviously" then it returns Gt. Eq corresponds to the unknown category, 
+this means that we don't have enough information to determine a possible entailment. *)
+Fixpoint obviously_smaller (φ : form) (ψ : form) :=
+match (φ, ψ) with 
+  |(Bot, _) => Lt
+  |(_, Bot) => Gt
+  |(Bot → _, _) => Gt
+  |(_, Bot → _) => Lt
+  |(φ ∧ ψ, ϴ) => match (obviously_smaller φ ϴ, obviously_smaller ψ ϴ) with
+      | (Lt, _) | (_, Lt) => Lt
+      | (Gt, Gt) => Gt
+      | _ => Eq
+      end
+  |(φ ∨ ψ, ϴ) => match (obviously_smaller φ ϴ, obviously_smaller ψ ϴ) with
+      | (Gt, _) | (_, Gt) => Gt
+      | (Lt, Lt) => Lt
+      | _ => Eq
+      end
+  |(φ, ψ) => if decide (φ = ψ) then Lt else Eq
 end.
+
+
+Definition choose_conj φ ψ :=
+match obviously_smaller φ ψ with
+  | Lt => φ
+  | Gt => ψ
+  | Eq => φ ∧ ψ
+ end.
+
+Definition make_conj φ ψ := 
+match (φ, ψ) with
+  | (φ, ψ1 ∧ ψ2) => 
+      match obviously_smaller φ ψ1 with
+      | Lt => φ ∧ ψ2
+      | Gt => ψ1 ∧ ψ2
+      | Eq => φ ∧ (ψ1 ∧ ψ2)
+      end
+  | (φ, ψ1 ∨ ψ2) => 
+      if decide (obviously_smaller φ ψ1 = Lt )
+      then φ
+      else φ ∧ (ψ1 ∨ ψ2)
+  |(φ,ψ) => choose_conj φ ψ
+end.
+
+
 
 Infix "⊼" := make_conj (at level 60).
 
-Lemma make_conj_spec x y :
-  {x = ⊥ ∧ x ⊼ y = ⊥} +
-  {x = ⊤ ∧ x  ⊼ y = y} +
-  {y = ⊥ ∧ x ⊼ y = ⊥}+
-  {y = ⊤ ∧ x ⊼ y = x} +
-  {x = y ∧ x ⊼ y = x} +
-  {x ⊼ y = (x ∧ y)}.
+Lemma occurs_in_make_conj v φ ψ : occurs_in v (φ ⊼ ψ) -> occurs_in v φ \/ occurs_in v ψ.
 Proof.
-unfold make_conj.
-repeat (match goal with |- context  [match ?x with | _  => _ end] => destruct x end; try tauto).
+generalize ψ.
+induction φ; intro ψ0; destruct ψ0;
+intro H; unfold make_conj in H; unfold choose_conj in H;
+repeat match goal with 
+    | H: occurs_in _  (if ?cond then _ else _) |- _ => case decide in H
+    | H: occurs_in _ (match ?x with _ => _ end) |- _ => destruct x
+    | |- _ => simpl; simpl in H; tauto
+end.
 Qed.
 
-Lemma occurs_in_make_conj v x y : occurs_in v (x ⊼ y) -> occurs_in v x \/ occurs_in v y.
-Proof.
-destruct (make_conj_spec x y) as [[[[[Hm|Hm]|Hm]|Hm]|Hm]|Hm]; try tauto.
-6:{ rewrite Hm. simpl. tauto. }
-all:(destruct Hm as [Heq Hm]; rewrite Hm; simpl; tauto).
-Qed.
 
-Definition make_disj x y := match x with
-| ⊥ => y
-|  (⊥→ ⊥)  => (⊥→ ⊥)
-| _ => match y with
-    | ⊥ => x
-    | (⊥→ ⊥)  => (⊥→ ⊥)
-    | _ => if decide (x = y) then x else x ∨ y
-    end
+Definition choose_disj φ ψ :=
+match obviously_smaller φ ψ with
+  | Lt => ψ
+  | Gt => φ
+  | Eq => φ ∨ ψ
+ end.
+
+Definition make_disj  φ ψ := 
+match (φ, ψ) with
+  | (φ, ψ1 ∨ ψ2) => 
+      match obviously_smaller φ ψ1 with
+      | Lt => ψ1 ∨ ψ2
+      | Gt => φ ∨ ψ2
+      | Eq => φ ∨ (ψ1 ∨ ψ2)
+      end
+  | (φ, ψ1 ∧ ψ2) => 
+      if decide (obviously_smaller φ ψ1 = Gt )
+      then φ
+      else φ ∨ (ψ1 ∧ ψ2)
+  |(φ,ψ) => choose_disj φ ψ
 end.
 
 Infix "⊻" := make_disj (at level 65).
 
-Lemma make_disj_spec x y :
-  {x = ⊥ ∧ x ⊻ y = y} +
-  {x = ⊤ ∧ x ⊻ y = ⊤} +
-  {y = ⊥ ∧ x ⊻ y = x} +
-  {y = ⊤ ∧ x ⊻ y = ⊤} +
-  {x = y ∧ x ⊻ y = x} +
-  {x ⊻ y = (x ∨ y)}.
-Proof.
-unfold make_disj.
-repeat (match goal with |- context  [match ?x with | _  => _ end] => destruct x end; try tauto).
-Qed.
 
-Lemma occurs_in_make_disj v x y : occurs_in v (x ⊻ y) -> occurs_in v x ∨ occurs_in v y.
+Lemma occurs_in_make_disj v φ ψ : occurs_in v (φ ⊻ ψ) -> occurs_in v φ ∨ occurs_in v ψ.
 Proof.
-destruct (make_disj_spec x y) as [[[[[Hm|Hm]|Hm]|Hm]|Hm]|Hm]; try tauto.
-6:{ rewrite Hm. simpl. tauto. }
-all:(destruct Hm as [Heq Hm]; rewrite Hm; simpl; tauto).
+generalize ψ.
+induction φ; intro ψ0; destruct ψ0;
+intro H; unfold make_disj in H; unfold choose_disj in H;
+repeat match goal with 
+    | H: occurs_in _  (if ?cond then _ else _) |- _ => case decide in H
+    | H: occurs_in _ (match ?x with _ => _ end) |- _ => destruct x
+    | |- _ => simpl; simpl in H; tauto
+end.
 Qed.
 
 
