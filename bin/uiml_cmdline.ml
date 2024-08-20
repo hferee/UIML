@@ -5,6 +5,7 @@ open Sys
 open Char
 open UIML.UIML_extraction
 open Stringconversion
+open Modal_expressions_parser
 
 
 
@@ -35,7 +36,8 @@ let e_formulas = Lazy.force l_e_formulas
 
 let nb_args = Array.length Sys.argv
 
-let start = if nb_args < 2 then 0 else int_of_string Sys.argv.(1)
+let form = if nb_args = 2 then (Sys.argv.(1)) else "T"
+let start = if nb_args < 3 then 0 else int_of_string Sys.argv.(1)
 let num = if nb_args < 3 then 1 else int_of_string Sys.argv.(2)
 
 let usage_string =
@@ -52,18 +54,19 @@ let show_test (f: form) : string =
     ("φ        : " ^ string_of_formula f ^ "\n" ^
                  "Weight: " ^ string_of_int (int_of_nat (weight f)) ^ "\n") ^
     let t_start = Sys.time() in
-    let e_result = isl_E v f in
+    let e_result = isl_simplified_E v f in
     let run_time = Sys.time() -. t_start in
     ("Time: " ^ string_of_float run_time ^ "s\n") ^
     ("Eₚ(φ): " ^
                   string_of_formula e_result ^ "\n" ^
                  "Weight: " ^ string_of_int (int_of_nat (weight e_result)) ^ "\n") ^
-    let a_result = isl_A v f in
+    let a_result = isl_simplified_A v f in
     ("Aₚ(φ): " ^
                  string_of_formula a_result ^ "\n" ^
                 "Weight: " ^ string_of_int (int_of_nat (weight a_result)) ^ "\n-------------------\n")
 
-let () = 
-  if nb_args < 2 then (print_string usage_string)
+let () =
+  if nb_args = 2 then print_string (show_test (eval form))
+  else if nb_args < 2 then (print_string usage_string)
   else
     show e_formulas show_test start num;
