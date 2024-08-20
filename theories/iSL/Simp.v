@@ -88,9 +88,12 @@ Infix "⊼" := simp_and (at level 60).
 (* Same as `simp_ors` but for large conjunctions. *)
 Fixpoint simp_ands φ ψ :=
 match (φ,ψ) with
-  |(φ1 ∧ φ2, ψ1 ∧ ψ2) => φ1 ⊼ (ψ1 ⊼ (simp_ands φ2 ψ2))
-  |(φ1 ∧ φ2, ψ) => ψ ⊼ (φ1 ∧ φ2)
-  |(φ, ψ1 ∧ ψ2) => φ ⊼ (ψ1 ∧ ψ2)
+  | (φ1 ∧ φ2, ψ1 ∧ ψ2) => φ1 ⊼ (ψ1 ⊼ (simp_ands φ2 ψ2))
+  | (φ1 ∧ φ2, ψ) => ψ ⊼ (φ1 ∧ φ2)
+  | (φ, ψ1 ∧ ψ2) => φ ⊼ (ψ1 ∧ ψ2)
+    (* TODO: use simp_ands recursively *)
+(*  | (φ,  ψ1 → ψ2) => if decide (obviously_smaller φ ψ1 = Lt) then φ ⊼ ψ2 else φ ⊼ ψ *)
+  | (φ1 → φ2, ψ) => if decide (obviously_smaller ψ φ1 = Lt) then simp_ands φ2 ψ else φ ⊼ ψ
   |(φ, ψ) => φ ⊼ ψ
 end.
 
@@ -664,15 +667,19 @@ Proof.
 generalize ψ.
 induction φ;
 intro ψ0;
-destruct ψ0; simpl; try (eapply simp_and_equiv_L; apply generalised_axiom);
-try (apply simp_and_comm_ctx_R; apply simp_and_equiv_L; apply generalised_axiom).
+destruct ψ0; unfold simp_ands; repeat case decide; intros; try (eapply simp_and_equiv_L; apply generalised_axiom);
+try (apply obviously_smaller_compatible_LT in e;
+  eapply weak_cut; [|apply IHφ2]; apply AndL, AndR; auto with proof; exch 0; apply ImpL; auto with proof);
+try (apply simp_and_comm_ctx_R; apply simp_and_equiv_L; apply generalised_axiom);
+ fold simp_ands.
 assert (H: φ1 ∧ ψ0_1 ∧ φ2 ∧ ψ0_2 ≼ φ1 ⊼ (ψ0_1 ⊼ simp_ands φ2 ψ0_2)).
-- apply simp_and_equiv_L.
+{apply simp_and_equiv_L.
   + apply generalised_axiom.
   + apply simp_and_equiv_L.
     * apply generalised_axiom.
     * apply IHφ2.
-- eapply weak_cut.
+}
+eapply weak_cut.
   + apply and_assoc_ctx_L_R.
     do 3 (apply AndL).
     apply AndR.
@@ -693,25 +700,29 @@ generalize ψ.
 induction φ;
 intro ψ0;
 destruct ψ0; 
-simpl; try (eapply simp_and_equiv_R; apply generalised_axiom);
+unfold simp_ands; fold simp_ands;
+try (case decide; [intro e;  apply obviously_smaller_compatible_LT in e;
+  eapply weak_cut; [apply IHφ2|]; apply AndL, AndR; auto with proof; exch 0; apply ImpL; auto with proof|intro Hneq]);
+try (eapply simp_and_equiv_R; apply generalised_axiom);
 try (apply simp_and_comm_ctx_L; apply simp_and_equiv_R; apply generalised_axiom).
 assert (H: φ1 ⊼ (ψ0_1 ⊼ simp_ands φ2 ψ0_2) ≼ φ1 ∧ ψ0_1 ∧ φ2 ∧ ψ0_2).
-- apply simp_and_equiv_R.
+{apply simp_and_equiv_R.
   + apply generalised_axiom.
   + apply simp_and_equiv_R.
     * apply generalised_axiom.
     * apply IHφ2.
-- apply and_assoc_ctx_R_R.
-  eapply weak_cut.
-  + apply H.
-  + do 3 (apply AndL).
-    apply AndR.
-    * exch 2. exch 1. exch 0. apply generalised_axiom.
-    * apply AndR.
-      -- exch 0. apply generalised_axiom.
-      -- apply AndR.
-         ++ exch 1. exch 0. apply generalised_axiom.
-         ++ apply generalised_axiom.
+}
+apply and_assoc_ctx_R_R.
+eapply weak_cut.
+- apply H.
+- do 3 (apply AndL).
+  apply AndR.
+  + exch 2. exch 1. exch 0. apply generalised_axiom.
+  + apply AndR.
+      * exch 0. apply generalised_axiom.
+      * apply AndR.
+     -- exch 1. exch 0. apply generalised_axiom.
+     -- apply generalised_axiom.
 Qed.
 
 
@@ -1011,8 +1022,9 @@ Lemma vars_incl_simp_ands φ ψ V :
 Proof.
 generalize ψ.
 induction φ; intro ψ0; destruct ψ0; intros Hφ Hψ;
+unfold simp_ands; fold simp_ands;try (case decide; intro);
+try (apply IHφ2; trivial; intros x Hx; apply Hφ; simpl; tauto);
 try (apply vars_incl_simp_and_equiv_and; apply and_vars_incl; assumption).
-simpl.
 apply vars_incl_simp_and_equiv_and.
 apply and_vars_incl.
 - vars_incl_tac.
