@@ -1,4 +1,20 @@
 Require Import ISL.Environments ISL.Sequents ISL.SequentProps ISL.Cut.
+Require Import Decidable.
+Definition is_double_negation φ ψ := φ = ¬ ¬ ψ.
+Global Instance decidable_is_double_negation φ ψ : Decision (is_double_negation φ ψ) := decide (φ =  ¬ ¬ ψ).
+
+Definition is_implication φ ψ := exists θ, φ = (θ → ψ).
+Global Instance decidable_is_implication φ ψ : Decision (is_implication φ ψ).
+Proof.
+unfold is_implication.
+destruct φ; try solve[right; intros [θ Hθ]; discriminate].
+case (decide (φ2 = ψ)).
+- intro; subst. left. eexists; reflexivity.
+- intro. right; intros [θ Hθ]; inversion Hθ. subst. tauto.
+Defined.
+
+Definition is_negation φ ψ := φ = ¬ ψ.
+Global Instance decidable_is_negation φ ψ : Decision (is_negation φ ψ) := decide (φ =  ¬ ψ).
 
 (* Checks "obvious" entailment conditions. If φ ⊢ ψ "obviously" then it returns Lt,
 if ψ ⊢ φ "obviously" then it returns Gt. Eq corresponds to the unknown category, 
@@ -19,7 +35,12 @@ match (φ, ψ) with
       | (Lt, Lt) => Lt
       | _ => Eq
       end
-  |(φ, ψ) => if decide (φ = ψ) then Lt else Eq
+  |(φ, ψ) => if decide (φ = ψ) then Lt else
+                       if decide (is_double_negation φ ψ) then Gt else
+                       if decide (is_double_negation ψ φ) then Lt else
+                       if decide (is_implication φ ψ) then Gt else
+                       if decide (is_implication ψ φ ) then Lt else
+                       Eq
 end.
 
 
@@ -27,22 +48,26 @@ Definition choose_or φ ψ :=
 match obviously_smaller φ ψ with
   | Lt => ψ
   | Gt => φ
-  | Eq => φ ∨ ψ
+  | Eq =>match obviously_smaller ψ φ with
+    | Lt => φ
+    | Gt => ψ
+    | Eq => φ ∨ ψ
+    end
  end.
 
 Definition simp_or φ ψ := 
-match (φ, ψ) with
-  | (φ, ψ1 ∨ ψ2) => 
+match ψ with
+  | ψ1 ∨ ψ2 => 
       match obviously_smaller φ ψ1 with
       | Lt => ψ1 ∨ ψ2
       | Gt => φ ∨ ψ2
       | Eq => φ ∨ (ψ1 ∨ ψ2)
       end
-  | (φ, ψ1 ∧ ψ2) => 
+  | ψ1 ∧ ψ2 => 
       if decide (obviously_smaller φ ψ1 = Gt )
       then φ
       else φ ∨ (ψ1 ∧ ψ2)
-  |(φ,ψ) => choose_or φ ψ
+  |_ => choose_or φ ψ
 end.
 
 
@@ -68,18 +93,19 @@ match obviously_smaller φ ψ with
  end.
 
 Definition simp_and φ ψ := 
-match (φ, ψ) with
-  | (φ, ψ1 ∧ ψ2) => 
+match ψ with
+  | ψ1 ∧ ψ2 => 
       match obviously_smaller φ ψ1 with
       | Lt => φ ∧ ψ2
       | Gt => ψ1 ∧ ψ2
       | Eq => φ ∧ (ψ1 ∧ ψ2)
       end
-  | (φ, ψ1 ∨ ψ2) => 
+  | ψ1 ∨ ψ2 => 
       if decide (obviously_smaller φ ψ1 = Lt )
       then φ
       else φ ∧ (ψ1 ∨ ψ2)
-  |(φ,ψ) => choose_and φ ψ
+  | ψ1 → ψ2 => if decide (obviously_smaller φ ψ1 = Lt) then choose_and φ ψ2 else choose_and φ ψ
+  | ψ => choose_and φ ψ
 end.
 
 
@@ -104,6 +130,8 @@ Definition simp_imp φ ψ :=
   else if decide (obviously_smaller ψ ⊤ = Gt) then ⊤
   else if decide (obviously_smaller φ ⊤ = Gt) then ψ
   else if decide (obviously_smaller ψ ⊥ = Lt) then ¬φ
+  else if decide (is_negation φ ψ) then ¬φ
+  else if decide (is_negation ψ φ) then ψ
   else φ → ψ.
 
 (* Same as `simp_ors` but for nested implications. *)
@@ -158,6 +186,19 @@ Ltac eq_clean := match goal with
     end
 | H : (if decide (?f1 = ?f2) then Lt else Eq) = Gt |- _ => 
     case decide in H; discriminate
+| H : match ?φ with _ => _ end = _ |- _ => destruct φ; try discriminate; eq_clean
+end.
+
+Ltac eq_clean' := match goal with 
+| H : (if decide (?f1 = ?f2) then ?t else Eq) = ?t |- _ => 
+    case decide in H;
+    match goal with
+    | e : ?f1 = ?f2 |- _ => rewrite e; apply generalised_axiom
+    | _ => discriminate
+    end
+| H : (if decide (?f1 = ?f2) then Lt else Eq) = Gt |- _ => 
+    case decide in H; discriminate
+| H : match ?φ with _ => _ end = _ |- _ => destruct φ; try discriminate; try eq_clean
 end.
 
 
@@ -187,24 +228,54 @@ Ltac induction_auto := match goal with
 | _ => idtac
 end.
 
+Lemma double_negation_obviously_smaller φ ψ:
+ is_double_negation φ ψ -> ψ ≼ φ.
+Proof.
+intro H; rewrite H. apply ImpR; auto with proof.
+Qed.
+
+Lemma is_implication_obviously_smaller φ ψ:
+ is_implication φ ψ -> ψ ≼ φ.
+Proof.
+unfold is_implication. intro H.
+destruct φ; try (contradict H; intros [θ Hθ]; discriminate).
+case (decide (φ2 = ψ)).
+- intro; subst. apply ImpR, weakening, generalised_axiom.
+- intro Hneq. contradict H; intros [θ Hθ]. inversion Hθ. tauto.
+Qed.
+
+
 Lemma obviously_smaller_compatible_LT φ ψ :
   obviously_smaller φ ψ = Lt -> φ ≼ ψ.
 Proof.
 intro H.
-induction φ; destruct ψ; 
-try (unfold obviously_smaller in H; try discriminate;  eq_clean); bot_clean; 
+induction φ; destruct ψ;
+repeat (unfold obviously_smaller in H; fold obviously_smaller in H; try discriminate; eq_clean); bot_clean;
+
 repeat match goal with
   | [ H : obviously_smaller _ (?f → _) = Lt |- _ ≼ ?f → _ ] => 
       destruct f; simpl in H; try discriminate; bot_clean
   | |- _ ∧ _ ≼ ?f =>
-    case_eq (obviously_smaller φ1 f); case_eq (obviously_smaller φ2 f); intros H0 H1; 
-    simpl in H; rewrite H0 in H; rewrite H1 in H; try discriminate; induction_auto
+    case_eq (obviously_smaller φ1 f); case_eq (obviously_smaller φ2 f); 
+    intros H0 H1;
+    simpl in H; try rewrite H0 in H; try rewrite H1 in H; try discriminate; induction_auto
   | |- _ ∨ _ ≼ ?f =>
-    case_eq (obviously_smaller φ1 f); case_eq (obviously_smaller φ2 f); intros H0 H1; 
+    case_eq (obviously_smaller φ1 f); case_eq (obviously_smaller φ2 f);
+    intros H0 H1; 
     simpl in H; rewrite H0 in H; rewrite H1 in H; try discriminate;
     apply OrL; induction_auto
   | |- (?f → _) ≼ _ => destruct f; try eq_clean; discriminate
-end. 
+end;
+try destruct ψ1; try discriminate; bot_clean;
+simpl in H; try case decide in H; try discriminate; bot_clean;
+try (now apply double_negation_obviously_smaller);
+try case decide in H;
+try (now apply is_implication_obviously_smaller);
+try (inversion e; subst; apply generalised_axiom);
+try solve[destruct φ1; inversion H];
+destruct φ1; repeat case decide in H; try discriminate;
+   try (now apply is_implication_obviously_smaller);
+   try (now apply double_negation_obviously_smaller).
 Qed.
 
 
@@ -212,7 +283,8 @@ Lemma obviously_smaller_compatible_GT φ ψ :
   obviously_smaller φ ψ = Gt -> ψ ≼ φ .
 Proof.
 intro H.
-induction φ; destruct ψ; 
+induction φ; destruct ψ;
+try match goal with H : ?H0 -> _ |- _ => assert(Hw' : H0) by lia; specialize (Hw Hw') end;
 try (unfold obviously_smaller in H; try discriminate; eq_clean); bot_clean;
 repeat match goal with
   | |-  ?f ≼ _ ∧ _ =>
@@ -226,7 +298,16 @@ repeat match goal with
   | |- (?f → _) ≼ _ => destruct f; discriminate
   | |- (∅ • (?f → _)) ⊢ _ => destruct f; discriminate
   | |- _ ≼ (?f → _) => destruct f; bot_clean; discriminate
-end.
+end;
+simpl in H;
+try solve[destruct ψ1; try discriminate; eq_clean];
+  destruct φ1; try discriminate; repeat eq_clean;
+  try destruct ψ1;
+ try (unfold obviously_smaller in H; try discriminate; eq_clean); bot_clean;
+ repeat case decide in H; try discriminate; bot_clean;
+try (now apply double_negation_obviously_smaller);
+try (now apply is_implication_obviously_smaller);
+try (now apply ImpR, weakening, IHφ2).
 Qed.
 
 Lemma or_congruence φ ψ φ' ψ':
@@ -303,7 +384,16 @@ Proof.
 intros Hφ Hψ.
 unfold choose_or.
 case_eq (obviously_smaller φ' ψ'); intro Heq.
-- apply or_congruence; assumption.
+- case_eq (obviously_smaller ψ' φ'); intro Heq'.
+  + apply or_congruence; assumption.
+  + apply OrL. assumption.
+       eapply weak_cut. 
+        * apply Hψ.
+        * apply obviously_smaller_compatible_LT; assumption.
+  + apply OrL; [| assumption].
+       eapply weak_cut. 
+        * apply Hφ.
+        * apply obviously_smaller_compatible_GT; assumption.
 - apply OrL.
   + eapply weak_cut. 
     * apply Hφ.
@@ -325,7 +415,9 @@ Proof.
 intros Hφ Hψ.
 unfold choose_or.
 case_eq (obviously_smaller φ' ψ'); intro Heq;
-[apply or_congruence| apply OrR2| apply OrR1]; assumption.
+[| apply OrR2| apply OrR1]; try assumption.
+case_eq (obviously_smaller ψ' φ'); intro Heq';
+[apply or_congruence| apply OrR1| apply OrR2]; try assumption.
 Qed.
 
 Lemma simp_or_equiv_L φ ψ φ' ψ' : 
@@ -402,14 +494,23 @@ intro H.
 eapply weak_cut; [apply simp_or_comm | apply H].
 Qed.
 
+Lemma Lindenbaum_Tarski_preorder_refl x : x ≼ x.
+Proof. apply generalised_axiom. Qed.
+
+Global Hint Resolve Lindenbaum_Tarski_preorder_refl : proof.
+Global Hint Resolve choose_or_equiv_L : proof.
+Global Hint Resolve choose_or_equiv_R : proof.
+
+
 Lemma simp_ors_self_equiv_L φ ψ:
   (φ ∨ ψ) ≼ simp_ors φ ψ.
 Proof.
 generalize ψ.
 induction φ;
 intro ψ0;
-destruct ψ0; simpl; try (eapply simp_or_equiv_L; apply generalised_axiom);
-try (apply simp_or_comm_ctx_R; apply simp_or_equiv_L; apply generalised_axiom).
+destruct ψ0; try (eapply simp_or_equiv_L; apply generalised_axiom);
+try (apply simp_or_comm_ctx_R; apply simp_or_equiv_L; apply generalised_axiom);
+try solve[auto with proof].
 assert (H: φ1 ∨ ψ0_1 ∨ φ2 ∨ ψ0_2 ≼ φ1 ⊻ (ψ0_1 ⊻ simp_ors φ2 ψ0_2)).
 - apply simp_or_equiv_L.
   + apply generalised_axiom.
@@ -448,8 +549,8 @@ Proof.
 generalize ψ.
 induction φ;
 intro ψ0;
-destruct ψ0; 
-simpl; try (eapply simp_or_equiv_R; apply generalised_axiom);
+destruct ψ0; unfold simp_ors; fold simp_ors;
+try solve[apply simp_or_equiv_R; apply generalised_axiom];
 try (apply simp_or_comm_ctx_L; apply simp_or_equiv_R; apply generalised_axiom).
 assert (H: φ1 ⊻ (ψ0_1 ⊻ simp_ors φ2 ψ0_2) ≼ φ1 ∨ ψ0_1 ∨ φ2 ∨ ψ0_2).
 - apply simp_or_equiv_R.
@@ -586,7 +687,7 @@ case_eq (obviously_smaller φ' ψ'); intro Heq.
   + assumption.
 Qed.
 
-
+Hint Unfold Lindenbaum_Tarski_preorder : proof.
 Lemma simp_and_equiv_L φ ψ φ' ψ' : 
   (φ ≼ φ') -> (ψ ≼ ψ') -> (φ ∧ ψ) ≼ φ' ⊼ ψ'.
 Proof.
@@ -602,6 +703,15 @@ destruct ψ'; try (apply choose_and_equiv_L; assumption).
 - case (decide (obviously_smaller φ' ψ'1 = Lt)); intro.
   + apply AndL. now apply weakening.
   + apply and_congruence; assumption.
+- case (decide (obviously_smaller φ' ψ'1 = Lt)); intro.
+  + apply weak_cut with (φ ∧ (φ ∧ ψ)). 
+     * apply AndR; auto with proof.
+     * apply choose_and_equiv_L. assumption.
+        apply obviously_smaller_compatible_LT in e. 
+        apply contraction, ImpR_rev. apply weak_cut with ψ'1. 
+        -- apply weak_cut with φ'; auto with proof.
+        -- apply ImpR. exch 0. apply ImpR_rev, AndL. exch 0. apply weakening, Hψ.
+  + apply choose_and_equiv_L; assumption.
 Qed.
 
 Lemma simp_and_equiv_R φ ψ φ' ψ' : 
@@ -632,7 +742,9 @@ destruct  ψ'.
       -- apply obviously_smaller_compatible_LT; apply HLt.
       -- apply OrL_rev in Hψ; apply Hψ.
   + apply and_congruence; assumption.
-- apply choose_and_equiv_R; assumption.
+- case decide; intro Heq.
+  + apply choose_and_equiv_R. assumption. eapply weak_cut; [|exact Hψ]. auto with proof.
+  + apply choose_and_equiv_R; assumption.
 - apply choose_and_equiv_R; assumption.
 Qed.
 
@@ -672,6 +784,7 @@ try (apply obviously_smaller_compatible_LT in e;
   eapply weak_cut; [|apply IHφ2]; apply AndL, AndR; auto with proof; exch 0; apply ImpL; auto with proof);
 try (apply simp_and_comm_ctx_R; apply simp_and_equiv_L; apply generalised_axiom);
  fold simp_ands.
+ -
 assert (H: φ1 ∧ ψ0_1 ∧ φ2 ∧ ψ0_2 ≼ φ1 ⊼ (ψ0_1 ⊼ simp_ands φ2 ψ0_2)).
 {apply simp_and_equiv_L.
   + apply generalised_axiom.
@@ -770,9 +883,11 @@ case decide as [HφTop |].
       * eapply additive_cut with ⊥.
        -- exch 0. apply weakening, obviously_smaller_compatible_LT, HψBot.
        -- do 2 (exch 0; apply weakening). now apply obviously_smaller_compatible_LT.
-  + apply ImpR. exch 0. apply ImpL.
-      * apply weakening, generalised_axiom.
-      * exch 0. apply weakening, generalised_axiom.
+  + case decide; intro Heq. 
+    * rewrite Heq. apply ImpR, ImpL; auto with proof.
+    * case decide; intro Heq'.
+      -- rewrite Heq'. apply ImpR. auto with proof.
+      -- auto with proof.
 Qed.
 
 Lemma simp_imp_self_equiv_R φ ψ:
@@ -802,9 +917,11 @@ case decide as [Heq |].
                  --- apply generalised_axiom.
                  --- apply ExFalso.
               ** apply generalised_axiom.
-           ++ apply ImpR. exch 0. apply ImpL.
-              ** apply weakening, generalised_axiom.
-              ** exch 0. apply weakening, generalised_axiom.
+           ++ case decide; intro Heq.
+             ** rewrite Heq. apply ImpR. exch 0. apply ImpL; auto with proof.
+             ** case decide; intro Heq'.
+             --- rewrite Heq'. auto with proof.
+             --- auto with proof.
 Qed.
 
 Lemma simp_imps_self_equiv_L φ ψ:
@@ -952,7 +1069,9 @@ Lemma vars_incl_choose_or φ ψ V:
 Proof.
 intros H.
 unfold choose_or. 
-destruct (obviously_smaller φ ψ); vars_incl_tac; assumption.
+destruct (obviously_smaller φ ψ); vars_incl_tac; 
+destruct (obviously_smaller ψ φ); vars_incl_tac; 
+assumption.
 Qed.
 
 Lemma vars_incl_simp_or_equiv_or φ ψ V:
@@ -983,7 +1102,7 @@ apply or_vars_incl.
   apply or_vars_incl.
   + now apply (or_vars_incl _ ψ0_2 _). 
   +  apply IHφ2.
-    * now apply (or_vars_incl  φ1 _ _). 
+    * now apply (or_vars_incl  φ1 _ _).
     * now apply (or_vars_incl  ψ0_1 _ _). 
 Qed.
 
@@ -1013,8 +1132,12 @@ destruct (obviously_smaller φ ψ1); try assumption; vars_incl_tac.
 apply and_vars_incl.
 - vars_incl_tac.
 - apply and_vars_incl in H. 
-  apply (and_vars_incl ψ1 _).
-  apply H.
+  apply (and_vars_incl ψ1 _), H.
+- case decide; intro; try discriminate. now apply vars_incl_choose_and.
+- apply and_vars_incl in H. destruct H. case decide; intro; try discriminate. apply vars_incl_choose_and.
+  + apply and_vars_incl; intuition. vars_incl_tac.
+  + vars_incl_tac.
+- case decide; intro. discriminate. apply vars_incl_choose_and, and_vars_incl; vars_incl_tac.
 Qed.
 
 Lemma vars_incl_simp_ands φ ψ V :
@@ -1043,11 +1166,7 @@ case decide as [].
   + vars_incl_tac.
   + case decide as [].
     * vars_incl_tac.
-    * case decide as [].
-      -- vars_incl_tac.
-      -- case decide as [].
-         ++ assumption.
-         ++ case decide as []; vars_incl_tac.
+    *  repeat (case decide as []; vars_incl_tac); assumption.
 Qed.
 
 Lemma vars_incl_simp_imps φ ψ V :
@@ -1150,4 +1269,10 @@ Example ex4: simp (Or (Implies (Var "a")  (Var "a")) (Implies (Var "a")  (Var "a
 Proof. reflexivity. Qed.
 
 Example ex5: simp (And (Implies (Var "a")  (Var "a")) (Implies (Var "a")  (Var "a"))) = Implies Bot Bot.
+Proof. reflexivity. Qed.
+
+Example ex6: simp (Or (Var "q") (Implies (Var "r") (Var "q"))) = Implies (Var "r") (Var "q").
+Proof. reflexivity. Qed.
+
+Example ex7: simp (And (Implies (Var "r") (Var "q")) (Var "q") ) = Var "q".
 Proof. reflexivity. Qed.
