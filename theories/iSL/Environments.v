@@ -103,6 +103,23 @@ Definition irreducible (Γ : env) :=
   ∀ φ ψ, ¬ (φ ∧ ψ) ∈ Γ /\ ¬ (φ ∨ ψ) ∈ Γ.
 
 
+Definition is_double_negation φ ψ := φ = ¬ ¬ ψ.
+Global Instance decidable_is_double_negation φ ψ : Decision (is_double_negation φ ψ) := decide (φ =  ¬ ¬ ψ).
+
+Definition is_implication φ ψ := exists θ, φ = (θ → ψ).
+Global Instance decidable_is_implication φ ψ : Decision (is_implication φ ψ).
+Proof.
+unfold is_implication.
+destruct φ; try solve[right; intros [θ Hθ]; discriminate].
+case (decide (φ2 = ψ)).
+- intro; subst. left. eexists; reflexivity.
+- intro. right; intros [θ Hθ]; inversion Hθ. subst. tauto.
+Defined.
+
+Definition is_negation φ ψ := φ = ¬ ψ.
+Global Instance decidable_is_negation φ ψ : Decision (is_negation φ ψ) := decide (φ =  ¬ ψ).
+
+
 (* Checks "obvious" entailment conditions. If φ ⊢ ψ "obviously" then it returns Lt,
 if ψ ⊢ φ "obviously" then it returns Gt. Eq corresponds to the unknown category, 
 this means that we don't have enough information to determine a possible entailment. *)
@@ -122,8 +139,14 @@ match (φ, ψ) with
       | (Lt, Lt) => Lt
       | _ => Eq
       end
-  |(φ, ψ) => if decide (φ = ψ) then Lt else Eq
+  |(φ, ψ) => if decide (φ = ψ) then Lt else
+                       if decide (is_double_negation φ ψ) then Gt else
+                       if decide (is_double_negation ψ φ) then Lt else
+                       if decide (is_implication φ ψ) then Gt else
+                       if decide (is_implication ψ φ ) then Lt else
+                       Eq
 end.
+
 
 
 Definition choose_conj φ ψ :=
@@ -134,18 +157,19 @@ match obviously_smaller φ ψ with
  end.
 
 Definition make_conj φ ψ := 
-match (φ, ψ) with
-  | (φ, ψ1 ∧ ψ2) => 
+match ψ with
+  | ψ1 ∧ ψ2 => 
       match obviously_smaller φ ψ1 with
       | Lt => φ ∧ ψ2
       | Gt => ψ1 ∧ ψ2
       | Eq => φ ∧ (ψ1 ∧ ψ2)
       end
-  | (φ, ψ1 ∨ ψ2) => 
+  | ψ1 ∨ ψ2 => 
       if decide (obviously_smaller φ ψ1 = Lt )
       then φ
       else φ ∧ (ψ1 ∨ ψ2)
-  |(φ,ψ) => choose_conj φ ψ
+  | ψ1 → ψ2 => if decide (obviously_smaller φ ψ1 = Lt) then choose_conj φ ψ2 else choose_conj φ ψ
+  | ψ => choose_conj φ ψ
 end.
 
 
@@ -169,22 +193,26 @@ Definition choose_disj φ ψ :=
 match obviously_smaller φ ψ with
   | Lt => ψ
   | Gt => φ
-  | Eq => φ ∨ ψ
+  | Eq =>match obviously_smaller ψ φ with
+    | Lt => φ
+    | Gt => ψ
+    | Eq => φ ∨ ψ
+    end
  end.
 
 Definition make_disj  φ ψ := 
-match (φ, ψ) with
-  | (φ, ψ1 ∨ ψ2) => 
+match ψ with
+  | ψ1 ∨ ψ2 => 
       match obviously_smaller φ ψ1 with
       | Lt => ψ1 ∨ ψ2
       | Gt => φ ∨ ψ2
       | Eq => φ ∨ (ψ1 ∨ ψ2)
       end
-  | (φ, ψ1 ∧ ψ2) => 
+  | ψ1 ∧ ψ2 => 
       if decide (obviously_smaller φ ψ1 = Gt )
       then φ
       else φ ∨ (ψ1 ∧ ψ2)
-  |(φ,ψ) => choose_disj φ ψ
+  |_ => choose_disj φ ψ
 end.
 
 Infix "⊻" := make_disj (at level 65).
@@ -204,26 +232,37 @@ Qed.
 
 
 (* "lazy" implication, which produces a potentially simpler, equivalent formula *)
-Definition make_impl x y :=
-if decide (x = ⊥) then ⊤ else if decide (y = (⊥ → ⊥)) then ⊤ else x → y.
+
+(* Same as `simp_ors` but for nested implications. *)
+Fixpoint make_impl φ ψ :=
+match ψ with
+  |(ψ1 → ψ2) => make_impl (make_conj φ ψ1) ψ2
+  |_ =>
+     if decide (obviously_smaller φ ψ = Lt) then ⊤
+     else if decide (obviously_smaller φ ⊥ = Lt) then ⊤
+     else if decide (obviously_smaller ψ ⊤ = Gt) then ⊤
+     else if decide (obviously_smaller φ ⊤ = Gt) then ψ
+     else if decide (obviously_smaller ψ ⊥ = Lt) then ¬φ
+     else if decide (is_negation φ ψ) then ¬φ
+     else if decide (is_negation ψ φ) then ψ
+    else φ → ψ
+end.
 
 Infix "⇢" := make_impl (at level 66).
 
-Lemma make_impl_spec x y:
-  {x = ⊥ ∧ x ⇢ y = ⊤} +
-  {y = ⊤ ∧ x ⇢ y = ⊤} +
-  {x ⇢ y = (x → y)}.
-Proof.
-unfold make_impl.
-repeat (match goal with |- context  [match ?x with | _  => _ end] => destruct x end; try tauto).
-Qed.
-
 Lemma occurs_in_make_impl v x y : occurs_in v (x ⇢ y) -> occurs_in v x ∨ occurs_in v y.
 Proof.
-destruct (make_impl_spec x y) as [[Hm|Hm]|Hm]; try tauto.
-3:{ rewrite Hm. simpl. tauto. }
-all:(destruct Hm as [Heq Hm]; rewrite Hm; simpl; tauto).
+generalize x.
+induction y; intro ψ0;
+intro H; unfold make_impl in H; fold make_impl in H;
+repeat match goal with 
+    | H: occurs_in _  (if ?cond then _ else _) |- _ => case decide in H
+    | H: occurs_in _ (match ?x with _ => _ end) |- _ => destruct x
+    | |- _ => simpl; simpl in H; tauto
+end.
+apply IHy2 in H. destruct H as [H|H]; [ apply occurs_in_make_conj in H|]; simpl; tauto.
 Qed.
+
 
 Lemma occurs_in_make_impl2 v x y z: occurs_in v (x ⇢ (y ⇢ z)) -> occurs_in v x ∨ occurs_in v y ∨ occurs_in v z.
 Proof.

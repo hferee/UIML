@@ -227,7 +227,7 @@ Proof.
 destruct θ; unfold e_rule.
 - case decide.
   + simpl. intros Heq HF; subst. tauto.
-  + simpl. intros Hneq Hocc. apply occurs_in_make_conj in Hocc.
+  + intros Hneq Hocc. apply occurs_in_make_conj in Hocc.
       destruct Hocc as [Hocc|Heq]; vars_tac. subst; tauto.
 - simpl. tauto.
 - vars_tac.
