@@ -282,20 +282,20 @@ unfold pointed_env_order; subst; simpl; repeat rewrite open_boxes_add; try match
 | H : ?ψ ∈ ?Γ |- ?Γ' ≺ ?Γ • _ • _ => let ψ' := (get_diff_form Γ') in
 apply (env_order_equiv_right_compat (equiv_disj_union_compat_r(equiv_disj_union_compat_r(difference_singleton Γ ψ' H))))
 end.
+
 (*
-Global Hint Extern 2 ((?Γ  ∖ {[?ψ]} , ?φ) ≺· (?Γ, ?φ)) => prepare_order : order.
-Global Hint Extern 2 (?Γ  ∖ {[?ψ]} • ?φ' • ?φ'' ≺ ?Γ • ?φ) => prepare_order : order.
-Global Hint Extern 2 (?Γ  ∖ {[?ψ]} • ?φ' • ?φ'' ≺ ?Γ • ?φ • ?φ''') => prepare_order : order.
-Global Hint Extern 2 (?Γ  ∖ {[?ψ]} • ?φ' • ?φ'' • ?φ'''' ≺ ?Γ • ?φ • ?φ''') => prepare_order : order.
-Global Hint Extern 2 (?Γ  ∖ {[?ψ]} • ?φ' ≺ ?Γ • ?φ) => prepare_order : order.
-Global Hint Extern 2 (?Γ  ∖ {[?ψ]} • ?φ' ≺ ?Γ • ?φ  • ?φ') => prepare_order : order.
-*)
 Lemma make_impl_weight φ ψ: weight (φ ⇢ ψ) <= weight (φ → ψ).
 Proof.
-destruct (make_impl_spec φ ψ) as [[[Heq' Heq]|[Heq' Heq]]|Heq]; subst; rewrite Heq; simpl.
-- assert (H := weight_pos ψ). lia.
--  lia.
-- trivial.
+assert (H := weight_pos ψ).
+assert (H' := weight_pos φ).
+revert φ H'; induction ψ; intros φ H';
+unfold make_impl; repeat destruct decide; simpl; try lia.
+fold make_impl.
+etransitivity. apply IHψ2.
+- apply weight_pos.
+- apply weight_pos.
+- simpl. assert(HH := make_conj_weight lia.
+revert (IHψ2 (ma)
 Qed.
 
 Lemma make_impl_weight2 φ ψ θ: weight (φ ⇢ (ψ ⇢ θ)) <= weight (φ → (ψ → θ)).
@@ -305,11 +305,12 @@ pose (make_impl_weight φ (ψ ⇢ θ)).
 simpl in *. lia.
 Qed.
 
+
 Global Hint Extern  5  (weight (?φ ⇢ ?ψ) < _) => (eapply Nat.le_lt_trans; [eapply make_impl_weight|]) : order.
 
 Global Hint Extern  5  (weight (?φ ⇢ (?ψ ⇢ ?θ)) < _) => (eapply Nat.le_lt_trans; [eapply make_impl_weight2|]) : order.
 
-(* TODO: new *)
+*)
 
 (* ad hoc *)
 Lemma openboxes_env_order Δ δ :  (⊗ Δ) • δ • δ ≺ Δ • □ δ.
