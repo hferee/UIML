@@ -158,21 +158,27 @@ match obviously_smaller φ ψ with
 
 Definition make_conj φ ψ := 
 match ψ with
-  | ψ1 ∧ ψ2 => 
+  | ψ1 ∧ ψ2 =>
       match obviously_smaller φ ψ1 with
       | Lt => φ ∧ ψ2
       | Gt => ψ1 ∧ ψ2
       | Eq => φ ∧ (ψ1 ∧ ψ2)
       end
-  | ψ1 ∨ ψ2 => 
-      if decide (obviously_smaller φ ψ1 = Lt )
-      then φ
-      else φ ∧ (ψ1 ∨ ψ2)
-  | ψ1 → ψ2 => if decide (obviously_smaller φ ψ1 = Lt) then choose_conj φ ψ2 else choose_conj φ ψ
-  | ψ => choose_conj φ ψ
+  | ψ1 ∨ ψ2 =>
+      if decide (obviously_smaller φ ψ1 = Lt ) then φ
+      else if decide (obviously_smaller φ ψ2 = Lt ) then φ
+      else choose_conj φ (ψ1 ∨ ψ2)
+  | ψ1 → ψ2 => 
+      if decide (obviously_smaller φ ψ1 = Lt) then choose_conj φ ψ2
+      else choose_conj φ ψ
+  | ψ => match φ with 
+      | φ1 → φ2 =>
+          if decide (obviously_smaller ψ φ1 = Lt)
+          then choose_conj φ2 ψ
+          else choose_conj φ ψ
+      | _ => choose_conj φ ψ
+       end
 end.
-
-
 
 Infix "⊼" := make_conj (at level 60).
 
@@ -209,9 +215,9 @@ match ψ with
       | Eq => φ ∨ (ψ1 ∨ ψ2)
       end
   | ψ1 ∧ ψ2 => 
-      if decide (obviously_smaller φ ψ1 = Gt )
-      then φ
-      else φ ∨ (ψ1 ∧ ψ2)
+      if decide (obviously_smaller φ ψ1 = Gt ) then φ
+      else if decide (obviously_smaller φ ψ2 = Gt ) then φ
+      else choose_disj φ (ψ1 ∧ ψ2)
   |_ => choose_disj φ ψ
 end.
 
@@ -649,3 +655,6 @@ repeat match goal with | H : exists x, _ |- _ => destruct H end; intuition;
 try multimatch goal with
 | H : ?θ0 ∈ ?Δ0 |- context [exists θ, θ ∈ ?Δ /\ occurs_in ?x θ] =>
   solve[try right; exists θ0; split; [eauto using difference_include|simpl; tauto]; eauto] end.
+
+
+(* TODO: move in optimisations *)

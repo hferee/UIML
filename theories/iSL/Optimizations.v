@@ -172,7 +172,7 @@ case_eq (obviously_smaller φ' ψ'); intro Heq.
 Qed.
 
 
-Lemma choose_and_equiv_R φ ψ φ' ψ':
+Lemma choose_conj_equiv_R φ ψ φ' ψ':
   (φ' ≼ φ) -> (ψ' ≼ ψ) -> choose_conj φ' ψ' ≼  φ ∧ ψ.
 Proof.
 intros Hφ Hψ.
@@ -199,15 +199,25 @@ Proof.
 intros Hφ Hψ.
 unfold make_conj.
 destruct ψ'; try (apply choose_conj_equiv_L; assumption).
+- destruct φ'; try (apply choose_conj_equiv_L; assumption).
+  case decide; intro; try (apply choose_conj_equiv_L; assumption).
+  apply obviously_smaller_compatible_LT in e.
+  apply weak_cut with ((φ ∧ φ'1) ∧ ψ).
+  + apply AndL; repeat apply AndR.  auto with proof.
+      * exch 0. apply weakening;  apply weak_cut with v; assumption.
+      * apply generalised_axiom.
+  + apply choose_conj_equiv_L; auto with proof.
+- apply exfalso, AndL. exch 0. apply weakening, Hψ.
 - case_eq (obviously_smaller φ' ψ'1); intro Heq.
   + apply and_congruence; assumption.
   + apply and_congruence.
     * assumption.
     * apply AndR_rev in Hψ; apply Hψ.
   + apply AndL. exch 0. apply weakening. assumption.
-- case (decide (obviously_smaller φ' ψ'1 = Lt)); intro.
+- repeat case decide; intros.
   + apply AndL. now apply weakening.
-  + apply and_congruence; assumption.
+  + apply AndL. now apply weakening.
+  + apply choose_conj_equiv_L ; assumption.
 - case (decide (obviously_smaller φ' ψ'1 = Lt)); intro.
   + apply weak_cut with (φ ∧ (φ ∧ ψ)).
      * apply AndR; auto with proof.
@@ -217,6 +227,15 @@ destruct ψ'; try (apply choose_conj_equiv_L; assumption).
         -- apply weak_cut with φ'; auto with proof.
         -- apply ImpR. exch 0. apply ImpR_rev, AndL. exch 0. apply weakening, Hψ.
   + apply choose_conj_equiv_L; assumption.
+- destruct φ'; try (apply choose_conj_equiv_L; assumption).
+  case decide; intro; try (apply choose_conj_equiv_L; assumption).
+  apply weak_cut with (ψ ∧ (φ ∧ φ'1)).
+  + apply AndL, AndR. auto with proof. apply AndR. auto with proof.
+      exch 0. apply weakening. apply weak_cut with (□ ψ'). auto with proof.
+      now apply obviously_smaller_compatible_LT.
+  + apply weak_cut with ((φ ∧ φ'1) ∧ ψ).
+     * apply AndR; auto with proof.
+     * apply choose_conj_equiv_L; auto with proof.
 Qed.
 
 Lemma make_conj_equiv_R φ ψ φ' ψ' : 
@@ -225,8 +244,10 @@ Proof.
 intros Hφ Hψ.
 unfold make_conj.
 destruct  ψ'.
-- now apply choose_and_equiv_R.
-- now apply choose_and_equiv_R.
+- destruct φ'; try case decide; intros; apply choose_conj_equiv_R; try assumption.
+  eapply imp_cut; eassumption.
+- destruct φ'; try case decide; intros; apply choose_conj_equiv_R; try assumption.
+   eapply imp_cut; eassumption.
 - case_eq (obviously_smaller φ' ψ'1); intro Heq.
   + now apply and_congruence.
   + apply AndR.
@@ -240,17 +261,23 @@ destruct  ψ'.
       -- apply obviously_smaller_compatible_GT; apply Heq.
       -- assumption.
     * assumption.
-- case (decide (obviously_smaller φ' ψ'1 = Lt)); [intro HLt | intro Hneq].
+- repeat case decide; intros.
   + apply AndR.
     * assumption.
     * eapply weak_cut.
-      -- apply obviously_smaller_compatible_LT; apply HLt.
+      -- apply obviously_smaller_compatible_LT; eassumption.
       -- apply OrL_rev in Hψ; apply Hψ.
-  + apply and_congruence; assumption.
+  + apply AndR.
+    * assumption.
+    * eapply weak_cut.
+      -- apply obviously_smaller_compatible_LT; eassumption.
+      -- apply OrL_rev in Hψ; apply Hψ.
+  + apply choose_conj_equiv_R; assumption.
 - case decide; intro Heq.
-  + apply choose_and_equiv_R. assumption. eapply weak_cut; [|exact Hψ]. auto with proof.
-  + apply choose_and_equiv_R; assumption.
-- apply choose_and_equiv_R; assumption.
+  + apply choose_conj_equiv_R. assumption. eapply weak_cut; [|exact Hψ]. auto with proof.
+  + apply choose_conj_equiv_R; assumption.
+- destruct φ'; try case decide; intros; apply choose_conj_equiv_R; try assumption.
+  eapply imp_cut; eassumption.
 Qed.
 
 Lemma specialised_weakening Γ φ ψ : (φ ≼ ψ) ->  Γ•φ ⊢ ψ.
@@ -357,13 +384,19 @@ Lemma make_disj_equiv_L φ ψ φ' ψ' :
 Proof.
 intros Hφ Hψ.
 unfold make_disj.
-destruct ψ'; try (apply choose_disj_equiv_L; assumption). - case (decide (obviously_smaller φ' ψ'1 = Gt)); [intro HGt | intro Hneq1].
+destruct ψ'; try (apply choose_disj_equiv_L; assumption).
+- repeat case decide; intros.
   + apply OrL.
     * assumption.
     * eapply weak_cut.
       -- apply Hψ.
       -- apply AndL; apply weakening; now apply obviously_smaller_compatible_GT.
-  + now apply or_congruence.
+  + apply OrL.
+    * assumption.
+    * eapply weak_cut.
+      -- apply Hψ.
+      -- apply AndL; exch 0. apply weakening; now apply obviously_smaller_compatible_GT.
+  + now apply choose_disj_equiv_L.
 - case_eq (obviously_smaller φ' ψ'1); intro Heq.
   + now apply or_congruence.
   + apply OrL.
@@ -387,9 +420,10 @@ unfold make_disj.
 destruct ψ'.
 - now apply choose_disj_equiv_R.
 - now apply choose_disj_equiv_R.
-- case (decide (obviously_smaller φ' ψ'1 = Gt)); intro.
+- repeat case decide; intros.
   + now apply OrR1.
-  + now apply or_congruence.
+  + now apply OrR1.
+  + now apply choose_disj_equiv_R.
 - case_eq (obviously_smaller φ' ψ'1); intro Heq.
  + now apply or_congruence.
  + now apply OrR2.
@@ -400,8 +434,6 @@ destruct ψ'.
 - now apply choose_disj_equiv_R.
 - now apply choose_disj_equiv_R.
 Qed.
-
-
 
 Lemma make_disj_sound_L Γ φ ψ θ : Γ•φ ∨ψ ⊢ θ -> Γ•make_disj φ ψ ⊢ θ.
 Proof.
@@ -469,7 +501,7 @@ assert(Hcut :
   - intro Hall. case in_dec; intro; apply (fst IHΔ); auto with *.
   - case in_dec in Hψ; apply IHΔ in Hψ;
     destruct Hψ as [Hψ Hind].
-    + split; trivial;  intros φ Hin; destruct (decide (φ = a)); auto with *.
+    + split; trivial;  intros φ Hin; destruct (decide (φ = a)); auto 2 with *.
         subst. apply Hind. now apply elem_of_list_In.
     + apply make_disj_complete_L in Hψ.
         apply OrL_rev in Hψ as [Hψ Ha].
