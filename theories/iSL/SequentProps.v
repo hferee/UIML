@@ -854,3 +854,25 @@ induction Hp.
 Qed.
 
 Global Hint Resolve imp_cut : proof.
+
+Lemma open_boxes_case Δ : {φ | (□ φ) ∈ Δ} + {Δ ≡ ⊗Δ}.
+Proof.
+unfold open_boxes.
+induction Δ as [|ψ Δ IH] using gmultiset_rec.
+- right. ms.
+- case_eq(is_box ψ); intro Hbox.
+  + left. exists (⊙ψ).
+      destruct ψ; try discriminate Hbox. ms.
+  + destruct IH as [[φ Hφ]| Heq].
+     * left. exists φ. ms.
+     * right. symmetry. etransitivity.
+        -- apply env_equiv_eq, list_to_set_disj_perm, Permutation_map.
+            apply gmultiset_elements_disj_union.
+        -- rewrite map_app, list_to_set_disj_app. rewrite <- Heq. apply env_equiv_eq.
+            f_equal.
+            unfold elements. apply is_not_box_open_box in Hbox.  rewrite <- Hbox at 2.
+            transitivity (list_to_set_disj (map open_box (id [ψ])) : env).
+            ++ apply list_to_set_disj_perm, Permutation_map.
+                    apply Permutation_refl', gmultiset_elements_singleton.
+            ++ simpl. ms.
+Qed.

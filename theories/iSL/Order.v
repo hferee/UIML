@@ -35,7 +35,7 @@ intro Hw. unfold env_order, ltof. do 2 rewrite env_weight_singleton.
 apply Nat.pow_lt_mono_r. lia. trivial.
 Qed.
 
-Notation "Δ ≼ Δ'" := ((Δ ≺ Δ') \/ Δ = Δ') (at level 150).
+Local Notation "Δ ≼ Δ'" := ((Δ ≺ Δ') \/ Δ = Δ') (at level 150).
 
 Lemma env_le_weight Δ Δ' : (Δ' ≼ Δ) -> env_weight Δ' ≤ env_weight Δ.
 Proof.

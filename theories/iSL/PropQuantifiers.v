@@ -47,7 +47,7 @@ match θ with
 | Bot => ⊥  (* E0 *)
 | Var q =>
     if decide (p = q) then ⊤ (* default *)
-    else E Δ' _ ⊼ q (* E1 *)
+    else q (* E1 *)
 (* E2 *)
 | δ₁ ∧ δ₂ => E ((Δ'•δ₁)•δ₂) _
 (* E3 *)
@@ -85,7 +85,7 @@ match θ with
     then
       if decide (Var p = ϕ) then ⊤ (* A10 *)
       else ⊥
-    else A (Δ', ϕ) _ (* A1 *)
+    else A (Δ', ϕ) _ (* A1 *) (* TODO: can be removed? *)
 (* A2 *)
 | δ₁ ∧ δ₂ => A ((Δ'•δ₁)•δ₂, ϕ) _
 (* A3 *)
@@ -152,9 +152,18 @@ Definition Af (ψ : form) := A (∅, ψ).
 
 (** Congruence lemmas: if we apply any of e_rule, a_rule_env, or a_rule_form
   to two equal environments, then they give the same results. *)
-Lemma e_rule_cong Δ ϕ θ (Hin : θ ∈ Δ) EA1 EA2:
+Lemma e_rule_cong Δ ϕ θ (Hin: θ ∈ Δ) EA1 EA2:
   (forall pe Hpe, EA1 pe Hpe = EA2 pe Hpe) ->
   @e_rule Δ ϕ EA1 θ Hin = @e_rule Δ ϕ EA2 θ Hin.
+Proof.
+  intro Heq.
+  destruct θ; simpl; try (destruct θ1); repeat (destruct decide);
+  f_equal; repeat erewrite Heq; trivial.
+Qed.
+
+Lemma e_rule_cong_strong Δ ϕ θ (Hin1 Hin2: θ ∈ Δ) EA1 EA2:
+  (forall pe Hpe1 Hpe2, EA1 pe Hpe1 = EA2 pe Hpe2) ->
+  @e_rule Δ ϕ EA1 θ Hin1 = @e_rule Δ ϕ EA2 θ Hin2.
 Proof.
   intro Heq.
   destruct θ; simpl; try (destruct θ1); repeat (destruct decide);
@@ -172,8 +181,28 @@ Proof.
   repeat erewrite Heq; trivial; (destruct decide); trivial.
 Qed.
 
+Lemma a_rule_env_cong_strong Δ ϕ θ Hin1 Hin2 EA1 EA2:
+  (forall pe Hpe1 Hpe2, EA1 pe Hpe1 = EA2 pe Hpe2) ->
+  @a_rule_env Δ ϕ EA1 θ Hin1 = @a_rule_env Δ ϕ EA2 θ Hin2.
+Proof.
+  intro Heq.
+  destruct θ; simpl; trivial; repeat (destruct decide);
+  f_equal; repeat erewrite Heq; trivial;
+  destruct θ1; try (destruct decide); trivial; simpl;
+  repeat erewrite Heq; trivial; (destruct decide); trivial.
+Qed.
+
 Lemma a_rule_form_cong Δ ϕ EA1 EA2:
   (forall pe Hpe, EA1 pe Hpe = EA2 pe Hpe) ->
+  @a_rule_form Δ ϕ EA1 = @a_rule_form Δ ϕ EA2.
+Proof.
+  intro Heq.
+  destruct ϕ; simpl; repeat (destruct decide); trivial;
+  repeat (erewrite Heq; eauto); trivial.
+Qed.
+
+Lemma a_rule_form_cong_strong Δ ϕ EA1 EA2:
+  (forall pe Hpe1 Hpe2, EA1 pe Hpe1 = EA2 pe Hpe2) ->
   @a_rule_form Δ ϕ EA1 = @a_rule_form Δ ϕ EA2.
 Proof.
   intro Heq.
@@ -190,7 +219,7 @@ simpl. unfold E, A, EA. simpl.
 rewrite -> Wf.Fix_eq.
 - simpl. split; trivial.
 - intros Δ' f g Heq. f_equal; f_equal.
-  + apply in_map_ext. intros. apply e_rule_cong; intros; f_equal.
+  + apply in_map_ext. intros. apply e_rule_cong; intros.
       now rewrite Heq.
   + f_equal. apply in_map_ext. intros. apply a_rule_env_cong; intros.
       now rewrite Heq.
@@ -227,8 +256,7 @@ Proof.
 destruct θ; unfold e_rule.
 - case decide.
   + simpl. intros Heq HF; subst. tauto.
-  + intros Hneq Hocc. apply occurs_in_make_conj in Hocc.
-      destruct Hocc as [Hocc|Heq]; vars_tac. subst; tauto.
+  + intros Hneq Hocc. vars_tac. subst; tauto.
 - simpl. tauto.
 - vars_tac.
 - intro Hocc. apply occurs_in_make_disj in Hocc as [Hocc|Hocc]; vars_tac.
@@ -245,6 +273,8 @@ destruct θ; unfold e_rule.
       simpl in Hocc; vars_tac.
 - intuition; simpl in *; vars_tac.
 Qed.
+
+
 (** *** (b) *)
 
 Lemma a_rule_env_vars Δ θ Hin ϕ
@@ -498,29 +528,6 @@ eapply make_disj_sound_R, OrR1, disjunction_R.
 - exact Hp.
 Qed.
 
-(* TODO: move *)
-Lemma open_boxes_case Δ : {φ | (□ φ) ∈ Δ} + {Δ ≡ ⊗Δ}.
-Proof.
-unfold open_boxes.
-induction Δ as [|ψ Δ IH] using gmultiset_rec.
-- right. ms.
-- case_eq(is_box ψ); intro Hbox.
-  + left. exists (⊙ψ).
-      destruct ψ; try discriminate Hbox. ms.
-  + destruct IH as [[φ Hφ]| Heq].
-     * left. exists φ. ms.
-     * right. symmetry. etransitivity.
-        -- apply env_equiv_eq, list_to_set_disj_perm, Permutation_map.
-            apply gmultiset_elements_disj_union.
-        -- rewrite map_app, list_to_set_disj_app. rewrite <- Heq. apply env_equiv_eq.
-            f_equal.
-            unfold elements. apply is_not_box_open_box in Hbox.  rewrite <- Hbox at 2.
-            transitivity (list_to_set_disj (map open_box (id [ψ])) : env).
-            ++ apply list_to_set_disj_perm, Permutation_map.
-                    apply Permutation_refl', gmultiset_elements_singleton.
-            ++ simpl. ms.
-Qed.
-
 
 Proposition pq_correct Γ Δ ϕ: (∀ φ0, φ0 ∈ Γ -> ¬ occurs_in p φ0) -> (Γ ⊎ Δ ⊢ ϕ) ->
   (¬ occurs_in p ϕ -> Γ•E (Δ, ϕ) ⊢ ϕ) *
@@ -584,10 +591,11 @@ end; simpl.
 (* Atom *)
 - auto 2 with proof.
 - Atac'. case decide; intro; subst; [exfalso; now apply (Hnin _ Hin0)|]; auto with proof.
-- split; Etac; case decide; intro; subst; try tauto; auto with proof.
-  + Atac. repeat rewrite decide_True by trivial. auto with proof.
-  + fold E. apply make_conj_sound_L, AndL. Atac. repeat rewrite decide_False by trivial.
-    Atac'. rewrite decide_False by trivial. apply Atom.
+- split. (* case decide; intro; subst; try tauto; auto with proof. *)
+  + intro Hneq. Etac. rewrite decide_False. auto with proof. trivial.
+  + Atac. case decide. 
+    * intro Heqp0. rewrite decide_True by (f_equal; trivial). auto with proof.
+    * intro Hneq. foldEA. Atac'. Etac. do 2 rewrite decide_False by trivial.  apply Atom.
 (* ExFalso *)
 - auto 2 with proof.
 - auto 2 with proof.
@@ -651,14 +659,13 @@ end; simpl.
       case (decide (Var p0 ∈ Δ)); intro Hp0;
       [|apply gmultiset_elem_of_disj_union in Hin0'; exfalso; tauto].
       (* subcase 3: p0 ∈ Δ ; (p0 → φ) ∈ Γ *)
-      split; [Etac|Atac]; case decide; intro; subst.
-      -- tauto.
-      -- exhibit Hin0 1. apply make_conj_sound_L, AndL. exch 1; exch 0. apply ImpLVar. exch 1. exch 0.
-         apply IHHp; [occ|equiv_tac|trivial].
-      -- tauto.
-      -- exhibit Hin0 1. Etac. rewrite decide_False by trivial.
-         apply make_conj_sound_L, AndL. exch 1; exch 0. apply ImpLVar.
-         exch 1; exch 0. apply IHHp. occ. equiv_tac.
+      split; try case decide; intros; subst.
+      -- apply contraction. Etac. rewrite decide_False by tauto.
+          exhibit Hin0 2. exch 1. exch 0. apply ImpLVar. exch 0. apply weakening. exch 0.
+         apply IHHp; [occ| |trivial]. rewrite Heq'. rewrite union_difference_L by trivial. ms.
+      -- apply contraction. Etac. rewrite decide_False by tauto.
+          exhibit Hin0 2. exch 1; exch 0. apply ImpLVar. exch 0. apply weakening.
+          exch 0. foldEA. apply IHHp. occ. rewrite Heq'.  rewrite union_difference_L by trivial. ms.
   + intro.
     assert(Hin : (Var p0 → φ) ∈ (Γ0•Var p0•(p0 → φ))) by ms.
     rewrite Heq in Hin.
@@ -694,18 +701,23 @@ end; simpl.
           rewrite <- (assoc disj_union).
           rewrite (comm disj_union {[Var p0]}).
           apply equiv_disj_union_compat_r.
-          rewrite Heq''.
+           rewrite Heq''.
           rewrite union_difference_R by trivial.
           rewrite union_difference_R. ms.
           apply in_difference. discriminate. trivial.
          } (* not pretty *)
-         split; Etac; rewrite decide_False by trivial;
-         apply make_conj_sound_L, AndL; exch 0; Etac; case decide; intro; try tauto.
-         ++ apply make_impl_sound_L, ImpLVar. apply IHHp; trivial. occ.
-         ++ Atac. case decide; intro; try tauto.
-            apply make_impl_sound_L, ImpLVar. Atac; case decide; intro; try tauto.
-            apply make_conj_sound_R, AndR; auto 2 with proof.
-            apply IHHp; trivial. occ.
+         split; [intro Hocc|].
+         ++ apply contraction. Etac. rewrite decide_False by trivial. exch 0.
+                 assert((p0 → φ) ∈ Δ) by ms. Etac. rewrite decide_False by trivial.
+                 foldEA. apply make_impl_sound_L, ImpLVar.
+                 exch 0. apply weakening. apply IHHp; trivial.
+                 rewrite Heq'. rewrite union_difference_R by trivial. ms.
+         ++ apply contraction. Etac. exch 0. 
+                 assert((p0 → φ) ∈ Δ) by ms. Etac; Atac.
+                 repeat rewrite decide_False by trivial. foldEA.
+                 apply make_conj_sound_R, AndR; auto 2 with proof.
+                 apply make_impl_sound_L. apply ImpLVar. exch 0. apply weakening.
+                 apply IHHp. occ. rewrite Heq'. rewrite union_difference_R by trivial. ms.
 (* ImpLAnd *)
 - exch 0. apply ImpLAnd. exch 0. apply IHHp; trivial; [occ|equiv_tac].
 - exch 0. apply ImpLAnd. exch 0. apply IHHp; trivial; [occ|equiv_tac].
