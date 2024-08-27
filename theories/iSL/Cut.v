@@ -1,13 +1,14 @@
 Require Import ISL.Formulas ISL.Sequents ISL.Order.
 Require Import ISL.SequentProps .
 
+Local Hint Rewrite elements_env_add : order.
+
+
 (* From "A New Calculus for Intuitionistic Strong Löb Logic" *)
 Theorem additive_cut Γ φ ψ :
   Γ ⊢ φ  -> Γ • φ ⊢ ψ ->
   Γ ⊢ ψ.
-Proof. (*
-Ltac order_tac := try (apply le_S_n; etransitivity; [|exact HW]); apply Nat.le_succ_l;
-match goal with |- env_weight .order_tac. *)
+Proof.
 remember (weight φ) as w. assert(Hw : weight φ ≤ w) by lia. clear Heqw.
 revert φ Hw ψ Γ.
 induction w; intros φ Hw; [pose (weight_pos φ); lia|].
@@ -15,7 +16,7 @@ intros ψ Γ.
 remember (Γ, ψ) as pe.
 replace Γ with pe.1 by now subst.
 replace ψ with pe.2 by now subst. clear Heqpe Γ ψ. revert pe.
-refine  (@well_founded_induction _ _ wf_pointed_order _ _).
+refine  (@well_founded_induction _ _ wf_pointed_env_ms_order _ _).
 intros (Γ &ψ). simpl. intro IHW'. assert (IHW := fun Γ0 => fun ψ0 => IHW' (Γ0, ψ0)).
 simpl in IHW. clear IHW'. intros HPφ HPψ.
 Ltac otac Heq := subst; repeat rewrite env_replace in Heq by trivial; repeat rewrite env_add_remove by trivial; order_tac; rewrite Heq; order_tac.
@@ -23,7 +24,7 @@ destruct HPφ; simpl in Hw.
 - now apply contraction.
 - apply ExFalso.
 - apply AndL_rev in HPψ. do 2 apply IHw in HPψ; trivial; try lia; apply weakening; assumption.
-- apply AndL. apply IHW; auto with proof. order_tac.
+- apply AndL. apply IHW; auto with proof. order_tac. 
 - apply OrL_rev in HPψ; apply (IHw φ); [lia| |]; tauto.
 - apply OrL_rev in HPψ; apply (IHw ψ0); [lia| |]; tauto.
 - apply OrL; apply IHW; auto with proof.
@@ -41,7 +42,7 @@ destruct HPφ; simpl in Hw.
   + forward. auto with proof.
   + apply AndR.
      * rw (symmetry Heq) 0. apply IHW.
-     -- order_tac.
+     -- unfold pointed_env_ms_order. order_tac.
      -- now apply ImpR.
      -- peapply HPψ1.
      * rw (symmetry Heq) 0. apply IHW.
@@ -49,7 +50,7 @@ destruct HPφ; simpl in Hw.
        -- apply ImpR. box_tac. peapply HPφ.
        -- peapply HPψ2.
   + forward. apply AndL. apply IHW.
-     * otac Heq.
+     * unfold pointed_env_ms_order. otac Heq.
      * apply AndL_rev. backward. rw (symmetry Heq) 0. apply ImpR, HPφ.
      * backward. peapply HPψ.
   + apply OrR1, IHW.
@@ -157,7 +158,7 @@ destruct HPφ; simpl in Hw.
     *  (* (V-f ) *)
        intro Hneq. forward. apply ImpBox.
        -- apply IHW.
-        ++ otac Heq.
+        ++ otac Heq. rewrite elements_open_boxes. otac Heq.
         ++ apply ImpR_rev, open_boxes_R, ImpR.
                 apply ImpLBox_prev with φ1. exch 0. apply weakening.
                 backward. rw (symmetry Heq) 0. apply ImpR, HPφ.
@@ -170,7 +171,7 @@ destruct HPφ; simpl in Hw.
         ++ exch 0.  rw (symmetry (difference_singleton _ _ Hin0)) 1. exact HPψ2.
   + subst. rw (symmetry Heq) 0. rewrite open_boxes_add in HPψ. simpl in HPψ.
       apply BoxR. apply IHW.
-    * otac Heq. (* todo: count rhs twice *)
+    * otac Heq. rewrite elements_open_boxes. otac Heq.
     * apply open_boxes_R, weakening, ImpR, HPφ.
     * exch 0. exact HPψ.
 - apply ImpLVar. eapply IHW; eauto.
@@ -269,7 +270,7 @@ destruct HPφ; simpl in Hw.
       forward. apply ImpBox.
      * (* π0 *)
         apply IHW.
-      -- otac Heq.
+      -- otac Heq. rewrite elements_open_boxes. otac Heq.
       -- apply ImpLBox_prev with (φ1 := φ1).
           exch 0. apply weakening.
           apply open_boxes_R. backward. rw (symmetry Heq) 0. apply BoxR, HPφ.
@@ -294,7 +295,7 @@ destruct HPφ; simpl in Hw.
   + (* (VIII-c) *)
       subst. rw (symmetry Heq) 0. rewrite open_boxes_add in HPψ. simpl in HPψ.
       apply BoxR. apply IHW.
-    * otac Heq. (* todo: count rhs twice *)
+    * otac Heq. rewrite elements_open_boxes. otac Heq.
     * apply open_boxes_R, weakening, BoxR, HPφ.
     * apply (IHw φ).
       -- lia.

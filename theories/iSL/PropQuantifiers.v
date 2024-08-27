@@ -30,19 +30,22 @@ Section PropQuantDefinition.
   is an implementation of Pitts' Table 5, together with a (mostly automatic)
   proof that the definition terminates*)
 
+Local Notation "Δ '•' φ" := (cons φ Δ).
 
 (* solves the obligations of the following programs *)
 Obligation Tactic := intros; order_tac.
 
+Notation "□⁻¹ Γ" := (map open_box Γ) (at level 75).
+
 (** First, the implementation of the rules for calculating E. The names of the rules
   refer to the table in Pitts' paper. *)
 (** note the use of  "lazy" conjunctions, disjunctions and implications *)
-Program Definition e_rule {Δ : env} {ϕ : form}
+Program Definition e_rule {Δ : list form } {ϕ : form}
   (EA0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form * form)
   (θ: form) (Hin : θ ∈ Δ) : form :=
 let E Δ H := fst (EA0 (Δ, ϕ) H) in
 let A pe0 H := snd (EA0 pe0 H) in
-let Δ'  := Δ ∖ {[θ]} in
+let Δ'  := remove form_eq_dec θ Δ in
 match θ with
 | Bot => ⊥  (* E0 *)
 | Var q =>
@@ -66,19 +69,20 @@ match θ with
 | ((δ₁→ δ₂)→ δ₃) =>
   (E (Δ'•(δ₂ → δ₃)) _⇢ A (Δ'•(δ₂ → δ₃), δ₁ → δ₂) _) ⇢ E (Δ'•δ₃) _
 | Bot → _ => ⊤
-| □ φ => □(E ((⊗Δ') • φ ) _) (* very redundant ; identical for each box *)
-| (□δ1 → δ2) =>  (□(E((⊗Δ') • δ2 • □δ1) _ ⇢ A((⊗Δ') • δ2 • □δ1, δ1) _)) ⇢ E(Δ' • δ2) _
+| □ φ => □(E ((□⁻¹ Δ') • φ ) _) (* very redundant ; identical for each box *)
+| (□δ1 → δ2) =>  (□(E((□⁻¹ Δ') • δ2 • □δ1) _ ⇢ A((□⁻¹ Δ') • δ2 • □δ1, δ1) _)) ⇢ E(Δ' • δ2) _
 end.
+
 
 (** The implementation of the rules for defining A is separated into two pieces.
     Referring to Table 5 in Pitts, the definition a_rule_env handles A1-8 and A10,
     and the definition a_rule_form handles A9 and A11-13. *)
-Program Definition a_rule_env {Δ : env} {ϕ : form}
+Program Definition a_rule_env {Δ : list form} {ϕ : form}
   (EA0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form * form)
   (θ: form) (Hin : θ ∈ Δ) : form :=
 let E Δ H := fst (EA0 (Δ, ϕ) H) in
 let A pe0 H := snd (EA0 pe0 H) in
-let Δ'  := Δ ∖ {[θ]} in
+let Δ'  := remove form_eq_dec θ Δ in
 match θ with
 | Var q =>
     if decide (p = q)
@@ -111,13 +115,13 @@ match θ with
 | Bot => ⊥
 | Bot → _ => ⊥
 | □δ => ⊥
-| ((□δ1) → δ2) => (□(E((⊗Δ')• δ2 • □δ1) _  ⇢ A((⊗Δ')• δ2 • □δ1, δ1) _)) ∧ A(Δ' • δ2, ϕ) _
+| ((□δ1) → δ2) => (□(E((□⁻¹ Δ')• δ2 • □δ1) _  ⇢ A((□⁻¹ Δ')• δ2 • □δ1, δ1) _)) ∧ A(Δ' • δ2, ϕ) _
 (* using ⊼ here breaks congruence *)
 end.
 
 (* make sure that the proof obligations do not depend on EA0 *)
 Obligation Tactic := intros Δ ϕ _ _ _; intros; order_tac.
-Program Definition a_rule_form {Δ : env} {ϕ : form}
+Program Definition a_rule_form {Δ : list form} {ϕ : form}
   (EA0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form * form) : form :=
 let E pe0 H := fst (EA0 pe0 H) in
 let A pe0 H := snd (EA0 pe0 H) in 
@@ -133,21 +137,21 @@ match ϕ with
 (* A13 *)
 | ϕ₁→ ϕ₂ => E (Δ•ϕ₁, ϕ₂) _ ⇢ A (Δ•ϕ₁, ϕ₂) _
 | Bot => ⊥
-| □δ => □((E ((⊗Δ) • □δ, δ) _) ⇢ A((⊗Δ) • □δ, δ) _)
+| □δ => □((E ((□⁻¹ Δ) • □δ, δ) _) ⇢ A((□⁻¹ Δ) • □δ, δ) _)
 end.
 
 Obligation Tactic := intros; order_tac.
-Program Fixpoint EA (pe : env * form) {wf pointed_env_order pe} :=
+Program Fixpoint EA (pe : list form * form) {wf pointed_env_order pe} :=
   let Δ := fst pe in
   (⋀ (in_map Δ (e_rule EA)),
    ⋁ (in_map Δ (a_rule_env EA)) ⊻ a_rule_form EA).
 Next Obligation. apply wf_pointed_order. Defined.
 
-Definition E (pe : env * form) := (EA pe).1.
-Definition A (pe : env * form) := (EA pe).2.
+Definition E pe := (EA pe).1.
+Definition A pe := (EA pe).2.
 
-Definition Ef (ψ : form) := E ({[ψ]}, ⊥).
-Definition Af (ψ : form) := A (∅, ψ).
+Definition Ef (ψ : form) := E ([ψ], ⊥).
+Definition Af (ψ : form) := A ([], ψ).
 
 
 (** Congruence lemmas: if we apply any of e_rule, a_rule_env, or a_rule_form
@@ -244,34 +248,44 @@ Section VariablesCorrect.
   occurs in the E- and A-formulas, and that the E- and A-formulas contain no more variables than the original formula.
   *)
 
+(* A general tactic for variable occurrences *)
+Ltac vars_tac :=
+intros; subst;
+repeat match goal with
+| HE : context [occurs_in ?x (?E _ _)], H : occurs_in ?x (?E _ _) |- _ =>
+    apply HE in H
+end;
+intuition;
+repeat match goal with | H : exists x, _ |- _ => destruct H end;
+intuition;
+simpl in *; in_tac; try (split; [tauto || auto with *|]); simpl in *;
+try match goal with
+| H : occurs_in _ (?a ⇢ (?b ⇢ ?c)) |- _ => apply occurs_in_make_impl2 in H
+| H : occurs_in _ (?a ⇢ ?b) |- _ => apply occurs_in_make_impl in H
+| H : occurs_in _ (?a ⊻ ?b) |- _ => apply occurs_in_make_disj in H
+| H : occurs_in _ (?a ⊼ ?b) |- _ => apply occurs_in_make_conj in H
+|H1 : ?x0 ∈ (⊗ ?Δ), H2 : occurs_in ?x ?x0 |- _ =>
+      apply (occurs_in_open_boxes _ _ _ H2) in H1
+|H1 : ?x0 ∈ (map open_box ?Δ), H2 : occurs_in ?x ?x0 |- _ =>
+      apply (occurs_in_map_open_box _ _ _ H2) in H1
+end; repeat rewrite elem_of_cons in * ; intuition; subst;
+repeat match goal with | H : exists x, _ |- _ => destruct H end; intuition;
+try multimatch goal with
+| H : ?θ0 ∈ ?Δ0 |- context [exists θ, θ ∈ ?Δ /\ occurs_in ?x θ] =>
+  solve[try right; exists θ0; split; [eauto using remove_include|simpl; tauto]; eauto] end.
+
+
 (** *** (a)  *)
 
-Lemma e_rule_vars (Δ : env) (θ : form) (Hin : θ ∈ Δ) (ϕ : form)
+Lemma e_rule_vars Δ (θ : form) (Hin : θ ∈ Δ) (ϕ : form)
   (EA0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form * form) x
   (HEA0 : ∀ pe Hpe, 
       (occurs_in x (fst (EA0 pe Hpe)) -> x ≠ p ∧ ∃ θ, θ ∈ pe.1 /\ occurs_in x θ) /\
       (occurs_in x (snd (EA0 pe Hpe)) -> x ≠ p ∧ (occurs_in x pe.2 \/ ∃ θ, θ ∈ pe.1 /\ occurs_in x θ))) :
 occurs_in x (e_rule EA0 θ Hin) -> x ≠ p ∧ ∃ θ, θ ∈ Δ /\ occurs_in x θ.
 Proof.
-destruct θ; unfold e_rule.
-- case decide.
-  + simpl. intros Heq HF; subst. tauto.
-  + intros Hneq Hocc. vars_tac. subst; tauto.
-- simpl. tauto.
-- vars_tac.
-- intro Hocc. apply occurs_in_make_disj in Hocc as [Hocc|Hocc]; vars_tac.
-- destruct θ1; try solve[vars_tac].
-  + case decide.
-    * intro; subst. case decide.
-      -- vars_tac.
-      -- simpl; tauto.
-    * intros Hneq Hocc. apply occurs_in_make_impl in Hocc as [Heq | Hocc]; vars_tac.
-      subst. tauto.
-  + intros Hocc. apply occurs_in_make_impl in Hocc.
-      destruct Hocc as [Hocc|Hocc]; [apply occurs_in_make_impl in Hocc as [Hocc|Hocc]|]; vars_tac; subst; tauto.
-  + intros Hocc. repeat (apply occurs_in_make_impl in Hocc; destruct Hocc as [Hocc|Hocc]);
-      simpl in Hocc; vars_tac.
-- intuition; simpl in *; vars_tac.
+destruct θ; unfold e_rule; simpl; try tauto; try solve [repeat case decide; repeat vars_tac].
+destruct θ1; repeat case decide; repeat vars_tac.
 Qed.
 
 
@@ -284,31 +298,8 @@ Lemma a_rule_env_vars Δ θ Hin ϕ
       (occurs_in x (snd (EA0 pe Hpe)) -> x ≠ p ∧ (occurs_in x pe.2 \/ ∃ θ, θ ∈ pe.1 /\ occurs_in x θ))):
 occurs_in x (a_rule_env EA0 θ Hin) -> x ≠ p ∧ (occurs_in x ϕ \/ ∃ θ, θ ∈ Δ /\ occurs_in x θ).
 Proof.
-destruct θ; unfold a_rule_env.
-- case decide.
-  + intro; subst. case decide; simpl; tauto.
-  + intros Hneq Hocc. vars_tac.
-- simpl. tauto.
-- intro Hocc. vars_tac.
-- intros Hocc. apply occurs_in_make_conj in Hocc.
-  destruct Hocc as [Hocc|Hocc];
-  apply occurs_in_make_impl in Hocc; vars_tac; vars_tac.
-- destruct θ1; try solve[vars_tac].
-  + case decide.
-    * intro; subst. case decide.
-      -- intros Hp Hocc. vars_tac.
-      -- simpl; tauto.
-    * intros Hneq Hocc. apply occurs_in_make_conj in Hocc.
-       destruct Hocc as [Heq | Hocc]; vars_tac. subst; tauto.
-  + intros Hocc. apply occurs_in_make_conj in Hocc.
-      destruct Hocc as [Hocc|Hocc].
-      * apply occurs_in_make_impl in Hocc; vars_tac; vars_tac.
-      * vars_tac.
-  + intros Hocc.  try apply occurs_in_make_conj in Hocc.
-      destruct Hocc as [Hocc|Hocc].
-      * try apply occurs_in_make_conj in Hocc; vars_tac; vars_tac.
-      * vars_tac.
-- simpl; tauto.
+destruct θ; unfold a_rule_env; simpl; try tauto; try solve [repeat case decide; repeat vars_tac].
+destruct θ1; repeat case decide; repeat vars_tac.
 Qed.
 
 
@@ -319,15 +310,7 @@ Lemma a_rule_form_vars Δ ϕ
       (occurs_in x (snd (EA0 pe Hpe)) -> x ≠ p ∧ (occurs_in x pe.2 \/ ∃ θ, θ ∈ pe.1 /\ occurs_in x θ))):
   occurs_in x (a_rule_form EA0) -> x ≠ p ∧ (occurs_in x ϕ \/ ∃ θ, θ ∈ Δ /\ occurs_in x θ).
 Proof.
-destruct ϕ.
-- simpl. case decide; simpl; intros; subst; intuition; auto.
-- tauto.
-- simpl. intros Hocc; apply occurs_in_make_conj in Hocc as [Hocc|Hocc]; vars_tac.
-- simpl. intros Hocc; apply occurs_in_make_disj in Hocc as  [Hocc|Hocc]; vars_tac.
-- simpl. intro Hocc. apply occurs_in_make_impl in Hocc. destruct Hocc; vars_tac; vars_tac.
-- intro Hocc. replace (occurs_in x (□ ϕ)) with (occurs_in x ϕ) by trivial.
-  unfold a_rule_form in Hocc. (* apply occurs_in_make_impl in Hocc. *)
-  repeat vars_tac; eauto using occurs_in_open_boxes.
+destruct ϕ; unfold a_rule_form; simpl; try tauto; try solve [repeat case decide; repeat vars_tac].
 Qed.
 
 Proposition EA_vars Δ ϕ x:
@@ -376,10 +359,9 @@ Section EntailmentCorrect.
 Hint Extern 5 (?a ≺ ?b) => order_tac : proof.
 Opaque make_disj.
 Opaque make_conj.
-
-Lemma a_rule_env_spec Δ θ ϕ Hin (EA0 : ∀ pe, (pe ≺· (Δ, ϕ)) → form * form)
-  (HEA : forall Δ ϕ Hpe, (Δ ⊢ fst (EA0 (Δ, ϕ) Hpe)) * (Δ• snd(EA0 (Δ, ϕ) Hpe) ⊢ ϕ)) :
-  (Δ•a_rule_env EA0 θ Hin ⊢ ϕ).
+Lemma a_rule_env_spec (Δ : list form) θ ϕ Hin (EA0 : ∀ pe, (pe ≺· (Δ, ϕ)) → form * form)
+  (HEA : forall Δ ϕ Hpe, (list_to_set_disj Δ ⊢ fst (EA0 (Δ, ϕ) Hpe)) * (list_to_set_disj Δ• snd(EA0 (Δ, ϕ) Hpe) ⊢ ϕ)) :
+  (list_to_set_disj Δ•a_rule_env EA0 θ Hin ⊢ ϕ).
 Proof with (auto with proof).
 assert (HE := λ Δ0 ϕ0 Hpe, fst (HEA Δ0 ϕ0 Hpe)).
 assert (HA := λ Δ0 ϕ0 Hpe, snd (HEA Δ0 ϕ0 Hpe)).
@@ -871,9 +853,10 @@ Qed.
 End PropQuantCorrect.
 
 End Correctness.
+*)
 
 End UniformInterpolation.
-
+(*
 (** * Main uniform interpolation Theorem *)
 
 Open Scope type_scope.
@@ -919,4 +902,4 @@ intros Hp φ Hvarsφ; repeat split.
       * peapply Hyp.
       * now rewrite E_of_empty.
 Qed.
-
+*)

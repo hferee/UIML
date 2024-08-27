@@ -45,8 +45,15 @@ Global Instance proper_disj_union : Proper ((≡@{env}) ==> (≡@{env}) ==> (≡
 Proof. intros Γ Γ' Heq Δ Δ' Heq'. ms. Qed.
 
 
-
 Global Notation "Γ • φ" := (disj_union Γ (base.singletonMS φ)) (at level 105, φ at level 85, left associativity).
+
+Lemma elements_env_add (Γ : env) φ : elements(Γ • φ) ≡ₚ φ :: elements Γ.
+Proof.
+rewrite (gmultiset_elements_disj_union Γ).
+setoid_rewrite (gmultiset_elements_singleton φ).
+symmetry. apply Permutation_cons_append.
+Qed.
+
 
 (** * Multiset utilities *)
 
@@ -325,21 +332,21 @@ Qed.
 (* a dependent map on lists, with knowledge that we are on that list *)
 (* should work with any set-like type *)
 
-Program Fixpoint in_map_aux {A : Type} (Γ : env) (f : forall φ, (φ ∈ Γ) -> A)
- Γ' (HΓ' : Γ' ⊆ elements Γ) : list A:=
+Program Fixpoint in_map_aux {A : Type} (Γ : list form) (f : forall φ, (φ ∈ Γ) -> A)
+ Γ' (HΓ' : Γ' ⊆ Γ) : list A:=
 match Γ' with
 | [] => []
 | a::Γ' => f a _ :: in_map_aux Γ f Γ' _
 end.
 Next Obligation.
-intros. apply gmultiset_elem_of_elements. auto with *.
+intros. auto with *.
 Qed.
 Next Obligation. auto with *. Qed.
 
 
-Definition in_map {A : Type} (Γ : env)
+Definition in_map {A : Type} (Γ : list form)
   (f : forall φ, (φ ∈ Γ) -> A) : list A :=
-  in_map_aux Γ f (elements Γ) (reflexivity _).
+  in_map_aux Γ f Γ (reflexivity _).
 
 
 (* This generalises to any type. decidability of equality over this type is necessary for a result in "Type" *)
@@ -348,7 +355,7 @@ Lemma in_in_map {A : Type} {HD : forall a b : A, Decision (a = b)}
   ψ ∈ (in_map Γ f) -> {ψ0 & {Hin | ψ = f ψ0 Hin}}.
 Proof.
 unfold in_map.
-assert(Hcut : forall Γ' (HΓ' : Γ' ⊆ elements Γ), ψ ∈ in_map_aux Γ f Γ' HΓ'
+assert(Hcut : forall Γ' (HΓ' : Γ' ⊆ Γ), ψ ∈ in_map_aux Γ f Γ' HΓ'
   → {ψ0 & {Hin : ψ0 ∈ Γ | ψ = f ψ0 Hin}}); [|apply Hcut].
 induction Γ'; simpl; intros HΓ' Hin.
 - contradict Hin. auto. now rewrite elem_of_nil.
@@ -369,7 +376,7 @@ Lemma in_map_in {A : Type} {HD : forall a b : A, Decision (a = b)}
   {Hin' | f ψ0 Hin' ∈ (in_map Γ f)}.
 Proof.
 unfold in_map.
-assert(Hcut : forall Γ' (HΓ' : Γ' ⊆ elements Γ) ψ0 (Hin : In ψ0 Γ'),
+assert(Hcut : forall Γ' (HΓ' : Γ' ⊆ Γ) ψ0 (Hin : In ψ0 Γ'),
   {Hin' | f ψ0 Hin' ∈ in_map_aux Γ f Γ' HΓ'}).
 - induction Γ'; simpl; intros HΓ' ψ' Hin'; [auto with *|].
   case (decide (ψ' = a)).
@@ -378,12 +385,12 @@ assert(Hcut : forall Γ' (HΓ' : Γ' ⊆ elements Γ) ψ0 (Hin : In ψ0 Γ'),
       pose (Hincl := (in_map_aux_obligation_2 Γ (a :: Γ') HΓ' a Γ' eq_refl)).
       destruct (IHΓ' Hincl ψ' Hin'') as [Hin0 Hprop].
       eexists. right. apply Hprop.
-- destruct (Hcut (elements Γ) (reflexivity (elements Γ)) ψ0) as [Hin' Hprop].
-  + now apply elem_of_list_In,  gmultiset_elem_of_elements.
+- destruct (Hcut Γ (reflexivity Γ) ψ0) as [Hin' Hprop].
+  + auto. now apply elem_of_list_In.
   + exists Hin'. exact Hprop.
 Qed.
 
-Lemma in_map_empty A f : @in_map A ∅ f = [].
+Lemma in_map_empty A f : @in_map A [] f = [].
 Proof. auto with *. Qed.
 
 Lemma in_map_ext {A} Δ f g:
@@ -461,7 +468,6 @@ Proof.
   apply Hinsert, IH; multiset_solver.
 Qed.
 
-
 Lemma difference_include (θ θ' : form) (Δ : env) :
   (θ' ∈ Δ) ->
   θ ∈ Δ ∖ {[θ']} -> θ ∈ Δ.
@@ -471,6 +477,11 @@ rewrite gmultiset_disj_union_difference with (X := {[θ']}).
 - apply gmultiset_elem_of_disj_union. tauto.
 - now apply gmultiset_singleton_subseteq_l.
 Qed.
+
+Lemma remove_include (θ θ' : form) (Δ : list form) :
+  (θ' ∈ Δ) ->
+  θ ∈ remove form_eq_dec θ' Δ -> θ ∈ Δ.
+Proof. intros Hin' Hin. eapply elem_of_list_In, in_remove, elem_of_list_In, Hin. Qed.
 
 
 (* technical lemma : one can constructively find whether an environment contains
@@ -577,6 +588,13 @@ Proof.
 intros Hx Hφ. apply elem_of_open_boxes in Hφ. destruct Hφ as [Hφ|Hφ]; eauto.
 Qed.
 
+Lemma occurs_in_map_open_box x φ Δ : occurs_in x φ -> φ ∈ (map open_box Δ) -> exists θ, θ ∈ Δ /\ occurs_in x θ.
+Proof.
+intros Hx Hφ. apply elem_of_list_In, in_map_iff in Hφ.
+destruct Hφ as [ψ [Hφ Hin]]; subst.
+exists ψ. split. now apply elem_of_list_In. destruct ψ; trivial.
+Qed.
+
 
 Global Hint Rewrite open_boxes_disj_union : proof.
 
@@ -634,27 +652,18 @@ Global Hint Rewrite open_boxes_singleton : proof.
 Global Hint Resolve open_boxes_spec' : proof.
 Global Hint Resolve open_boxes_spec : proof.
 
+Global Instance Proper_elements : Proper ((≡) ==> (≡ₚ)) ((λ Γ : env, elements Γ)).
+Proof.
+intros Γ Δ Heq; apply AntiSymm_instance_0; apply gmultiset_elements_submseteq; ms.
+Qed.
 
-Ltac vars_tac :=
-intros; subst;
-repeat match goal with
-| HE : context [occurs_in ?x (?E _ _)], H : occurs_in ?x (?E _ _) |- _ =>
-    apply HE in H
-end;
-intuition;
-repeat match goal with | H : exists x, _ |- _ => destruct H end;
-intuition;
-simpl in *; in_tac; try (split; [tauto || auto with *|]); simpl in *;
-try match goal with
-| H : occurs_in _ (?a ⇢ (?b ⇢ ?c)) |- _ => apply occurs_in_make_impl2 in H
-| H : occurs_in _ (?a ⇢ ?b) |- _ => apply occurs_in_make_impl in H
-|H1 : ?x0 ∈ (⊗ ?Δ), H2 : occurs_in ?x ?x0 |- _ =>
-      apply (occurs_in_open_boxes _ _ _ H2) in H1
-end;
-repeat match goal with | H : exists x, _ |- _ => destruct H end; intuition;
-try multimatch goal with
-| H : ?θ0 ∈ ?Δ0 |- context [exists θ, θ ∈ ?Δ /\ occurs_in ?x θ] =>
-  solve[try right; exists θ0; split; [eauto using difference_include|simpl; tauto]; eauto] end.
-
+Lemma elements_open_boxes Γ: elements (⊗ Γ) ≡ₚ map open_box (elements Γ).
+Proof.
+unfold open_boxes. remember (elements Γ) as l. clear Γ Heql.
+induction l as [| a l].
+- ms.
+- simpl. setoid_rewrite gmultiset_elements_disj_union.
+  rewrite IHl. setoid_rewrite gmultiset_elements_singleton. trivial.
+Qed.
 
 (* TODO: move in optimisations *)

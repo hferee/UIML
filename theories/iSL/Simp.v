@@ -529,9 +529,10 @@ Qed.
 
 Require Import ISL.PropQuantifiers.
 
-Definition E_simplified (p: variable) (ψ: form) := simp (Ef p ψ).
-Definition A_simplified (p: variable) (ψ: form) := simp (Af p ψ).
+Definition E_simplified (p: variable) (ψ: form) := simp (E p ([ψ],  ⊥)).
+Definition A_simplified (p: variable) (ψ: form) := simp (Af p (ψ)).
 
+(*
 Lemma bot_vars_incl V: vars_incl ⊥ V.
 Proof.
   intros x H; unfold In; induction V; auto.
@@ -747,7 +748,7 @@ repeat split.
       apply Hef.
     * apply (simp_equiv  (Af p φ)).
 Qed.
-
+*)
 
 
 Require Import String.

@@ -1,50 +1,57 @@
 Require Export ISL.Environments.
 
 (* Note 3 or 4 would suffice for IPC ; iSL requires 5 *)
-Definition env_weight (Γ : env) := list_sum (map (fun x => 5^ weight x) (elements Γ)).
+Definition env_weight (Γ : list form) := list_sum (map (fun x => 5^ weight x) Γ).
 
-Lemma env_weight_disj_union Γ Δ : env_weight (disj_union Γ Δ) = env_weight Γ +  env_weight Δ.
+Lemma env_weight_disj_union Γ Δ : env_weight (Γ ++ Δ) = env_weight Γ +  env_weight Δ.
 Proof. 
-unfold env_weight. 
-assert (Heq := gmultiset_elements_disj_union Γ Δ).
-apply (Permutation_map (λ x : form, 5 ^ weight x)) in Heq.
-apply Permutation_list_sum in Heq.
-rewrite map_app, list_sum_app in Heq. exact Heq.
+unfold env_weight. now rewrite map_app, list_sum_app.
 Qed.
+
+(* TODO: dirty hack *)
+Local Notation "Δ '•' φ" := (cons φ Δ).
 
 Lemma env_weight_add Γ φ : env_weight (Γ • φ) = env_weight Γ +  (5 ^ weight φ).
 Proof.
-rewrite env_weight_disj_union. unfold env_weight at 2.
-setoid_rewrite gmultiset_elements_singleton. simpl. lia.
+unfold env_weight. simpl. lia.
 Qed.
 
 Global Hint Rewrite env_weight_add : order.
 
-Definition env_order := ltof env env_weight.
+Definition env_order := ltof (list form) env_weight.
 Infix "≺" := env_order (at level 150).
 
-Lemma env_weight_singleton (φ : form) : env_weight {[ φ ]} = 5 ^ weight φ.
+Lemma env_weight_singleton (φ : form) : env_weight [ φ ] = 5 ^ weight φ.
 Proof.
-unfold env_weight, ltof.
-replace (elements {[ φ ]}) with [φ]. simpl. lia. now rewrite <- gmultiset_elements_singleton.
+unfold env_weight, ltof. simpl. lia.
 Qed.
 
-Lemma env_order_singleton (φ ψ : form) : weight φ < weight ψ -> {[+ φ +]}≺ {[+ ψ +]}.
+Lemma env_order_singleton (φ ψ : form) : weight φ < weight ψ -> [φ ] ≺ [ ψ ].
 Proof.
 intro Hw. unfold env_order, ltof. do 2 rewrite env_weight_singleton.
 apply Nat.pow_lt_mono_r. lia. trivial.
 Qed.
 
-Local Notation "Δ ≼ Δ'" := ((Δ ≺ Δ') \/ Δ = Δ') (at level 150).
+Definition env_order_refl Δ Δ' := (Δ ≺ Δ') \/ Δ ≡ₚ Δ'.
 
-Lemma env_le_weight Δ Δ' : (Δ' ≼ Δ) -> env_weight Δ' ≤ env_weight Δ.
+Local Notation "Δ ≼ Δ'" := (env_order_refl Δ Δ') (at level 150).
+
+Global Instance Proper_env_weight: Proper ((≡ₚ) ==> (=)) env_weight.
 Proof.
-unfold env_order. intros [Hle | Heq].
-- auto with *.
-- subst; trivial.
+intros Γ Δ Heq. unfold env_weight. now rewrite Heq.
 Qed.
 
-Global Hint Resolve env_le_weight : order.
+
+Global Instance Proper_env_order_refl_env_weight:
+  Proper ((env_order_refl) ==> le) env_weight.
+Proof.
+intros Γ Δ.
+unfold env_order. intros [Hle | Heq].
+- auto with *.
+- now rewrite Heq.
+Qed.
+
+Global Hint Resolve Proper_env_order_refl_env_weight : order.
 
 Global Hint Unfold form_order : mset.
 
@@ -59,7 +66,10 @@ Defined.
 (* We introduce a notion of "pointed" environment, which is simply
  * a pair (Δ, φ), where Δ is an environment and φ is a formula,
  * not necessarily an element of Δ.  *)
-Definition pointed_env := (env * form)%type.
+Definition pointed_env := (list form * form)%type.
+
+
+
 
 (* The order on pointed environments is given by considering the
  * environment order on the sum of Δ and {φ}. *)
@@ -70,23 +80,37 @@ Definition pointed_env_order (pe1 : pointed_env) (pe2 : pointed_env) :=
 Lemma wf_pointed_order : well_founded pointed_env_order.
 Proof. apply well_founded_ltof. Qed.
 
+Definition pointed_env_ms_order (Γφ Δψ : env * form) :=
+  pointed_env_order (elements Γφ.1, Γφ.2) (elements Δψ.1, Δψ.2).
+
+Lemma wf_pointed_env_ms_order : well_founded pointed_env_ms_order.
+Proof. apply well_founded_ltof. Qed.
+
 Infix "≺·" := pointed_env_order (at level 150).
 
-Lemma env_order_equiv_right_compat {Δ Δ' Δ'' : env}:
-  Δ' ≡ Δ'' ->
+Lemma env_order_equiv_right_compat {Δ Δ' Δ'' }:
+  Δ' ≡ₚ Δ'' ->
   (Δ ≺ Δ'') ->
   Δ ≺ Δ'.
-Proof. ms. Qed.
+Proof. 
+unfold equiv, env_order, ltof, env_weight. intro Heq. rewrite Heq. trivial.
+Qed.
 
-Lemma env_order_equiv_left_compat {Δ Δ' Δ'' : env}:
-  Δ ≡ Δ'' ->
+Lemma env_order_equiv_left_compat {Δ Δ' Δ'' }:
+  Δ ≡ₚ Δ'' ->
   (Δ'' ≺ Δ') ->
   Δ ≺ Δ'.
-Proof. ms. Qed.
+Proof. unfold equiv, env_order, ltof, env_weight. intro Heq. rewrite Heq. trivial. Qed.
 
-Global Instance Proper_env_order : Proper ((≡@{env}) ==> (≡@{env}) ==> (fun x y => x <-> y)) env_order.
-Proof. intros Δ1 Δ2 H12 Δ3 Δ4 H34; ms. Qed.
 
+Global Instance Proper_env_order : Proper ((≡ₚ) ==> (≡ₚ) ==> (fun x y => x <-> y)) env_order.
+Proof. intros Δ1 Δ2 H12 Δ3 Δ4 H34; unfold equiv, env_order, ltof, env_weight.  rewrite H12, H34. tauto. Qed.
+
+Global Instance Proper_env_order_refl : Proper ((≡ₚ) ==> (≡ₚ) ==> (fun x y => x <-> y)) env_order_refl.
+Proof.
+intros Δ1 Δ2 H12 Δ3 Δ4 H34; unfold equiv, env_order, ltof, env_weight, env_order_refl.
+now rewrite H12, H34.
+Qed.
 
 Lemma env_order_1  Δ φ1 φ : weight φ1 < weight φ -> Δ • φ1 ≺ Δ • φ.
 Proof.
@@ -104,6 +128,12 @@ Qed.
 
 Global Hint Resolve env_order_compat : order.
 
+Lemma env_order_compat'  Δ Δ' φ1 φ : weight φ1 ≤ weight φ -> (Δ' ≺ Δ) -> Δ' • φ1 ≺ Δ • φ.
+Proof.
+intros.  unfold env_order, ltof. repeat rewrite env_weight_add.
+apply Nat.add_lt_le_mono; auto with *. now apply Nat.pow_le_mono_r.
+Qed.
+
 Lemma env_order_add_compat Δ Δ' φ : (Δ ≺ Δ') -> (Δ • φ) ≺ (Δ' • φ).
 Proof.
 unfold env_order, ltof. do 2 rewrite env_weight_add. lia.
@@ -111,31 +141,26 @@ Qed.
 
 (* TODO: this is just a special case *)
 Lemma env_order_disj_union_compat_left Δ Δ' Δ'':
-  (Δ ≺ Δ'') -> Δ ⊎ Δ' ≺ Δ'' ⊎ Δ'.
+  (Δ ≺ Δ'') -> Δ ++ Δ' ≺ Δ'' ++ Δ'.
 Proof.
 unfold env_order, ltof. intro. do 2 rewrite env_weight_disj_union. lia.
 Qed.
 
 Lemma env_order_disj_union_compat_right Δ Δ' Δ'':
-  (Δ ≺ Δ'') -> Δ' ⊎ Δ ≺ Δ' ⊎ Δ''.
+  (Δ ≺ Δ'') -> Δ' ++ Δ ≺ Δ' ++ Δ''.
 Proof.
-intro H. eapply (Proper_env_order  _ (Δ ⊎ Δ') _ _ (Δ'' ⊎ Δ')) . ms. 
-now apply env_order_disj_union_compat_left.
-Unshelve. ms.
+unfold env_order, ltof. repeat rewrite env_weight_disj_union. lia.
 Qed.
 
 Lemma env_order_disj_union_compat Δ Δ' Δ'' Δ''':
-  (Δ ≺ Δ'') -> (Δ' ≺ Δ''') -> Δ ⊎ Δ' ≺ Δ'' ⊎ Δ'''.
+  (Δ ≺ Δ'') -> (Δ' ≺ Δ''') -> Δ ++ Δ' ≺ Δ'' ++ Δ'''.
 Proof.
-intros H1 H2.
-transitivity (Δ  ⊎ Δ''').
-- now apply env_order_disj_union_compat_right.
-- now apply env_order_disj_union_compat_left.
+unfold env_order, ltof. repeat rewrite env_weight_disj_union. lia.
 Qed.
 
-
+Hint Unfold env_order_refl : order.
 Lemma env_order_disj_union_compat_strong_right Δ Δ' Δ'' Δ''':
-  (Δ ≺ Δ'') -> (Δ' ≼ Δ''') -> Δ ⊎ Δ' ≺ Δ'' ⊎ Δ'''.
+  (Δ ≺ Δ'') -> (Δ' ≼ Δ''') -> Δ ++ Δ' ≺ Δ'' ++ Δ'''.
 Proof.
 intros H1 H2. 
 destruct H2 as [Hlt|Heq].
@@ -144,36 +169,32 @@ destruct H2 as [Hlt|Heq].
 Qed.
 
 Lemma env_order_disj_union_compat_strong_left Δ Δ' Δ'' Δ''':
-  (Δ ≼ Δ'') -> (Δ' ≺ Δ''') -> Δ ⊎ Δ' ≺ Δ'' ⊎ Δ'''.
+  (Δ ≼ Δ'') -> (Δ' ≺ Δ''') -> Δ ++ Δ' ≺ Δ'' ++ Δ'''.
 Proof.
-intros H1 H2. 
+intros H1 H2.
 destruct H1 as [Hlt|Heq].
 - unfold env_order, ltof in *. do 2 rewrite env_weight_disj_union. lia.
 - rewrite Heq. now apply env_order_disj_union_compat_right.
 Qed.
 
-Lemma open_boxes_env_order Δ : (⊗Δ) ≼ Δ.
+Lemma weight_open_box φ : weight (⊙ φ) ≤ weight φ.
+Proof. destruct φ; simpl; lia. Qed.
+
+Lemma open_boxes_env_order Δ : (map open_box Δ) ≼ Δ.
 Proof.
-induction Δ as [|φ Δ] using gmultiset_rec.
-- right. autorewrite with proof. auto.
-- destruct IHΔ as [Hlt | Heq].
-  + left. autorewrite with proof.
-      apply env_order_disj_union_compat_strong_left; trivial.
-      destruct φ; simpl; try ms. left.
-      apply env_order_singleton. simpl. lia.
-  + rewrite open_boxes_disj_union, open_boxes_singleton, Heq.
-      case_eq (is_box φ); intro Hbox; simpl.
-      * left. apply env_order_disj_union_compat_strong_right; [|ms].
-         destruct φ; simpl in *; try inversion Hbox.
-         apply env_order_singleton. simpl. lia.
-      * right. destruct φ; simpl in *; ms.
+induction Δ as [|φ Δ].
+- right. trivial.
+- destruct IHΔ as [Hlt | Heq]; simpl.
+  + left. apply env_order_compat'; trivial. apply weight_open_box. 
+  + rewrite Heq. auto with order. destruct φ; simpl; try auto with order.
+       left. auto with order.
 Qed.
 
 Global Hint Resolve open_boxes_env_order : order.
 
 Lemma env_order_0 Δ φ: Δ ≺ Δ • φ.
 Proof.
-unfold env_order, ltof. rewrite env_weight_disj_union, env_weight_singleton.
+unfold env_order, ltof. rewrite env_weight_add.
 apply Nat.lt_add_pos_r. transitivity (5 ^ 0). simpl. lia. apply Nat.pow_lt_mono_r. lia.
 apply weight_pos.
 Qed.
@@ -193,7 +214,7 @@ Lemma env_order_2  Δ Δ' φ1 φ2 φ: weight φ1 < weight φ -> weight φ2 < wei
 Proof.
 intros Hw1 Hw2 Hor.
 unfold env_order, ltof. repeat rewrite env_weight_add.
-apply env_le_weight in Hor.
+apply Proper_env_order_refl_env_weight in Hor.
 replace (weight φ) with (S (pred (weight φ))) by lia.
 apply Nat.lt_le_pred in Hw1, Hw2.
 simpl. repeat rewrite Nat.add_assoc.
@@ -210,7 +231,7 @@ Lemma env_order_3  Δ Δ' φ1 φ2 φ3 φ:
 Proof.
 intros Hw1 Hw2 Hw3 Hor.
 unfold env_order, ltof. repeat rewrite env_weight_add.
-apply env_le_weight in Hor.
+apply Proper_env_order_refl_env_weight in Hor.
 replace (weight φ) with (S (pred (weight φ))) by lia.
 apply Nat.lt_le_pred in Hw1, Hw2.
 simpl. repeat rewrite Nat.add_assoc.
@@ -227,7 +248,7 @@ Lemma env_order_4  Δ Δ' φ1 φ2 φ3 φ4 φ:
 Proof.
 intros Hw1 Hw2 Hw3 Hw4 Hor.
 unfold env_order, ltof. repeat rewrite env_weight_add.
-apply env_le_weight in Hor.
+apply Proper_env_order_refl_env_weight in Hor.
 replace (weight φ) with (S (pred (weight φ))) by lia.
 apply Nat.lt_le_pred in Hw1, Hw2.
 simpl. repeat rewrite Nat.add_assoc.
@@ -261,6 +282,7 @@ Global Hint Extern 1 (?a < ?b) => subst; simpl; lia : order.
 Ltac get_diff_form g := match g with
 | ?Γ ∖{[?φ]} => φ
 | _ (?Γ ∖{[?φ]}) => φ
+| _ (remove _ ?φ _) => φ
 | ?Γ • _ => get_diff_form Γ
 end.
 
@@ -271,64 +293,87 @@ end.
 
 Global Hint Rewrite open_boxes_remove : order.
 
+Lemma remove_env_order Δ φ:  remove form_eq_dec φ Δ ≼ Δ.
+Proof.
+induction Δ as [|ψ Δ].
+- simpl. right. auto.
+- simpl.  destruct form_eq_dec.
+  + subst. destruct IHΔ as [Hlt | Heq].
+      * left. apply env_order_cancel_right, Hlt.
+      * rewrite Heq. auto with order.
+  + auto with order.
+Qed.
+
+Global Hint Resolve remove_env_order : order.
+
+Lemma remove_In_env_order_refl Δ φ:  In φ Δ -> remove form_eq_dec φ Δ • φ ≼ Δ.
+Proof.
+induction Δ as [|ψ Δ].
+- intro Hf; contradict Hf.
+- intros [Heq | Hin].
+  + subst. simpl.  destruct form_eq_dec; [|tauto]. auto with order.
+  + specialize (IHΔ Hin).  simpl. case form_eq_dec as [Heq | Hneq].
+      * subst. auto with order.
+      * rewrite (Permutation_swap ψ φ (remove form_eq_dec φ Δ)). auto with order.
+Qed.
+
+Global Hint Resolve remove_In_env_order_refl : order.
+
+Lemma env_order_lt_le_trans Γ Γ' Γ'' : (Γ ≺ Γ') -> (Γ' ≼ Γ'') -> Γ ≺ Γ''.
+Proof. intros Hlt [Hlt' | Heq]. transitivity Γ'; auto with order. now rewrite <- Heq. Qed.
+
+Lemma env_order_le_lt_trans Γ Γ' Γ'' : (Γ ≼ Γ') -> (Γ' ≺ Γ'') -> Γ ≺ Γ''.
+Proof. intros [Hlt' | Heq] Hlt. transitivity Γ'; auto with order. now rewrite Heq. Qed.
+
+Lemma remove_In_env_order Δ φ:  In φ Δ -> remove form_eq_dec φ Δ ≺ Δ.
+Proof.
+intro Hin. apply remove_In_env_order_refl in Hin.
+eapply env_order_lt_le_trans; [|apply Hin]. auto with order.
+Qed.
+
+Global Hint Resolve remove_In_env_order : order.
+
+Lemma elem_of_list_In_1 {A : Type}: ∀ (l : list A) (x : A), x ∈ l -> In x l.
+Proof. apply elem_of_list_In. Qed.
+
+Global Hint Resolve  elem_of_list_In_1 : order.
+
+
 Ltac prepare_order := 
 repeat (apply env_order_add_compat);
 unfold pointed_env_order; subst; simpl; repeat rewrite open_boxes_add; try match goal with
 | Δ := _ |- _ => subst Δ; try prepare_order
 | H : ?ψ ∈ ?Γ |- ?Γ' ≺ ?Γ => let ψ' := (get_diff_form Γ') in
-    apply (env_order_equiv_right_compat (difference_singleton Γ ψ' H))
+    apply (env_order_equiv_right_compat (difference_singleton Γ ψ' H)) ||
+    (eapply env_order_lt_le_trans ; [| apply (remove_In_env_order_refl _ ψ'); try apply elem_of_list_In; trivial])
 | H : ?ψ ∈ ?Γ |- ?Γ' ≺ ?Γ • ?φ => let ψ' := (get_diff_form Γ') in
     apply (env_order_equiv_right_compat (equiv_disj_union_compat_r(difference_singleton Γ ψ' H)))
 | H : ?ψ ∈ ?Γ |- ?Γ' ≺ ?Γ • _ • _ => let ψ' := (get_diff_form Γ') in
-apply (env_order_equiv_right_compat (equiv_disj_union_compat_r(equiv_disj_union_compat_r(difference_singleton Γ ψ' H))))
+apply (env_order_equiv_right_compat (equiv_disj_union_compat_r(equiv_disj_union_compat_r(difference_singleton Γ ψ' H)))) ||
+(eapply env_order_le_lt_trans; [| apply env_order_add_compat; 
+eapply env_order_lt_le_trans; [| (apply env_order_eq_add; apply (remove_In_env_order_refl _ ψ'); try apply elem_of_list_In; trivial) ] ] )
 end.
 
-(*
-Lemma make_impl_weight φ ψ: weight (φ ⇢ ψ) <= weight (φ → ψ).
-Proof.
-assert (H := weight_pos ψ).
-assert (H' := weight_pos φ).
-revert φ H'; induction ψ; intros φ H';
-unfold make_impl; repeat destruct decide; simpl; try lia.
-fold make_impl.
-etransitivity. apply IHψ2.
-- apply weight_pos.
-- apply weight_pos.
-- simpl. assert(HH := make_conj_weight lia.
-revert (IHψ2 (ma)
-Qed.
-
-Lemma make_impl_weight2 φ ψ θ: weight (φ ⇢ (ψ ⇢ θ)) <= weight (φ → (ψ → θ)).
-Proof.
-pose (make_impl_weight ψ θ).
-pose (make_impl_weight φ (ψ ⇢ θ)).
-simpl in *. lia.
-Qed.
-
-
-Global Hint Extern  5  (weight (?φ ⇢ ?ψ) < _) => (eapply Nat.le_lt_trans; [eapply make_impl_weight|]) : order.
-
-Global Hint Extern  5  (weight (?φ ⇢ (?ψ ⇢ ?θ)) < _) => (eapply Nat.le_lt_trans; [eapply make_impl_weight2|]) : order.
-
-*)
 
 (* ad hoc *)
-Lemma openboxes_env_order Δ δ :  (⊗ Δ) • δ • δ ≺ Δ • □ δ.
+Lemma openboxes_env_order Δ δ :  (map open_box Δ) • δ • δ ≺ Δ • □ δ.
 Proof.
-induction Δ using gmultiset_rec.
-- eapply @env_order_equiv_left_compat with  (∅ • δ • δ). 
-  + now rewrite open_boxes_empty.
-  + apply env_order_2; simpl; try lia. ms.
-- apply (@env_order_equiv_right_compat _  _ (Δ • □ δ • x)); [ms|].
-  eapply (@env_order_equiv_left_compat  _ _ (⊗ Δ • δ • δ •  ⊙ x)).
-  rewrite open_boxes_disj_union, open_boxes_singleton. ms.
-  case x; intros; simpl; try (solve[now apply env_order_add_compat]).
-  transitivity (Δ • □δ • f).
-  + auto with *.
-  + apply env_order_1. simpl. auto.
+induction Δ as [|x Δ].
+- simpl. unfold env_order, ltof, env_weight. simpl.
+  repeat rewrite <- plus_n_O. apply Nat.add_lt_mono_l.
+  rewrite plus_n_O at 1. auto with *.
+- apply (@env_order_equiv_right_compat _  _ (Δ • □ δ • x)). constructor.
+  simpl.
+  eapply (@env_order_equiv_left_compat  _ _ (map open_box Δ • δ • δ •  ⊙ x)).
+  + do 2 (rewrite (Permutation_swap δ (⊙ x)); apply Permutation_skip). trivial.
+  + case x; intros; simpl; try (solve[now apply env_order_add_compat]).
+      transitivity (Δ • □δ • f).
+      * auto with *.
+      * apply env_order_1. simpl. auto.
 Qed.
 
 Global Hint Resolve openboxes_env_order : order.
 
-Ltac order_tac := prepare_order; auto 10 with order.
+
+Ltac order_tac := try unfold pointed_env_ms_order; prepare_order; repeat rewrite elements_env_add; auto 10 with order.
 
