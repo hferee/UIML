@@ -478,10 +478,21 @@ rewrite gmultiset_disj_union_difference with (X := {[θ']}).
 - now apply gmultiset_singleton_subseteq_l.
 Qed.
 
+Fixpoint rm x l := match l with
+| h :: t => if form_eq_dec x h then t else h :: rm x t
+| [] => []
+end.
+
+Lemma in_rm l x y: In x (rm y l) -> In x l.
+Proof.
+induction l; simpl. tauto.
+destruct form_eq_dec. tauto. firstorder.
+Qed.
+
 Lemma remove_include (θ θ' : form) (Δ : list form) :
   (θ' ∈ Δ) ->
-  θ ∈ remove form_eq_dec θ' Δ -> θ ∈ Δ.
-Proof. intros Hin' Hin. eapply elem_of_list_In, in_remove, elem_of_list_In, Hin. Qed.
+  θ ∈ rm θ' Δ -> θ ∈ Δ.
+Proof. intros Hin' Hin. eapply elem_of_list_In, in_rm, elem_of_list_In, Hin. Qed.
 
 
 (* technical lemma : one can constructively find whether an environment contains

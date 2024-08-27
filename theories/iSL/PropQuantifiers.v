@@ -45,7 +45,7 @@ Program Definition e_rule {Δ : list form } {ϕ : form}
   (θ: form) (Hin : θ ∈ Δ) : form :=
 let E Δ H := fst (EA0 (Δ, ϕ) H) in
 let A pe0 H := snd (EA0 pe0 H) in
-let Δ'  := remove form_eq_dec θ Δ in
+let Δ'  := rm θ Δ in
 match θ with
 | Bot => ⊥  (* E0 *)
 | Var q =>
@@ -78,11 +78,11 @@ end.
     Referring to Table 5 in Pitts, the definition a_rule_env handles A1-8 and A10,
     and the definition a_rule_form handles A9 and A11-13. *)
 Program Definition a_rule_env {Δ : list form} {ϕ : form}
-  (EA0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form * form)
+  (EA0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form * form) 
   (θ: form) (Hin : θ ∈ Δ) : form :=
 let E Δ H := fst (EA0 (Δ, ϕ) H) in
 let A pe0 H := snd (EA0 pe0 H) in
-let Δ'  := remove form_eq_dec θ Δ in
+let Δ'  := rm θ Δ in
 match θ with
 | Var q =>
     if decide (p = q)
@@ -118,6 +118,7 @@ match θ with
 | ((□δ1) → δ2) => (□(E((□⁻¹ Δ')• δ2 • □δ1) _  ⇢ A((□⁻¹ Δ')• δ2 • □δ1, δ1) _)) ∧ A(Δ' • δ2, ϕ) _
 (* using ⊼ here breaks congruence *)
 end.
+
 
 (* make sure that the proof obligations do not depend on EA0 *)
 Obligation Tactic := intros Δ ϕ _ _ _; intros; order_tac.
@@ -283,7 +284,7 @@ Lemma e_rule_vars Δ (θ : form) (Hin : θ ∈ Δ) (ϕ : form)
       (occurs_in x (fst (EA0 pe Hpe)) -> x ≠ p ∧ ∃ θ, θ ∈ pe.1 /\ occurs_in x θ) /\
       (occurs_in x (snd (EA0 pe Hpe)) -> x ≠ p ∧ (occurs_in x pe.2 \/ ∃ θ, θ ∈ pe.1 /\ occurs_in x θ))) :
 occurs_in x (e_rule EA0 θ Hin) -> x ≠ p ∧ ∃ θ, θ ∈ Δ /\ occurs_in x θ.
-Proof.
+Proof. 
 destruct θ; unfold e_rule; simpl; try tauto; try solve [repeat case decide; repeat vars_tac].
 destruct θ1; repeat case decide; repeat vars_tac.
 Qed.
@@ -297,7 +298,7 @@ Lemma a_rule_env_vars Δ θ Hin ϕ
       (occurs_in x (fst (EA0 pe Hpe)) -> x ≠ p ∧ ∃ θ, θ ∈ pe.1 /\ occurs_in x θ) /\
       (occurs_in x (snd (EA0 pe Hpe)) -> x ≠ p ∧ (occurs_in x pe.2 \/ ∃ θ, θ ∈ pe.1 /\ occurs_in x θ))):
 occurs_in x (a_rule_env EA0 θ Hin) -> x ≠ p ∧ (occurs_in x ϕ \/ ∃ θ, θ ∈ Δ /\ occurs_in x θ).
-Proof.
+Proof. 
 destruct θ; unfold a_rule_env; simpl; try tauto; try solve [repeat case decide; repeat vars_tac].
 destruct θ1; repeat case decide; repeat vars_tac.
 Qed.
@@ -309,14 +310,14 @@ Lemma a_rule_form_vars Δ ϕ
       (occurs_in x (fst (EA0 pe Hpe)) -> x ≠ p ∧ ∃ θ, θ ∈ pe.1 /\ occurs_in x θ) /\
       (occurs_in x (snd (EA0 pe Hpe)) -> x ≠ p ∧ (occurs_in x pe.2 \/ ∃ θ, θ ∈ pe.1 /\ occurs_in x θ))):
   occurs_in x (a_rule_form EA0) -> x ≠ p ∧ (occurs_in x ϕ \/ ∃ θ, θ ∈ Δ /\ occurs_in x θ).
-Proof.
+Proof. 
 destruct ϕ; unfold a_rule_form; simpl; try tauto; try solve [repeat case decide; repeat vars_tac].
 Qed.
 
 Proposition EA_vars Δ ϕ x:
   (occurs_in x (E (Δ, ϕ)) -> x <> p /\ ∃ θ, θ ∈ Δ /\ occurs_in x θ) /\
   (occurs_in x (A (Δ, ϕ)) -> x <> p /\ (occurs_in x ϕ \/ (∃ θ, θ ∈ Δ /\ occurs_in x θ))).
-Proof.
+Proof. 
 remember (Δ, ϕ) as pe.
 replace Δ with pe.1 by now subst.
 replace ϕ with pe.2 by now subst. clear Heqpe Δ ϕ. revert pe.
@@ -359,52 +360,74 @@ Section EntailmentCorrect.
 Hint Extern 5 (?a ≺ ?b) => order_tac : proof.
 Opaque make_disj.
 Opaque make_conj.
+
+(* TODO move *)
+Lemma list_to_set_disj_rm Δ v: (list_to_set_disj Δ : env) ∖ {[v]} = list_to_set_disj (rm v Δ).
+Proof.
+Admitted.
+
+Lemma list_to_set_disj_env_add Δ v: ((list_to_set_disj Δ : env) • v : env)≡ list_to_set_disj (v :: Δ).
+Proof.
+Admitted.
+
+Lemma list_to_set_disj_open_boxes Δ:  ((⊗ (list_to_set_disj Δ)) ≡ list_to_set_disj (map open_box Δ)).
+Proof.
+Admitted.
+
+Local Ltac l_tac :=
+    rewrite (proper_Provable _ _ (list_to_set_disj_env_add _ _) _ _ eq_refl)
+|| rewrite (proper_Provable _ _ (equiv_disj_union_compat_r (list_to_set_disj_env_add _ _)) _ _ eq_refl)
+|| rewrite (proper_Provable _ _ (equiv_disj_union_compat_r (equiv_disj_union_compat_r (list_to_set_disj_env_add _ _))) _ _ eq_refl)
+|| rewrite (proper_Provable _ _ (equiv_disj_union_compat_r(equiv_disj_union_compat_r (equiv_disj_union_compat_r (list_to_set_disj_env_add _ _)))) _ _ eq_refl)
+|| rewrite (proper_Provable _ _ (equiv_disj_union_compat_r(equiv_disj_union_compat_r (equiv_disj_union_compat_r (list_to_set_disj_open_boxes _)))) _ _ eq_refl).
+
 Lemma a_rule_env_spec (Δ : list form) θ ϕ Hin (EA0 : ∀ pe, (pe ≺· (Δ, ϕ)) → form * form)
-  (HEA : forall Δ ϕ Hpe, (list_to_set_disj Δ ⊢ fst (EA0 (Δ, ϕ) Hpe)) * (list_to_set_disj Δ• snd(EA0 (Δ, ϕ) Hpe) ⊢ ϕ)) :
-  (list_to_set_disj Δ•a_rule_env EA0 θ Hin ⊢ ϕ).
+  (HEA : forall Δ ϕ Hpe, (list_to_set_disj Δ ⊢ fst (EA0 (Δ, ϕ) Hpe)) * (list_to_set_disj  Δ• snd(EA0 (Δ, ϕ) Hpe) ⊢ ϕ)) :
+  (list_to_set_disj  Δ • a_rule_env EA0 θ Hin ⊢ ϕ).
 Proof with (auto with proof).
 assert (HE := λ Δ0 ϕ0 Hpe, fst (HEA Δ0 ϕ0 Hpe)).
 assert (HA := λ Δ0 ϕ0 Hpe, snd (HEA Δ0 ϕ0 Hpe)).
 clear HEA.
-destruct θ; exhibit Hin 1.
+assert(Hi : θ ∈ list_to_set_disj  Δ) by now apply elem_of_list_to_set_disj.
+destruct θ; exhibit Hi 1; rewrite list_to_set_disj_rm in *.
 - simpl; case decide; intro Hp.
   + subst. case_decide; subst; auto with proof.
   + exch 0...
 - constructor 2.
-- simpl; exch 0. apply AndL. exch 1; exch 0...
+- simpl; exch 0. apply AndL. exch 1; exch 0. do 2 l_tac...
 - apply make_conj_sound_L.
   exch 0. apply OrL; exch 0.
-  + apply AndL. apply make_impl_sound_L. exch 0. apply make_impl_sound_L... (* uses imp_cut *)
-  + apply AndL. apply make_impl_sound_L. exch 0. apply make_impl_sound_L. auto with proof.
+  + apply AndL. apply make_impl_sound_L. exch 0. apply make_impl_sound_L.
+      l_tac. apply ImpL...
+  + apply AndL. l_tac. apply make_impl_sound_L. exch 0. apply make_impl_sound_L...
 - destruct θ1.
   + simpl; case decide; intro Hp.
     * subst. case decide.
       -- intros Hp.
-         assert(Hin' : (p → θ2) ∈ Δ ∖ {[Var p]})
-         by (rewrite (gmultiset_disj_union_difference' _ _ Hp) in Hin; ms).
-         assert (Hin'' : Var p ∈ Δ ∖ {[p → θ2]}) by now apply in_difference.
-         exhibit Hin'' 2. exch 0; exch 1. apply ImpLVar.
-         exch 1. exch 0. peapply HA. rewrite <- difference_singleton by trivial. reflexivity.
+         assert (Hin'' : Var p ∈ (list_to_set_disj (rm (p → θ2) Δ) : env)).
+          (rewrite <- list_to_set_disj_rm; apply in_difference; try easy; now apply elem_of_list_to_set_disj).
+         exhibit Hin'' 2. exch 0; exch 1. apply ImpLVar. exch 0. backward.
+         rewrite env_add_remove. exch 0. l_tac...
       -- intro; constructor 2.
     * apply make_conj_sound_L. constructor 4. exch 0. exch 1. exch 0. apply ImpLVar.
-      exch 0. apply weakening. exch 0...
+      exch 0. exch 1. l_tac. apply weakening...
   + constructor 2.
-  + simpl; exch 0. apply ImpLAnd. apply make_impl_complete_L2. exch 0...
-  + simpl; exch 0. apply ImpLOr. exch 1. exch 0...
+  + simpl; exch 0. apply ImpLAnd. exch 0. l_tac...
+  + simpl; exch 0. apply ImpLOr. exch 1. l_tac. exch 0. l_tac...
   + apply make_conj_sound_L. exch 0. apply ImpLImp; exch 0.
-      * apply AndL. exch 0. apply make_impl_sound_L. exch 0...
-      * apply AndL. exch 0. apply weakening, HA.
+      * apply AndL. exch 0. apply make_impl_sound_L. l_tac. exch 0...
+      * apply AndL. exch 0. l_tac. apply weakening, HA.
   + exch 0. exch 0. simpl. apply  AndL. exch 1; exch 0. apply ImpBox.
       * box_tac. box_tac. exch 0; exch 1; exch 0. apply weakening. exch 1; exch 0.
-         apply make_impl_sound_L. apply ImpL.
+         apply make_impl_sound_L. do 3 l_tac. apply ImpL.
          -- auto with proof.
          -- apply HA.
-      * exch 1; exch 0. apply weakening. exch 0. auto with proof.
+      * exch 1; exch 0. apply weakening. exch 0. l_tac. auto with proof.
 - auto with proof.
 Qed.
 
 Proposition entail_correct Δ ϕ : (Δ ⊢ E (Δ, ϕ)) * (Δ•A (Δ, ϕ) ⊢ ϕ).
-Proof.
+Proof. Admitted.
 remember (Δ, ϕ) as pe.
 replace Δ with pe.1 by now subst.
 replace ϕ with pe.2 by now subst. clear Heqpe Δ ϕ. revert pe.
@@ -475,7 +498,7 @@ Section PropQuantCorrect.
 
 (** E's second argument is mostly irrelevant and is only there for uniform treatment with A *)
 Lemma E_irr ϕ' Δ ϕ : E (Δ, ϕ) = E (Δ, ϕ').
-Proof.
+Proof. 
 remember ((Δ, ϕ) : pointed_env) as pe.
 replace Δ with pe.1 by now subst.
 replace ϕ with pe.2 by now subst. clear Heqpe Δ ϕ.
@@ -492,7 +515,7 @@ Qed.
 Lemma E_left {Γ} {θ} {Δ} {φ φ'} (Hin : φ ∈ Δ) :
 (Γ•e_rule (λ pe (_ : pe ≺· (Δ, φ')),  EA pe)  φ Hin) ⊢ θ ->
 Γ•E (Δ, φ') ⊢ θ.
-Proof.
+Proof. 
 intro Hp. rewrite E_eq.
 destruct (@in_map_in _ _ _  (e_rule (λ pe (_ : pe ≺· (Δ, φ')), EA pe)) _ Hin) as [Hin' Hrule].
 eapply conjunction_L.
@@ -503,7 +526,7 @@ Qed.
 Lemma A_right {Γ} {Δ} {φ φ'} (Hin : φ ∈ Δ) :
 Γ ⊢ a_rule_env (λ pe (_ : pe ≺· (Δ, φ')), EA pe) φ Hin ->
 Γ ⊢ A (Δ, φ').
-Proof. intro Hp. rewrite A_eq.
+Proof.  intro Hp. rewrite A_eq.
 destruct (@in_map_in _ _ _  (a_rule_env (λ pe (_ : pe ≺· (Δ, φ')), EA pe)) _ Hin) as [Hin' Hrule].
 eapply make_disj_sound_R, OrR1, disjunction_R.
 - exact Hrule.
@@ -514,7 +537,7 @@ Qed.
 Proposition pq_correct Γ Δ ϕ: (∀ φ0, φ0 ∈ Γ -> ¬ occurs_in p φ0) -> (Γ ⊎ Δ ⊢ ϕ) ->
   (¬ occurs_in p ϕ -> Γ•E (Δ, ϕ) ⊢ ϕ) *
   (Γ•E (Δ, ϕ) ⊢ A (Δ, ϕ)).
-Proof.
+Proof. 
 (* we want to use an E rule *)
 Ltac Etac := foldEA; intros; match goal with | Hin : ?a ∈ ?Δ |- _•E (?Δ, _) ⊢ _=> apply (E_left Hin); unfold e_rule end.
 
@@ -863,7 +886,7 @@ Open Scope type_scope.
 
 
 Lemma E_of_empty p φ : E p (∅, φ) = (Implies Bot Bot).
-Proof.
+Proof. 
   rewrite E_eq. rewrite in_map_empty. now unfold conjunction, nodup, foldl.
 Qed.
 
@@ -879,7 +902,7 @@ Theorem iSL_uniform_interpolation p V: p ∉ V ->
   * (vars_incl (Af p φ) V)
   * ({[Af p φ]} ⊢ φ)
   * (∀ θ, vars_incl θ V -> {[θ]} ⊢ φ -> {[θ]} ⊢ Af p φ).
-Proof.
+Proof. 
 intros Hp φ Hvarsφ; repeat split.
 
   + intros x Hx. apply (EA_vars p _ ⊥ x) in Hx.

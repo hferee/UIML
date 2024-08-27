@@ -282,7 +282,7 @@ Global Hint Extern 1 (?a < ?b) => subst; simpl; lia : order.
 Ltac get_diff_form g := match g with
 | ?Γ ∖{[?φ]} => φ
 | _ (?Γ ∖{[?φ]}) => φ
-| _ (remove _ ?φ _) => φ
+| _ (rm ?φ _) => φ
 | ?Γ • _ => get_diff_form Γ
 end.
 
@@ -293,20 +293,16 @@ end.
 
 Global Hint Rewrite open_boxes_remove : order.
 
-Lemma remove_env_order Δ φ:  remove form_eq_dec φ Δ ≼ Δ.
+Lemma remove_env_order Δ φ:  rm φ Δ ≼ Δ.
 Proof.
 induction Δ as [|ψ Δ].
 - simpl. right. auto.
-- simpl.  destruct form_eq_dec.
-  + subst. destruct IHΔ as [Hlt | Heq].
-      * left. apply env_order_cancel_right, Hlt.
-      * rewrite Heq. auto with order.
-  + auto with order.
+- simpl.  destruct form_eq_dec; auto with order.
 Qed.
 
 Global Hint Resolve remove_env_order : order.
 
-Lemma remove_In_env_order_refl Δ φ:  In φ Δ -> remove form_eq_dec φ Δ • φ ≼ Δ.
+Lemma remove_In_env_order_refl Δ φ:  In φ Δ -> rm φ Δ • φ ≼ Δ.
 Proof.
 induction Δ as [|ψ Δ].
 - intro Hf; contradict Hf.
@@ -314,7 +310,7 @@ induction Δ as [|ψ Δ].
   + subst. simpl.  destruct form_eq_dec; [|tauto]. auto with order.
   + specialize (IHΔ Hin).  simpl. case form_eq_dec as [Heq | Hneq].
       * subst. auto with order.
-      * rewrite (Permutation_swap ψ φ (remove form_eq_dec φ Δ)). auto with order.
+      * rewrite (Permutation_swap ψ φ (rm φ Δ)). auto with order.
 Qed.
 
 Global Hint Resolve remove_In_env_order_refl : order.
@@ -325,7 +321,7 @@ Proof. intros Hlt [Hlt' | Heq]. transitivity Γ'; auto with order. now rewrite <
 Lemma env_order_le_lt_trans Γ Γ' Γ'' : (Γ ≼ Γ') -> (Γ' ≺ Γ'') -> Γ ≺ Γ''.
 Proof. intros [Hlt' | Heq] Hlt. transitivity Γ'; auto with order. now rewrite Heq. Qed.
 
-Lemma remove_In_env_order Δ φ:  In φ Δ -> remove form_eq_dec φ Δ ≺ Δ.
+Lemma remove_In_env_order Δ φ:  In φ Δ -> rm φ Δ ≺ Δ.
 Proof.
 intro Hin. apply remove_In_env_order_refl in Hin.
 eapply env_order_lt_le_trans; [|apply Hin]. auto with order.
