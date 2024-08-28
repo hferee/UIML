@@ -89,7 +89,7 @@ match θ with
     then
       if decide (Var p = ϕ) then ⊤ (* A10 *)
       else ⊥
-    else A (Δ', ϕ) _ (* A1 *) (* TODO: can be removed? *)
+    else ⊥ (* A1 modified : A (Δ', ϕ) can be removed *)
 (* A2 *)
 | δ₁ ∧ δ₂ => A ((Δ'•δ₁)•δ₂, ϕ) _
 (* A3 *)
@@ -361,29 +361,6 @@ Hint Extern 5 (?a ≺ ?b) => order_tac : proof.
 Opaque make_disj.
 Opaque make_conj.
 
-(* TODO move *)
-Lemma list_to_set_disj_env_add Δ v: ((list_to_set_disj Δ : env) • v : env) ≡ list_to_set_disj (v :: Δ).
-Proof. ms. Qed.
-
-Lemma list_to_set_disj_rm Δ v: (list_to_set_disj Δ : env) ∖ {[v]} ≡ list_to_set_disj (rm v Δ).
-Proof.
-induction Δ as [|φ Δ]; simpl; [ms|].
-case form_eq_dec; intro; subst; [ms|].
-simpl. rewrite <- IHΔ. case (decide (v ∈ (list_to_set_disj Δ: env))).
-- intro. rewrite union_difference_R by assumption. ms.
-- intro. rewrite diff_not_in by auto with *. rewrite diff_not_in; auto with *.
-Qed.
-
-Lemma gmultiset_elements_list_to_set_disj l: gmultiset_elements(list_to_set_disj l) ≡ₚ l.
-Proof.
-induction l as [| x l]; [ms|].
-rewrite Proper_elements; [|symmetry; apply list_to_set_disj_env_add].
-rewrite elements_env_add, IHl. trivial.
-Qed.
-
-Lemma list_to_set_disj_open_boxes Δ:  ((⊗ (list_to_set_disj Δ)) = list_to_set_disj (map open_box Δ)).
-Proof. apply list_to_set_disj_perm, Permutation_map', gmultiset_elements_list_to_set_disj. Qed.
-
 Local Ltac l_tac := repeat rewrite list_to_set_disj_open_boxes;
     rewrite (proper_Provable _ _ (list_to_set_disj_env_add _ _) _ _ eq_refl)
 || rewrite (proper_Provable _ _ (equiv_disj_union_compat_r (list_to_set_disj_env_add _ _)) _ _ eq_refl)
@@ -617,9 +594,9 @@ end; simpl.
 - Atac'. case decide; intro; subst; [exfalso; now apply (Hnin _ Hin0)|]; auto with proof.
 - split. (* case decide; intro; subst; try tauto; auto with proof. *)
   + intro Hneq. Etac. rewrite decide_False. auto with proof. trivial.
-  + Atac. case decide. 
-    * intro Heqp0. rewrite decide_True by (f_equal; trivial). auto with proof.
-    * intro Hneq. foldEA. Atac'. Etac. do 2 rewrite decide_False by trivial.  apply Atom.
+  + case (decide (p = p0)).
+    * intro Heqp0. Atac. do 2 rewrite decide_True by (f_equal; trivial). auto with proof.
+    * intro Hneq. Etac. Atac'. do 2 rewrite decide_False by trivial. apply Atom.
 (* ExFalso *)
 - auto 2 with proof.
 - auto 2 with proof.
@@ -819,7 +796,7 @@ end; simpl.
               simpl. rewrite union_difference_L by trivial. ms.
          -- intro HF. apply (Hnin _ Hin0). simpl. tauto.
       * erewrite E_irr with (ϕ' := ψ).
-          exch 0. apply IHHp2. occ. rewrite Heq'. (* TODO: equiv_tac should do that *) equiv_tac.
+          exch 0. apply IHHp2. occ. clear Hequiv. equiv_tac.
 - split; Etac.
   + foldEA. apply make_impl_sound_L, ImpBox.
         -- do 2 apply weakening. apply make_impl_sound_R, ImpR.
