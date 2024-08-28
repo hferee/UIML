@@ -362,26 +362,33 @@ Opaque make_disj.
 Opaque make_conj.
 
 (* TODO move *)
-Lemma list_to_set_disj_rm Δ v: (list_to_set_disj Δ : env) ∖ {[v]} = list_to_set_disj (rm v Δ).
-Proof.
-Admitted.
+Lemma list_to_set_disj_env_add Δ v: ((list_to_set_disj Δ : env) • v : env) ≡ list_to_set_disj (v :: Δ).
+Proof. ms. Qed.
 
-Lemma list_to_set_disj_env_add Δ v: ((list_to_set_disj Δ : env) • v : env)≡ list_to_set_disj (v :: Δ).
+Lemma list_to_set_disj_rm Δ v: (list_to_set_disj Δ : env) ∖ {[v]} ≡ list_to_set_disj (rm v Δ).
 Proof.
-Admitted.
+induction Δ as [|φ Δ]; simpl; [ms|].
+case form_eq_dec; intro; subst; [ms|].
+simpl. rewrite <- IHΔ. case (decide (v ∈ (list_to_set_disj Δ: env))).
+- intro. rewrite union_difference_R by assumption. ms.
+- intro. rewrite diff_not_in by auto with *. rewrite diff_not_in; auto with *.
+Qed.
 
-Lemma list_to_set_disj_open_boxes Δ:  ((⊗ (list_to_set_disj Δ)) ≡ list_to_set_disj (map open_box Δ)).
+Lemma gmultiset_elements_list_to_set_disj l: gmultiset_elements(list_to_set_disj l) ≡ₚ l.
 Proof.
-Admitted.
+induction l as [| x l]; [ms|].
+rewrite Proper_elements; [|symmetry; apply list_to_set_disj_env_add].
+rewrite elements_env_add, IHl. trivial.
+Qed.
 
-Local Ltac l_tac :=
+Lemma list_to_set_disj_open_boxes Δ:  ((⊗ (list_to_set_disj Δ)) = list_to_set_disj (map open_box Δ)).
+Proof. apply list_to_set_disj_perm, Permutation_map', gmultiset_elements_list_to_set_disj. Qed.
+
+Local Ltac l_tac := repeat rewrite list_to_set_disj_open_boxes;
     rewrite (proper_Provable _ _ (list_to_set_disj_env_add _ _) _ _ eq_refl)
 || rewrite (proper_Provable _ _ (equiv_disj_union_compat_r (list_to_set_disj_env_add _ _)) _ _ eq_refl)
-|| rewrite (proper_Provable _ _ (equiv_disj_union_compat_r (list_to_set_disj_open_boxes _)) _ _ eq_refl)
 || rewrite (proper_Provable _ _ (equiv_disj_union_compat_r (equiv_disj_union_compat_r (list_to_set_disj_env_add _ _))) _ _ eq_refl)
-|| rewrite (proper_Provable _ _ (equiv_disj_union_compat_r (equiv_disj_union_compat_r (list_to_set_disj_open_boxes _))) _ _ eq_refl)
-|| rewrite (proper_Provable _ _ (equiv_disj_union_compat_r(equiv_disj_union_compat_r (equiv_disj_union_compat_r (list_to_set_disj_env_add _ _)))) _ _ eq_refl)
-|| rewrite (proper_Provable _ _ (equiv_disj_union_compat_r(equiv_disj_union_compat_r (equiv_disj_union_compat_r (list_to_set_disj_open_boxes _)))) _ _ eq_refl).
+|| rewrite (proper_Provable _ _ (equiv_disj_union_compat_r(equiv_disj_union_compat_r (equiv_disj_union_compat_r (list_to_set_disj_env_add _ _)))) _ _ eq_refl).
 
 Lemma a_rule_env_spec (Δ : list form) θ ϕ Hin (EA0 : ∀ pe, (pe ≺· (Δ, ϕ)) → form * form)
   (HEA : forall Δ ϕ Hpe, (list_to_set_disj Δ ⊢ fst (EA0 (Δ, ϕ) Hpe)) * (list_to_set_disj  Δ• snd(EA0 (Δ, ϕ) Hpe) ⊢ ϕ)) :
@@ -391,7 +398,8 @@ assert (HE := λ Δ0 ϕ0 Hpe, fst (HEA Δ0 ϕ0 Hpe)).
 assert (HA := λ Δ0 ϕ0 Hpe, snd (HEA Δ0 ϕ0 Hpe)).
 clear HEA.
 assert(Hi : θ ∈ list_to_set_disj  Δ) by now apply elem_of_list_to_set_disj.
-destruct θ; exhibit Hi 1; rewrite list_to_set_disj_rm in *.
+destruct θ; exhibit Hi 1;
+rewrite (proper_Provable _ _ (equiv_disj_union_compat_r (equiv_disj_union_compat_r (list_to_set_disj_rm _ _))) _ _ eq_refl).
 - simpl; case decide; intro Hp.
   + subst. case_decide; subst; auto with proof.
   + exch 0...
@@ -421,7 +429,7 @@ destruct θ; exhibit Hi 1; rewrite list_to_set_disj_rm in *.
       * apply AndL. exch 0. l_tac. apply weakening, HA.
   + exch 0. exch 0. simpl. apply  AndL. exch 1; exch 0. apply ImpBox.
       * box_tac. box_tac. exch 0; exch 1; exch 0. apply weakening. exch 1; exch 0.
-         apply make_impl_sound_L. do 3 l_tac. apply ImpL.
+         apply make_impl_sound_L. do 2 l_tac. apply ImpL.
          -- auto with proof.
          -- apply HA.
       * exch 1; exch 0. apply weakening. exch 0. l_tac. auto with proof.
@@ -447,7 +455,7 @@ split. {
 apply conjunction_R1. intros φ Hin. apply in_in_map in Hin.
 destruct Hin as (ψ&Hin&Heq). subst.
 assert(Hi : ψ ∈ list_to_set_disj  Δ) by now apply elem_of_list_to_set_disj.
-destruct ψ; unfold e_rule; exhibit Hi 0; rewrite list_to_set_disj_rm in *.
+destruct ψ; unfold e_rule; exhibit Hi 0; rewrite (proper_Provable _ _ (equiv_disj_union_compat_r (list_to_set_disj_rm _ _)) _ _ eq_refl).
 - case decide; intro; subst; simpl; auto using HE with proof.
 - auto with proof.
 - apply AndL. do 2 l_tac...
@@ -471,10 +479,10 @@ destruct ψ; unfold e_rule; exhibit Hi 0; rewrite list_to_set_disj_rm in *.
       * exch 0. l_tac. auto with proof.
   + foldEA. apply make_impl_sound_R, ImpR. exch 0. apply ImpBox.
          --  box_tac. exch 0; exch 1; exch 0. apply make_impl_sound_L, ImpL.
-            ++ do 3 l_tac. apply weakening, HE. order_tac.
-            ++ do 3 l_tac. apply HA. order_tac.
+            ++ do 2 l_tac. apply weakening, HE. order_tac.
+            ++ do 2 l_tac. apply HA. order_tac.
          -- exch 0. l_tac. apply weakening, HE. order_tac.
--  apply BoxR. apply weakening. box_tac. do 2 l_tac. apply HE. order_tac.
+-  apply BoxR. apply weakening. box_tac. l_tac. apply HE. order_tac.
 }
 (* A *)
 apply make_disj_sound_L, OrL.
@@ -485,7 +493,7 @@ apply make_disj_sound_L, OrL.
   + case decide; intro; subst; [constructor 2|constructor 1].
   + apply make_conj_sound_L, AndR; apply AndL; auto using HE with proof.
   + apply ImpR. exch 0. l_tac. apply make_impl_sound_L, ImpL; auto using HE, HA with proof.
-  + foldEA. apply BoxR. box_tac. exch 0. do 2 l_tac. apply make_impl_sound_L, ImpL.
+  + foldEA. apply BoxR. box_tac. exch 0. l_tac. apply make_impl_sound_L, ImpL.
       * apply weakening, HE. order_tac.
       * apply HA. order_tac.
 Qed.

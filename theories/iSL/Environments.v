@@ -677,4 +677,26 @@ induction l as [| a l].
   rewrite IHl. setoid_rewrite gmultiset_elements_singleton. trivial.
 Qed.
 
+Lemma list_to_set_disj_env_add Δ v: ((list_to_set_disj Δ : env) • v : env) ≡ list_to_set_disj (v :: Δ).
+Proof. ms. Qed.
+
+Lemma list_to_set_disj_rm Δ v: (list_to_set_disj Δ : env) ∖ {[v]} ≡ list_to_set_disj (rm v Δ).
+Proof.
+induction Δ as [|φ Δ]; simpl; [ms|].
+case form_eq_dec; intro; subst; [ms|].
+simpl. rewrite <- IHΔ. case (decide (v ∈ (list_to_set_disj Δ: env))).
+- intro. rewrite union_difference_R by assumption. ms.
+- intro. rewrite diff_not_in by auto with *. rewrite diff_not_in; auto with *.
+Qed.
+
+Lemma gmultiset_elements_list_to_set_disj l: gmultiset_elements(list_to_set_disj l) ≡ₚ l.
+Proof.
+induction l as [| x l]; [ms|].
+rewrite Proper_elements; [|symmetry; apply list_to_set_disj_env_add].
+rewrite elements_env_add, IHl. trivial.
+Qed.
+
+Lemma list_to_set_disj_open_boxes Δ:  ((⊗ (list_to_set_disj Δ)) = list_to_set_disj (map open_box Δ)).
+Proof. apply list_to_set_disj_perm, Permutation_map', gmultiset_elements_list_to_set_disj. Qed.
+
 (* TODO: move in optimisations *)
