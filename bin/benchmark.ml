@@ -100,6 +100,7 @@ let test_cases =
     "□((p ∨ q) ∧ (p → r))";
     "□(p ∨  □ q ∧ t) ∧(t → p)";
     "□(□(t -> t))";
+    "(q →  (¬p ∨ ¬¬p)) ∧ ((¬p ∨ ¬¬ p) →  q)";
   ]
 
 let _ = bench test_cases
