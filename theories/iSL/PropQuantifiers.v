@@ -56,10 +56,8 @@ match θ with
 (* E3 *)
 | δ₁ ∨ δ₂ => E (Δ'•δ₁) _ ⊻ E (Δ' •δ₂) _
 | Var q → δ =>
-    if decide (p = q)
-    then
-      if decide (Var p ∈ Δ) then E (Δ'•δ) _ (* E5 *)
-      else ⊤
+    if decide (Var q ∈ Δ) then E (Δ'•δ) _ (* E5 modified *)
+    else if decide (p = q) then ⊤
     else q ⇢ E (Δ'•δ) _ (* E4 *)
 (* E6 *)
 | (δ₁ ∧ δ₂)→ δ₃ => E (Δ'•(δ₁ → (δ₂ → δ₃))) _
@@ -97,10 +95,8 @@ match θ with
       (E (Δ'•δ₁) _ ⇢ A (Δ'•δ₁, ϕ) _)
   ⊼ (E (Δ'•δ₂) _ ⇢ A (Δ'•δ₂, ϕ) _)
 | Var q → δ =>
-    if decide (p = q)
-    then
-      if decide (Var p ∈ Δ) then A (Δ'•δ, ϕ) _ (* A5 *)
-      else ⊥
+    if decide (Var q ∈ Δ) then A (Δ'•δ, ϕ) _ (* A5 modified *)
+    else if decide (p = q) then ⊥
     else q ⊼ A (Δ'•δ, ϕ) _ (* A4 *)
 (* A6 *)
 | (δ₁ ∧ δ₂)→ δ₃ =>
@@ -390,15 +386,14 @@ rewrite (proper_Provable _ _ (equiv_disj_union_compat_r (equiv_disj_union_compat
   + apply AndL. l_tac. apply make_impl_sound_L. exch 0. apply make_impl_sound_L...
 - destruct θ1.
   + simpl; case decide; intro Hp.
-    * subst. case decide.
-      -- intros Hp.
-         assert (Hin'' : Var p ∈ (list_to_set_disj (rm (p → θ2) Δ) : env)).
-          (rewrite <- list_to_set_disj_rm; apply in_difference; try easy; now apply elem_of_list_to_set_disj).
-         exhibit Hin'' 2. exch 0; exch 1. apply ImpLVar. exch 0. backward.
-         rewrite env_add_remove. exch 0. l_tac...
-      -- intro; constructor 2.
-    * apply make_conj_sound_L. constructor 4. exch 0. exch 1. exch 0. apply ImpLVar.
-      exch 0. exch 1. l_tac. apply weakening...
+    * assert (Hin'' : Var v ∈ (list_to_set_disj (rm (v → θ2) Δ) : env))
+       by (rewrite <- list_to_set_disj_rm; apply in_difference; try easy; now apply elem_of_list_to_set_disj).
+       exhibit Hin'' 2. exch 0; exch 1. apply ImpLVar. exch 0. backward.
+       rewrite env_add_remove. exch 0. l_tac...
+    * case decide; intro; subst.
+     -- apply ExFalso.
+     -- apply make_conj_sound_L. constructor 4. exch 0. exch 1. exch 0. apply ImpLVar.
+         exch 0. exch 1. l_tac. apply weakening...
   + constructor 2.
   + simpl; exch 0. apply ImpLAnd. exch 0. l_tac...
   + simpl; exch 0. apply ImpLOr. exch 1. l_tac. exch 0. l_tac...
@@ -443,14 +438,14 @@ destruct ψ; unfold e_rule; exhibit Hi 0; rewrite (proper_Provable _ _ (equiv_di
   + l_tac. apply OrR2, HE. order_tac.
 - destruct ψ1; auto 3 using HE with proof.
   + case decide; intro Hp.
-    * subst. case decide; intro Hp.
-      -- assert(Hin'' : Var p ∈ (list_to_set_disj (rm (p → ψ2) Δ) : env))
-            by (rewrite <- list_to_set_disj_rm; apply in_difference; try easy; now apply elem_of_list_to_set_disj).
+    * assert(Hin'' : Var v ∈ (list_to_set_disj (rm (v → ψ2) Δ) : env))
+          by (rewrite <- list_to_set_disj_rm; apply in_difference; try easy; now apply elem_of_list_to_set_disj).
           exhibit Hin'' 1. apply ImpLVar. exch 0. backward. rewrite env_add_remove.
           l_tac. apply HE...
+    * case decide; intro; subst.
       -- apply ImpR, ExFalso.
-    * apply make_impl_sound_R, ImpR. exch 0. apply ImpLVar. exch 0.
-       l_tac. apply weakening, HE. order_tac.
+      -- apply make_impl_sound_R, ImpR. exch 0. apply ImpLVar. exch 0.
+          l_tac. apply weakening, HE. order_tac.
   + apply ImpLAnd. l_tac...
   + apply ImpLOr. do 2 l_tac...
   + apply make_impl_sound_R, ImpR, make_impl_sound_L. exch 0. apply ImpLImp.
@@ -685,13 +680,16 @@ end; simpl.
     * (* subcase 2: p0 ∈ Γ ; (p0 → φ) ∈ Δ *)
       do 2 exhibit Hin1 1.
       split; [intro Hocc|].
-      -- Etac. case_decide; [auto with *|].
-         apply make_impl_sound_L, ImpLVar. exch 0. backward. rewrite env_add_remove.
+      -- Etac. case decide; intro Hp0;[|case decide; intro; subst; [auto with *|]].
+         ++ foldEA. apply Hind; auto with proof; [order_tac; order_tac|occ | peapply' Hp]. 
+         ++  apply make_impl_sound_L, ImpLVar. exch 0. backward. rewrite env_add_remove.
          apply Hind; auto with proof. peapply' Hp.
-      -- Etac. case_decide; [auto with *|].
-         apply make_impl_sound_L, ImpLVar. Atac. repeat case_decide; auto 2 with proof; [tauto| tauto|].
-         apply make_conj_sound_R, AndR; auto 2 with proof. exch 0. backward. rewrite env_add_remove.
-         apply Hind; auto with proof. peapply' Hp.
+      -- Etac. Atac. case decide; intro Hp0;[|case decide; intro; subst; [auto with *|]].
+        ++ foldEA. apply Hind; auto with proof; [order_tac; order_tac|occ | peapply' Hp].
+        ++ apply make_impl_sound_L, ImpLVar.
+               apply make_conj_sound_R, AndR; auto 2 with proof.
+               exch 0. backward. rewrite env_add_remove.
+               apply Hind; auto with proof. peapply' Hp.
     * assert(Hin': Var p0 ∈ Γ ⊎ list_to_set_disj Δ) by (rewrite <- Heq; ms).
        apply gmultiset_elem_of_disj_union in Hin'.
        case (decide (Var p0 ∈ (list_to_set_disj Δ: env))); intro Hin1'; [|exfalso; tauto].
@@ -706,14 +704,13 @@ end; simpl.
       -- (* subsubcase p ≠ p0 *)
          split; [intro Hocc|].
          ++ apply contraction. Etac. rewrite decide_False by trivial. exch 0.
-                 assert((p0 → φ) ∈ list_to_set_disj Δ) by ms. Etac. rewrite decide_False by trivial.
-                 foldEA. apply make_impl_sound_L, ImpLVar.
+                 assert((p0 → φ) ∈ list_to_set_disj Δ) by ms. Etac.
+                 rewrite decide_True by now apply elem_of_list_to_set_disj.
                  exch 0. apply weakening. apply Hind; auto with proof. peapply' Hp.
-         ++ apply contraction. Etac. exch 0.
-                 assert((p0 → φ) ∈ list_to_set_disj Δ) by ms. Etac; Atac.
-                 repeat rewrite decide_False by trivial. foldEA.
-                 apply make_conj_sound_R, AndR; auto 2 with proof.
-                 apply make_impl_sound_L. apply ImpLVar. exch 0. apply weakening.
+         ++ apply contraction. Etac. exch 0. assert((p0 → φ) ∈ list_to_set_disj Δ) by ms. 
+                 Etac; Atac. rewrite decide_False by trivial.
+                 do 2 rewrite decide_True by now apply elem_of_list_to_set_disj.
+                 exch 0. apply weakening.
                  apply Hind; auto with proof. peapply' Hp.
 (* ImpLAnd *)
 - exch 0. apply ImpLAnd. exch 0. apply Hind; auto with proof; [occ|peapply' Hp].
