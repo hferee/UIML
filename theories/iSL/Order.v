@@ -152,11 +152,23 @@ Proof.
 unfold env_order, ltof. repeat rewrite env_weight_disj_union. lia.
 Qed.
 
+Global Hint Resolve env_order_disj_union_compat_right : order.
+
 Lemma env_order_disj_union_compat Δ Δ' Δ'' Δ''':
   (Δ ≺ Δ'') -> (Δ' ≺ Δ''') -> Δ ++ Δ' ≺ Δ'' ++ Δ'''.
 Proof.
 unfold env_order, ltof. repeat rewrite env_weight_disj_union. lia.
 Qed.
+
+Lemma env_order_refl_disj_union_compat Δ Δ' Δ'' Δ''':
+  (env_order_refl Δ Δ'') -> (env_order_refl Δ' Δ''') -> env_order_refl (Δ ++ Δ') (Δ'' ++ Δ''').
+Proof.
+unfold env_order_refl, env_order, ltof. repeat rewrite env_weight_disj_union.
+intros [Hlt1 | Heq1] [Hlt2 | Heq2]; try rewrite Heq1; try rewrite Heq2; try lia.
+right. trivial.
+Qed.
+
+Global Hint Resolve env_order_refl_disj_union_compat : order.
 
 Hint Unfold env_order_refl : order.
 Lemma env_order_disj_union_compat_strong_right Δ Δ' Δ'' Δ''':
@@ -176,6 +188,9 @@ destruct H1 as [Hlt|Heq].
 - unfold env_order, ltof in *. do 2 rewrite env_weight_disj_union. lia.
 - rewrite Heq. now apply env_order_disj_union_compat_right.
 Qed.
+
+Global Hint Resolve env_order_disj_union_compat_strong_left : order.
+Global Hint Rewrite elements_open_boxes : order.
 
 Lemma weight_open_box φ : weight (⊙ φ) ≤ weight φ.
 Proof. destruct φ; simpl; lia. Qed.
@@ -334,11 +349,15 @@ Proof. apply elem_of_list_In. Qed.
 
 Global Hint Resolve  elem_of_list_In_1 : order.
 
+Lemma elements_elem_of {Γ : env} {φ : form} : φ ∈ Γ -> elements Γ ≡ₚ φ :: elements (Γ ∖ {[φ]}).
+Proof. intro Hin. rewrite <- elements_env_add. apply Proper_elements, difference_singleton, Hin. Qed.
 
 Ltac prepare_order := 
 repeat (apply env_order_add_compat);
 unfold pointed_env_order; subst; simpl; repeat rewrite open_boxes_add; try match goal with
 | Δ := _ |- _ => subst Δ; try prepare_order
+| Hin : ?a ∈ ?Γ |- context[elements ?Γ] => rewrite (elements_elem_of Hin); try prepare_order
+| H : _ ∈ list_to_set_disj _ |- _ => apply elem_of_list_to_set_disj in H; try prepare_order
 | H : ?ψ ∈ ?Γ |- ?Γ' ≺ ?Γ => let ψ' := (get_diff_form Γ') in
     apply (env_order_equiv_right_compat (difference_singleton Γ ψ' H)) ||
     (eapply env_order_lt_le_trans ; [| apply (remove_In_env_order_refl _ ψ'); try apply elem_of_list_In; trivial])
@@ -370,6 +389,8 @@ Qed.
 
 Global Hint Resolve openboxes_env_order : order.
 
-
-Ltac order_tac := try unfold pointed_env_ms_order; prepare_order; repeat rewrite elements_env_add; auto 10 with order.
-
+Ltac order_tac :=
+try unfold pointed_env_ms_order; prepare_order;
+repeat rewrite elements_env_add; 
+simpl; auto 10 with order;
+try (apply env_order_disj_union_compat_right; order_tac).
