@@ -298,6 +298,8 @@ Ltac get_diff_form g := match g with
 | ?Γ ∖{[?φ]} => φ
 | _ (?Γ ∖{[?φ]}) => φ
 | _ (rm ?φ _) => φ
+| (rm ?φ _) => φ
+| ?Γ ++ _ => get_diff_form Γ
 | ?Γ • _ => get_diff_form Γ
 end.
 
