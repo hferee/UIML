@@ -1,6 +1,6 @@
 (executables
- (public_names uiml_demo benchmark uiml_cmdline)
- (names uiml_demo benchmark uiml_cmdline)
+ (public_names uiml_demo benchmark uiml_cmdline isl_dec)
+ (names uiml_demo benchmark uiml_cmdline isl_dec)
  (modes js native)
  (preprocess (pps js_of_ocaml-ppx))
  (libraries js_of_ocaml UIML angstrom exenum)
