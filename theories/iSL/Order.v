@@ -369,6 +369,7 @@ unfold pointed_env_order; subst; simpl; repeat rewrite open_boxes_add; try match
 apply (env_order_equiv_right_compat (equiv_disj_union_compat_r(equiv_disj_union_compat_r(difference_singleton Γ ψ' H)))) ||
 (eapply env_order_le_lt_trans; [| apply env_order_add_compat; 
 eapply env_order_lt_le_trans; [| (apply env_order_eq_add; apply (remove_In_env_order_refl _ ψ'); try apply elem_of_list_In; trivial) ] ] )
+|H : ?a = _ |- context[?a] => rewrite H; try prepare_order
 end.
 
 
