@@ -37,6 +37,7 @@ Obligation Tactic := intros; order_tac.
 
 Notation "□⁻¹ Γ" := (map open_box Γ) (at level 75).
 
+
 (** First, the implementation of the rules for calculating E. The names of the rules
   refer to the table in Pitts' paper. *)
 (** note the use of  "lazy" conjunctions, disjunctions and implications *)
@@ -44,7 +45,7 @@ Program Definition e_rule {Δ : list form } {ϕ : form}
   (E : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form)
   (A : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form)
   (θ: form) (Hin : θ ∈ Δ) : form :=
-let E Δ H := E (Δ, ϕ) H in
+let E Δ H := E (Δ, ⊥) H in
 let Δ'  := rm θ Δ in
 match θ with
 | Bot => ⊥  (* E0 *)
@@ -71,7 +72,6 @@ match θ with
 | (□δ1 → δ2) =>  (□(E((□⁻¹ Δ') • δ2 • □δ1) _ ⇢ A((□⁻¹ Δ') • δ2 • □δ1, δ1) _)) ⇢ E(Δ' • δ2) _
 end.
 
-
 (** The implementation of the rules for defining A is separated into two pieces.
     Referring to Table 5 in Pitts, the definition a_rule_env handles A1-8 and A10,
     and the definition a_rule_form handles A9 and A11-13. *)
@@ -79,7 +79,7 @@ Program Definition a_rule_env {Δ : list form} {ϕ : form}
   (E : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form)
   (A : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form)
   (θ: form) (Hin : θ ∈ Δ) : form :=
-let E Δ H := E (Δ, ϕ) H in
+let E Δ H := E (Δ, ⊥) H in
 let Δ'  := rm θ Δ in
 match θ with
 | Var q =>
@@ -129,10 +129,10 @@ match ϕ with
 (* A12 *)
 | ϕ₁ ∨ ϕ₂ => A (Δ, ϕ₁) _ ⊻ A (Δ, ϕ₂) _
 (* A13 *)
-| ϕ₁→ ϕ₂ => E (Δ•ϕ₁, ϕ₂) _ ⇢ A (Δ•ϕ₁, ϕ₂) _
+| ϕ₁→ ϕ₂ => E (Δ•ϕ₁, ⊥) _ ⇢ A (Δ•ϕ₁, ϕ₂) _
     (* TODO would a general right-implication rule be useful efficient? *)
 | Bot => ⊥
-| □δ => □((E ((□⁻¹ Δ) • □δ, δ) _) ⇢ A((□⁻¹ Δ) • □δ, δ) _)
+| □δ => □((E ((□⁻¹ Δ) • □δ, ⊥) _) ⇢ A((□⁻¹ Δ) • □δ, δ) _)
 end.
 
 Obligation Tactic := intros; order_tac.
@@ -144,10 +144,10 @@ Program Fixpoint EA (b : bool) (pe : list form * form) {wf pointed_env_order pe}
   else ⋁ (in_map Δ (a_rule_env E A)) ⊻ a_rule_form E A.
 Next Obligation. apply Wf.measure_wf, wf_pointed_order. Defined.
 
-Definition E := EA true.
+Definition E Δ:= EA true (Δ, ⊥).
 Definition A := EA false.
 
-Definition Ef (ψ : form) := E ([ψ], ⊥).
+Definition Ef (ψ : form) := E ([ψ]).
 Definition Af (ψ : form) := A ([], ψ).
 
 
@@ -220,9 +220,9 @@ Proof.
 Qed.
 
 Lemma EA_eq Δ ϕ:
-  (E (Δ, ϕ) =  ⋀ (in_map Δ (@e_rule Δ ϕ (λ pe _, E pe) (λ pe _, A pe)))) /\
-  (A (Δ, ϕ) = (⋁ (in_map Δ (@a_rule_env Δ ϕ (λ pe _, E pe) (λ pe _, A pe)))) ⊻
-       @a_rule_form Δ ϕ (λ pe _, E pe) (λ pe _, A pe)).
+  (E Δ =  ⋀ (in_map Δ (@e_rule Δ ϕ (λ pe _, E pe.1) (λ pe _, A pe)))) /\
+  (A (Δ, ϕ) = (⋁ (in_map Δ (@a_rule_env Δ ϕ (λ pe _, E pe.1) (λ pe _, A pe)))) ⊻
+       @a_rule_form Δ ϕ (λ pe _, E pe.1) (λ pe _, A pe)).
 Proof.
 simpl. unfold E, A, EA. simpl.
 unfold EA_func at 1.
@@ -241,7 +241,7 @@ rewrite -> Wf.Fix_eq; simpl.
   + apply a_rule_form_cong; intros; now rewrite Heq.
 Qed.
 
-Definition E_eq Δ ϕ := proj1 (EA_eq Δ ϕ).
+Definition E_eq Δ := proj1 (EA_eq Δ ⊥).
 Definition A_eq Δ ϕ := proj2 (EA_eq Δ ϕ).
 
 End PropQuantDefinition.
@@ -292,7 +292,7 @@ Lemma e_rule_vars Δ (θ : form) (Hin : θ ∈ Δ) (ϕ : form)
   (E0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form)
   (A0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form)
    x
-  (HEA0 : ∀ pe Hpe, 
+  (HE0 : ∀ pe Hpe, 
       (occurs_in x (E0 pe Hpe) -> x ≠ p ∧ ∃ θ, θ ∈ pe.1 /\ occurs_in x θ) /\
       (occurs_in x (A0 pe Hpe) -> x ≠ p ∧ (occurs_in x pe.2 \/ ∃ θ, θ ∈ pe.1 /\ occurs_in x θ))) :
 occurs_in x (e_rule E0 A0 θ Hin) -> x ≠ p ∧ ∃ θ, θ ∈ Δ /\ occurs_in x θ.
@@ -330,8 +330,20 @@ Proof.
 destruct ϕ; unfold a_rule_form; simpl; try tauto; try solve [repeat case decide; repeat vars_tac].
 Qed.
 
+Lemma pointed_env_order_bot_R pe Δ φ: (pe ≺· (Δ, ⊥)) -> pe ≺· (Δ, φ).
+Proof.
+Admitted.
+
+Hint Resolve pointed_env_order_bot_R : order.
+
+Lemma pointed_env_order_bot_L pe Δ φ: ((Δ, φ) ≺· pe) -> (Δ, ⊥) ≺· pe.
+Proof.
+Admitted.
+
+Hint Resolve pointed_env_order_bot_L : order.
+
 Proposition EA_vars Δ ϕ x:
-  (occurs_in x (E (Δ, ϕ)) -> x <> p /\ ∃ θ, θ ∈ Δ /\ occurs_in x θ) /\
+  (occurs_in x (E Δ) -> x <> p /\ ∃ θ, θ ∈ Δ /\ occurs_in x θ) /\
   (occurs_in x (A (Δ, ϕ)) -> x <> p /\ (occurs_in x ϕ \/ (∃ θ, θ ∈ Δ /\ occurs_in x θ))).
 Proof. 
 remember (Δ, ϕ) as pe.
@@ -346,7 +358,7 @@ split.
   apply in_in_map in Hin as (ψ&Hin&Heq). subst φ.
   apply e_rule_vars in Hφ.
   + trivial.
-  + intros; now apply Hind.
+  + intros; apply Hind. now apply pointed_env_order_bot_R.
 (* A *)
 - intro Hocc. apply occurs_in_make_disj in Hocc as [Hocc|Hocc].
   (* disjunction *)
@@ -362,8 +374,8 @@ Qed.
 End VariablesCorrect.
 
 Ltac foldEA := repeat match goal with
-| |- context C [(EA ?pe).1] => fold (E pe)
-| |- context C [(EA ?pe).2] => fold (A pe)
+| |- context C [EA true ?pe] => fold (E pe)
+| |- context C [EA false ?pe] => fold (A pe)
 end.
 
 (** ** (ii) Entailment *)
@@ -431,7 +443,7 @@ rewrite (proper_Provable _ _ (equiv_disj_union_compat_r (equiv_disj_union_compat
 - auto with proof.
 Qed.
 
-Proposition entail_correct Δ ϕ : (list_to_set_disj Δ ⊢ E (Δ, ϕ)) * (list_to_set_disj Δ•A (Δ, ϕ) ⊢ ϕ).
+Proposition entail_correct Δ ϕ : (list_to_set_disj Δ ⊢ E Δ) * (list_to_set_disj Δ•A (Δ, ϕ) ⊢ ϕ).
 Proof with (auto with proof).
 remember (Δ, ϕ) as pe.
 replace Δ with pe.1 by now subst.
@@ -441,7 +453,7 @@ unfold pointed_env_order.
 intros (Δ, ϕ) Hind. simpl.
 rewrite E_eq, A_eq.
 (* uncurry the induction hypothesis for convenience *)
-assert (HE := fun d f x=> fst (Hind (d, f) x)).
+assert (HE := fun d x=> fst (Hind (d, ⊥) x)).
 assert (HA := fun d f x=> snd (Hind (d, f) x)).
 unfold E, A in *; simpl in HE, HA.
 simpl in *. clear Hind.
@@ -478,16 +490,18 @@ destruct ψ; unfold e_rule; exhibit Hi 0; rewrite (proper_Provable _ _ (equiv_di
             ++ do 2 l_tac. apply HA. order_tac.
          -- exch 0. l_tac. apply weakening, HE. order_tac.
 -  apply BoxR. apply weakening. box_tac. l_tac. apply HE. order_tac.
+  
 }
 (* A *)
 apply make_disj_sound_L, OrL.
 - apply disjunction_L. intros φ Hin.
   apply in_in_map in Hin as (φ' & Heq & Hφ'). subst φ.
   apply a_rule_env_spec; intros; split ; apply HE || apply HA; order_tac.
+  eapply pointed_env_order_bot_L in Hpe. exact Hpe.
 - destruct ϕ; simpl; auto using HE with proof.
   + case decide; intro; subst; [constructor 2|constructor 1].
   + apply make_conj_sound_L, AndR; apply AndL; auto using HE with proof.
-  + apply ImpR. exch 0. l_tac. apply make_impl_sound_L, ImpL; auto using HE, HA with proof.
+  + apply ImpR. exch 0. l_tac. foldEA. apply make_impl_sound_L, ImpL; auto using HE, HA with proof.
   + foldEA. apply BoxR. box_tac. exch 0. l_tac. apply make_impl_sound_L, ImpL.
       * apply weakening, HE. order_tac.
       * apply HA. order_tac.
@@ -506,38 +520,22 @@ Hint Extern 5 (?a ≺· ?b) => order_tac : proof.
   the E-quantified version, and similarly on the other side for the A-quantifier.
 *)
 
-(** E's second argument is mostly irrelevant and is only there for uniform treatment with A *)
-Lemma E_irr ϕ' Δ ϕ : E (Δ, ϕ) = E (Δ, ϕ').
-Proof. 
-remember ((Δ, ϕ) : pointed_env) as pe.
-replace Δ with pe.1 by now subst.
-replace ϕ with pe.2 by now subst. clear Heqpe Δ ϕ.
-  induction pe as [[Γ φ] Hind0] using (well_founded_induction_type wf_pointed_order).
-assert(Hind : ∀ Γ0 φ0, ((Γ0, φ0) ≺· (Γ, φ)) → E (Γ0, φ0) = E (Γ0, ϕ'))
-  by exact (fun Γ0 φ0 => (Hind0 (Γ0, φ0))).
-unfold E in Hind. simpl in Hind.
-do 2 rewrite E_eq. f_equal. apply in_map_ext.
-intros φ' Hin. unfold e_rule.
-destruct φ'; repeat rewrite (Hind _ φ) by (trivial; order_tac); trivial.
-destruct φ'1; repeat rewrite (Hind _ φ) by (trivial; order_tac); trivial.
-Qed.
-
-Lemma E_left {Γ} {θ} {Δ} {φ φ'} (Hin : φ ∈ Δ) :
-(Γ • e_rule (λ pe (_ : pe ≺· (Δ, φ')),  E pe) (λ pe (_ : pe ≺· (Δ, φ')),  A pe)  φ Hin) ⊢ θ ->
-Γ • E (Δ, φ') ⊢ θ.
+Lemma E_left {Γ} {θ} {Δ} {φ} (Hin : φ ∈ Δ) :
+(Γ • e_rule (λ pe (_ : pe ≺· (Δ, ⊥)),  E pe.1) (λ pe (_ : pe ≺· (Δ, ⊥)),  A pe)  φ Hin) ⊢ θ ->
+Γ • E Δ ⊢ θ.
 Proof. 
 intro Hp. rewrite E_eq.
-destruct (@in_map_in _ _ _  (e_rule (λ pe (_ : pe ≺· (Δ, φ')), E pe) (λ pe (_ : pe ≺· (Δ, φ')), A pe) ) _ Hin) as [Hin' Hrule].
+destruct (@in_map_in _ _ _  (e_rule (λ pe (_ : pe ≺· (Δ, ⊥)), E pe.1) (λ pe (_ : pe ≺· (Δ, ⊥)), A pe) ) _ Hin) as [Hin' Hrule].
 eapply conjunction_L.
 - apply Hrule.
 - exact Hp.
 Qed.
 
 Lemma A_right {Γ} {Δ} {φ φ'} (Hin : φ ∈ Δ) :
-Γ ⊢ a_rule_env  (λ pe (_ : pe ≺· (Δ, φ')), E pe) (λ pe (_ : pe ≺· (Δ, φ')), A pe) φ Hin ->
+Γ ⊢ a_rule_env  (λ pe (_ : pe ≺· (Δ, φ')), E pe.1) (λ pe (_ : pe ≺· (Δ, φ')), A pe) φ Hin ->
 Γ ⊢ A (Δ, φ').
 Proof.  intro Hp. rewrite A_eq.
-destruct (@in_map_in _ _ _  (a_rule_env  (λ pe (_ : pe ≺· (Δ, φ')), E pe) (λ pe (_ : pe ≺· (Δ, φ')), A pe)) _ Hin) as [Hin' Hrule].
+destruct (@in_map_in _ _ _  (a_rule_env  (λ pe (_ : pe ≺· (Δ, φ')), E pe.1) (λ pe (_ : pe ≺· (Δ, φ')), A pe)) _ Hin) as [Hin' Hrule].
 eapply make_disj_sound_R, OrR1, disjunction_R.
 - exact Hrule.
 - exact Hp.
@@ -546,13 +544,13 @@ Qed.
 Proposition pq_correct Γ Δ ϕ:
   (∀ φ0, φ0 ∈ Γ -> ¬ occurs_in p φ0) ->
   (Γ ⊎ list_to_set_disj Δ ⊢ ϕ) ->
-  (¬ occurs_in p ϕ -> Γ•E (Δ, ϕ) ⊢ ϕ) * (Γ•E (Δ, ϕ) ⊢ A (Δ, ϕ)).
+  (¬ occurs_in p ϕ -> Γ•E Δ ⊢ ϕ) * (Γ•E Δ ⊢ A (Δ, ϕ)).
 Proof.
 (* This proof goes by induction on the ordering w.r.t (Γ ⊎Δ, ϕ)
   instead of on the structure of Γ ⊎Δ ⊢ ϕ, to allow better rules *)
 (* we want to use an E rule *)
 Local Ltac Etac := foldEA; intros; match goal with
-| Hin : ?a ∈ list_to_set_disj ?Δ |- _•E (?Δ, _) ⊢ _=>
+| Hin : ?a ∈ list_to_set_disj ?Δ |- _•E ?Δ ⊢ _=>
     apply (E_left (proj1 (elem_of_list_to_set_disj _ _) Hin)); unfold e_rule end.
 
 (* we want to use an A rule defined in a_rule_env *)
@@ -628,25 +626,25 @@ end; simpl.
 -  split; Etac; auto with proof.
 (* AndR *)
 - split.
-  + intro Hocc. apply AndR; erewrite E_irr; apply Hind; auto with proof.
-  + Atac'. foldEA. apply make_conj_sound_R, AndR; erewrite E_irr;
+  + intro Hocc. apply AndR; apply Hind; auto with proof.
+  + Atac'. foldEA. apply make_conj_sound_R, AndR;
       (eapply Hind; [order_tac | occ | trivial]).
 (* AndL *)
 - exch 0. apply AndL. exch 1; exch 0. peapply Hind; auto with proof. occ. peapply' Hp.
 - exch 0. apply AndL. exch 1; exch 0. peapply Hind; auto with proof. occ. peapply' Hp.
 -  split.
-   + Etac. foldEA. apply Hind; auto with proof. peapply' Hp.
+   + Etac. foldEA. apply Hind; auto with proof. simpl. peapply' Hp.
    + Atac. Etac. apply Hind; auto; auto with proof. peapply' Hp.
 (* OrR1 & OrR2 *)
 - split.
-  + intro Hocc. apply OrR1. erewrite E_irr; apply Hind; auto with proof.
+  + intro Hocc. apply OrR1. apply Hind; auto with proof.
   + rewrite A_eq. apply make_disj_sound_R, OrR2.
-      apply make_disj_sound_R, OrR1; erewrite E_irr.
+      apply make_disj_sound_R, OrR1.
       apply Hind; auto with proof.
 - simpl. split.
-  + intro Hocc. apply OrR2. erewrite E_irr; apply Hind; auto with proof.
+  + intro Hocc. apply OrR2. apply Hind; auto with proof.
   + rewrite A_eq. apply make_disj_sound_R, OrR2.
-       apply make_disj_sound_R, OrR2; erewrite E_irr.
+       apply make_disj_sound_R, OrR2.
        apply Hind; auto with proof.
 (* OrL *)
 - exch 0. apply OrL; exch 0.
@@ -656,7 +654,7 @@ end; simpl.
   + apply Hind; auto with proof. occ. peapply' Hp1.
   + apply Hind; auto with proof. occ. peapply' Hp2.
 - split.
-  + Etac. apply make_disj_sound_L, OrL; apply Hind; auto with proof.
+  + Etac. apply make_disj_sound_L, OrL; apply Hind; auto with proof; simpl.
       * peapply' Hp1.
       * peapply' Hp2.
   + Atac. apply weakening. apply make_conj_sound_R,AndR, make_impl_sound_R.
@@ -665,7 +663,7 @@ end; simpl.
 (* ImpR *)
 - split.
   + intro Hocc. apply ImpR. exch 0.
-    erewrite E_irr. apply Hind; auto with proof. occ. peapply Hp.
+      apply Hind; auto with proof. occ. peapply Hp.
   + Atac'. apply weakening, make_impl_sound_R, ImpR, Hind; auto with proof. order_tac.
       * rewrite <- Permutation_middle. order_tac.
       * peapply Hp.
@@ -702,9 +700,9 @@ end; simpl.
       do 2 exhibit Hin1 1.
       split; [intro Hocc|].
       -- Etac. case decide; intro Hp0;[|case decide; intro; subst; [auto with *|]].
-         ++ foldEA. apply Hind; auto with proof; [order_tac; order_tac|occ | peapply' Hp]. 
+         ++ foldEA. simpl. apply Hind; auto with proof; [order_tac; order_tac|occ | peapply' Hp]. 
          ++  apply make_impl_sound_L, ImpLVar. exch 0. backward. rewrite env_add_remove.
-         apply Hind; auto with proof. peapply' Hp.
+         apply Hind; auto with proof. simpl. peapply' Hp.
       -- Etac. Atac. case decide; intro Hp0;[|case decide; intro; subst; [auto with *|]].
         ++ foldEA. apply Hind; auto with proof; [order_tac; order_tac|occ | peapply' Hp].
         ++ apply make_impl_sound_L, ImpLVar.
@@ -719,7 +717,7 @@ end; simpl.
       -- (* subsubcase p = p0 *)
         apply elem_of_list_to_set_disj in Hin1'.
         subst. split; Etac; repeat rewrite decide_True by trivial.
-        ++ clear Heq. apply Hind; auto with proof. peapply' Hp.
+        ++ clear Heq. apply Hind; auto with proof. simpl. peapply' Hp.
         ++ Atac. repeat rewrite decide_True by trivial. clear Heq.
                 apply Hind; auto with proof. peapply' Hp.
       -- (* subsubcase p ≠ p0 *)
@@ -727,7 +725,7 @@ end; simpl.
          ++ apply contraction. Etac. rewrite decide_False by trivial. exch 0.
                  assert((p0 → φ) ∈ list_to_set_disj Δ) by ms. Etac.
                  rewrite decide_True by now apply elem_of_list_to_set_disj.
-                 exch 0. apply weakening. apply Hind; auto with proof. peapply' Hp.
+                 exch 0. apply weakening. apply Hind; auto with proof. simpl. peapply' Hp.
          ++ apply contraction. Etac. exch 0. assert((p0 → φ) ∈ list_to_set_disj Δ) by ms. 
                  Etac; Atac. rewrite decide_False by trivial.
                  do 2 rewrite decide_True by now apply elem_of_list_to_set_disj.
@@ -737,40 +735,39 @@ end; simpl.
 - exch 0. apply ImpLAnd. exch 0. apply Hind; auto with proof; [occ|peapply' Hp].
 - exch 0. apply ImpLAnd. exch 0. apply Hind; auto with proof; [occ|peapply' Hp].
 - split; Etac.
-  + apply Hind; auto with proof. peapply' Hp.
+  + apply Hind; auto with proof. simpl. peapply' Hp.
   + Atac. simpl. apply Hind; auto with proof. peapply' Hp.
 (* ImpLOr *)
 - exch 0; apply ImpLOr. exch 1; exch 0. apply Hind; auto with proof. occ. peapply' Hp.
 - exch 0; apply ImpLOr. exch 1; exch 0. apply Hind; [order_tac | occ|peapply' Hp].
 - split; Etac.
-  +  apply Hind; auto with proof. peapply' Hp.
+  +  apply Hind; auto with proof. simpl. peapply' Hp.
   +  Atac. apply Hind; auto with proof. peapply' Hp.
 (* ImpLImp *)
 - (* subcase 1: ((φ1 → φ2) → φ3) ∈ Γ *)
   assert(ψ ≠ Var p) by (intro; subst; simpl in *; tauto).
   exch 0; apply ImpLImp; exch 0.
-  + erewrite E_irr. apply Hind; auto with proof. occ. peapply' Hp1.
+  + apply Hind; auto with proof. occ. peapply' Hp1.
       simpl. apply Hnin in Hin0. simpl in *. tauto.
-  + erewrite E_irr. apply Hind; auto with proof. occ. peapply' Hp2.
+  + apply Hind; auto with proof. occ. peapply' Hp2.
 - exch 0; apply ImpLImp; exch 0.
-  + erewrite E_irr. apply Hind; auto with proof. occ. peapply' Hp1.
+  + apply Hind; auto with proof. occ. peapply' Hp1.
        simpl. apply Hnin in Hin0. simpl in Hin0. tauto.
   +  apply Hind; auto with proof. occ. peapply' Hp2.
 - (* subcase 2: ((φ1 → φ2) → φ3) ∈ Δ *)
   split.
   + Etac. apply make_impl_sound_L2'. apply ImpLImp.
     * apply weakening. apply ImpR. foldEA.
-       rewrite (E_irr φ2).
        apply Hind; auto with proof.
        -- order_tac. repeat rewrite Permutation_middle. order_tac.
        -- repeat setoid_rewrite gmultiset_disj_union_assoc.
            setoid_rewrite gmultiset_disj_union_comm.
            repeat setoid_rewrite gmultiset_disj_union_assoc.  exch 0. apply ImpR_rev.
            peapply' Hp1.
-    * apply Hind; auto with proof. peapply' Hp2.
+    * apply Hind; auto with proof. simpl. peapply' Hp2.
   + Atac. apply make_conj_sound_R, AndR.
     * apply weakening. apply make_impl_sound_R, ImpR. foldEA.
-       rewrite (E_irr φ2). apply Hind; auto with proof.
+       apply Hind; auto with proof.
        -- order_tac. repeat rewrite Permutation_middle. order_tac.
        -- repeat setoid_rewrite gmultiset_disj_union_assoc.
            setoid_rewrite gmultiset_disj_union_comm.
@@ -778,7 +775,7 @@ end; simpl.
            peapply' Hp1.
     * Etac. simpl. apply make_impl_sound_L2', ImpLImp.
       -- apply weakening. apply ImpR. foldEA.
-       rewrite (E_irr φ2). apply Hind; auto with proof.
+          apply Hind; auto with proof.
        ++ order_tac. repeat rewrite Permutation_middle. order_tac.
        ++ repeat setoid_rewrite gmultiset_disj_union_assoc.
                setoid_rewrite gmultiset_disj_union_comm.
@@ -789,7 +786,6 @@ end; simpl.
    destruct (open_boxes_case (list_to_set_disj Δ)) as [[θ Hθ] | Hequiv].
     + apply contraction. Etac. exch 1; exch 0; apply ImpBox.
         * box_tac. box_tac. exch 2; exch 1; exch 0. apply weakening. foldEA.
-           erewrite E_irr with (ϕ' := φ1).
            exch 1; exch 0. apply Hind.
            --  order_tac. (* cannot handle it. manual proof *)
                rewrite  elements_open_boxes.
@@ -815,9 +811,7 @@ end; simpl.
        rewrite <- Hequiv, open_boxes_disj_union.
        rewrite open_boxes_remove by trivial. ms. }
        exch 0. apply ImpBox.
-      * box_tac. exch 1; exch 0. apply open_box_L.
-         erewrite E_irr with (ϕ' := φ1).
-         apply Hind.
+      * box_tac. exch 1; exch 0. apply open_box_L, Hind.
          -- order_tac. rewrite elements_open_boxes. repeat rewrite Permutation_middle. order_tac.
          -- occ. intro HF. destruct (occurs_in_open_boxes _ _ _ HF Hin1) as (θ0 & Hθ0 & Hinθ).
              apply (Hnin θ0); ms.
@@ -829,7 +823,6 @@ end; simpl.
 - destruct (open_boxes_case (list_to_set_disj Δ)) as [[θ Hθ] | Hequiv].
     + apply contraction. Etac. exch 1; exch 0; apply ImpBox.
         * box_tac. box_tac. exch 2; exch 1; exch 0. apply weakening. foldEA.
-           erewrite E_irr with (ϕ' := φ1).
            exch 1; exch 0. apply Hind.
          -- order_tac.
              rewrite  elements_open_boxes.
@@ -850,8 +843,7 @@ end; simpl.
               rewrite open_boxes_add. simpl. ms.
          -- intro HF. apply (Hnin _ Hin0). simpl. tauto.
         * exch 0. apply weakening. exch 0. apply Hind ; [order_tac|occ|peapply' Hp2].
-  + erewrite E_irr with (ϕ' := φ1).
-      exch 0. apply ImpBox. 
+  + exch 0. apply ImpBox. 
       * box_tac. exch 1; exch 0. apply open_box_L. apply Hind.
          --  order_tac. rewrite  elements_open_boxes.  order_tac.
          -- occ. intro HF. destruct (occurs_in_open_boxes _ _ _ HF Hin1) as (θ0 & Hθ0 & Hinθ).
@@ -862,13 +854,10 @@ end; simpl.
                  rewrite open_boxes_remove by trivial. ms. }
                  peapply Hp1.
          -- intro HF. apply (Hnin _ Hin0). simpl. tauto.
-      * erewrite E_irr with (ϕ' := ψ).
-          exch 0. apply Hind. order_tac. occ. clear Hequiv. peapply' Hp2.
+      * exch 0. apply Hind. order_tac. occ. clear Hequiv. peapply' Hp2.
 - split; Etac.
   + foldEA. apply make_impl_sound_L, ImpBox.
-        -- do 2 apply weakening. apply make_impl_sound_R, ImpR.
-            erewrite E_irr with (ϕ' := φ1) by ms.
-            apply Hind.
+        -- do 2 apply weakening. apply make_impl_sound_R, ImpR, Hind.
              ++ order_tac. rewrite elements_open_boxes. 
                      do 2 apply env_order_cancel_right.
                      repeat rewrite Permutation_middle.
@@ -882,7 +871,7 @@ end; simpl.
                     simpl. rewrite union_difference_R by auto with proof. rewrite open_boxes_remove by ms. ms.
                     }
                     peapply Hp1.
-        -- apply Hind. order_tac. occ. peapply' Hp2. trivial.
+        -- apply Hind. order_tac. occ. simpl. peapply' Hp2. trivial.
   + assert(Heq'' : (⊗ Γ0) ≡ ((⊗Γ) ⊎ list_to_set_disj (map open_box (rm (□ φ1 → φ2) Δ)))). {
           rewrite Heq'.
           repeat rewrite open_boxes_remove by ms. simpl.
@@ -891,10 +880,8 @@ end; simpl.
         }
   foldEA. Atac.  apply AndR.
      * apply make_impl_sound_L, ImpBox.
-        -- do 2 apply weakening. apply make_impl_sound_R, ImpR.
-            erewrite E_irr with (ϕ' := φ1).
-            apply Hind.
-             ++ order_tac. rewrite elements_open_boxes. 
+        -- do 2 apply weakening. apply make_impl_sound_R, ImpR, Hind.
+             ++ order_tac. rewrite elements_open_boxes.
                      do 2 apply env_order_cancel_right.
                      repeat rewrite Permutation_middle.
                      apply env_order_disj_union_compat_strong_left; order_tac.
@@ -902,7 +889,6 @@ end; simpl.
                     apply (Hnin θ0); ms.
             ++ peapply Hp1.
        -- apply BoxR. box_tac. do 2 apply weakening. apply make_impl_sound_R, ImpR. foldEA. 
-           erewrite E_irr with (ϕ' := φ1) by ms.
            apply Hind.
              ++ order_tac. rewrite elements_open_boxes. 
                      do 2 apply env_order_cancel_right.
@@ -912,9 +898,7 @@ end; simpl.
                     apply (Hnin θ0); ms.
             ++ peapply Hp1.
      * foldEA. apply make_impl_sound_L, ImpBox.
-        -- do 2 apply weakening. apply make_impl_sound_R, ImpR.
-               erewrite E_irr with (ϕ' := φ1).
-               apply Hind.
+        -- do 2 apply weakening. apply make_impl_sound_R, ImpR, Hind.
              ++ order_tac. rewrite elements_open_boxes. 
                      do 2 apply env_order_cancel_right.
                      repeat rewrite Permutation_middle.
@@ -925,9 +909,8 @@ end; simpl.
         -- clear Heq''. apply Hind; [order_tac|occ|peapply' Hp2].
 - split.
   + intro Hocc. destruct (open_boxes_case (list_to_set_disj Δ)) as [[θ Hθ] | Hequiv].
-      * Etac. foldEA. apply BoxR. box_tac. exch 0.
-        erewrite E_irr with (ϕ' := φ); apply Hind.
-        -- order_tac. 
+      * Etac. foldEA. apply BoxR. box_tac. exch 0. apply Hind.
+        -- order_tac.
             rewrite elements_open_boxes.
             repeat rewrite Permutation_middle.
             apply env_order_disj_union_compat_strong_left. order_tac.
@@ -943,9 +926,7 @@ end; simpl.
             rewrite open_boxes_remove by ms.
             rewrite <- difference_singleton by auto with proof. ms.
         -- trivial.
-      * apply BoxR. box_tac. exch 0. apply open_box_L.
-         erewrite E_irr with (ϕ' := φ).
-         apply Hind.
+      * apply BoxR. box_tac. exch 0. apply open_box_L, Hind.
          -- order_tac.
              rewrite elements_open_boxes.
             repeat rewrite Permutation_middle.
@@ -957,8 +938,7 @@ end; simpl.
          -- (erewrite proper_Provable;  [| |reflexivity]);  [eapply Hp|].
               rewrite open_boxes_disj_union, <- Hequiv. ms.
          --  trivial.
-  + Atac'. foldEA. apply BoxR. box_tac. apply weakening. erewrite E_irr with (ϕ' := φ).
-       apply weakening. apply make_impl_sound_R, ImpR.
+  + Atac'. foldEA. apply BoxR. box_tac. apply weakening, weakening, make_impl_sound_R, ImpR.
        apply Hind.
        * order_tac.
           rewrite elements_open_boxes.
@@ -984,7 +964,7 @@ End UniformInterpolation.
 Open Scope type_scope.
 
 
-Lemma E_of_empty p φ : E p ([], φ) = (Implies Bot Bot).
+Lemma E_of_empty p : E p [] = (Implies Bot Bot).
 Proof. 
   rewrite E_eq. rewrite in_map_empty. now unfold conjunction, nodup, foldl.
 Qed.
@@ -1006,8 +986,8 @@ intros Hp φ Hvarsφ; repeat split.
   + intros x Hx. apply (EA_vars p _ ⊥ x) in Hx.
       destruct Hx as [Hneq [θ [Hθ Hocc]]]. apply elem_of_list_singleton in Hθ. subst.
       apply Hvarsφ in Hocc. destruct Hocc; subst; tauto.
-  + replace {[φ]} with (list_to_set_disj [φ] : env). apply entail_correct. simpl. ms.
-  + intros ψ Hψ Hyp. rewrite elem_of_list_In in Hp. unfold Ef. rewrite E_irr with (ϕ' := ψ).
+  + replace {[φ]} with (list_to_set_disj [φ] : env). apply (entail_correct _ _ ⊥). ms.
+  + intros ψ Hψ Hyp. rewrite elem_of_list_In in Hp. unfold Ef.
       * peapply (pq_correct p ∅ [φ] ψ).
          -- intros θ Hin. inversion Hin.
          -- peapply Hyp.
