@@ -32,47 +32,19 @@ Section PropQuantDefinition.
 
 Local Notation "Δ '•' φ" := (cons φ Δ).
 
-Notation "□⁻¹ Γ" := (map open_box Γ) (at level 75).
-
-(** TODO: Experimental: weight_preserving simplifications *)
-
-Definition isimp (φ : form) : list form := [φ].
-Opaque isimp.
-
-Lemma env_order_refl_isimp φ: env_order_refl (isimp φ) [φ].
-Proof.
-Admitted.
-
-
-Lemma isim_vars {φ ψ x}: occurs_in x ψ -> ψ ∈ isimp φ -> occurs_in x φ.
-Proof.
-Admitted.
-
-Lemma isimp_complete_L (Γ : env) φ θ: Γ ⊎ list_to_set_disj (isimp φ) ⊢ θ -> Γ ⊎ {[φ]} ⊢ θ.
-Proof. Admitted.
-
-Ltac isimp_order := match goal with
-| |- ?Δ ++ isimp ?φ ≺ _ => eapply env_order_le_lt_trans;
-[apply env_order_refl_disj_union_compat ; [ isimp_order |apply (env_order_refl_isimp φ)]| 
-repeat rewrite <- Permutation_cons_append]
-| |- env_order_refl (_ ++ isimp _) _ =>
-apply env_order_refl_disj_union_compat; [ isimp_order|apply env_order_refl_isimp]
-| |- _ • _ ≺ _ => eapply env_order_le_lt_trans; [repeat apply env_order_eq_add; isimp_order|
-repeat rewrite <- Permutation_cons_append]
-| _ => right; reflexivity
-end.
-
 (* solves the obligations of the following programs *)
-Obligation Tactic := try solve[intros; order_tac; try isimp_order; order_tac].
+Obligation Tactic := intros; order_tac.
+
+Notation "□⁻¹ Γ" := (map open_box Γ) (at level 75).
 
 (** First, the implementation of the rules for calculating E. The names of the rules
   refer to the table in Pitts' paper. *)
 (** note the use of  "lazy" conjunctions, disjunctions and implications *)
 Program Definition e_rule {Δ : list form } {ϕ : form}
-  (EA0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form * form)
+  (E : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form)
+  (A : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form)
   (θ: form) (Hin : θ ∈ Δ) : form :=
-let E Δ H := fst (EA0 (Δ, ϕ) H) in
-let A pe0 H := snd (EA0 pe0 H) in
+let E Δ H := E (Δ, ϕ) H in
 let Δ'  := rm θ Δ in
 match θ with
 | Bot => ⊥  (* E0 *)
@@ -80,23 +52,23 @@ match θ with
     if decide (p = q) then ⊤ (* default *)
     else q (* E1 modified *)
 (* E2 *)
-| δ₁ ∧ δ₂ => E ((Δ' ++ isimp δ₁) ++ isimp δ₂) _
+| δ₁ ∧ δ₂ => E ((Δ'•δ₁)•δ₂) _
 (* E3 *)
-| δ₁ ∨ δ₂ => E (Δ'•δ₁) _ ⊻ E (Δ'  ++ isimp δ₂) _
+| δ₁ ∨ δ₂ => E (Δ'•δ₁) _ ⊻ E (Δ' •δ₂) _
 | Var q → δ =>
-    if decide (Var q ∈ Δ) then E (Δ' ++ isimp δ) _ (* E5 modified *)
+    if decide (Var q ∈ Δ) then E (Δ'•δ) _ (* E5 modified *)
     else if decide (p = q) then ⊤
-    else q ⇢ E (Δ' ++ isimp δ) _ (* E4 *)
+    else q ⇢ E (Δ'•δ) _ (* E4 *)
 (* E6 *)
-| (δ₁ ∧ δ₂)→ δ₃ => E (Δ' ++ isimp (δ₁ → (δ₂ → δ₃))) _
+| (δ₁ ∧ δ₂)→ δ₃ => E (Δ'•(δ₁ → (δ₂ → δ₃))) _
 (* E7 *)
-| (δ₁ ∨ δ₂)→ δ₃ => E ((Δ' ++ isimp (δ₁ → δ₃)) ++ isimp (δ₂ → δ₃)) _
+| (δ₁ ∨ δ₂)→ δ₃ => E (Δ'•(δ₁ → δ₃)•(δ₂ → δ₃)) _
 (* E8 modified *)
 | ((δ₁→ δ₂)→ δ₃) =>
-  (E ((Δ' ++ isimp (δ₂ → δ₃)) ++ isimp  δ₁) _⇢ A ((Δ' ++ isimp (δ₂ → δ₃)) ++ isimp  δ₁, δ₂) _) ⇢ E (Δ' ++ isimp δ₃) _
+  (E (Δ'•(δ₂ → δ₃) • δ₁) _⇢ A (Δ'•(δ₂ → δ₃) • δ₁, δ₂) _) ⇢ E (Δ'•δ₃) _
 | Bot → _ => ⊤
-| □ φ => □(E ((□⁻¹ Δ') ++ isimp  φ ) _) (* very redundant ; identical for each box *)
-| (□δ1 → δ2) =>  (□(E(((□⁻¹ Δ') ++ isimp  δ2) ++ isimp  (□δ1)) _ ⇢ A(((□⁻¹ Δ') ++ isimp  δ2) ++ isimp  (□δ1), δ1) _)) ⇢ E(Δ'  ++ isimp  δ2) _
+| □ φ => □(E ((□⁻¹ Δ') • φ ) _) (* very redundant ; identical for each box *)
+| (□δ1 → δ2) =>  (□(E((□⁻¹ Δ') • δ2 • □δ1) _ ⇢ A((□⁻¹ Δ') • δ2 • □δ1, δ1) _)) ⇢ E(Δ' • δ2) _
 end.
 
 
@@ -104,10 +76,10 @@ end.
     Referring to Table 5 in Pitts, the definition a_rule_env handles A1-8 and A10,
     and the definition a_rule_form handles A9 and A11-13. *)
 Program Definition a_rule_env {Δ : list form} {ϕ : form}
-  (EA0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form * form) 
+  (E : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form)
+  (A : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form)
   (θ: form) (Hin : θ ∈ Δ) : form :=
-let E Δ H := fst (EA0 (Δ, ϕ) H) in
-let A pe0 H := snd (EA0 pe0 H) in
+let E Δ H := E (Δ, ϕ) H in
 let Δ'  := rm θ Δ in
 match θ with
 | Var q =>
@@ -117,41 +89,36 @@ match θ with
       else ⊥
     else ⊥ (* A1 modified : A (Δ', ϕ) can be removed *)
 (* A2 *)
-| δ₁ ∧ δ₂ => A ((Δ' ++ isimp δ₁) ++ isimp δ₂, ϕ) _
+| δ₁ ∧ δ₂ => A ((Δ'•δ₁)•δ₂, ϕ) _
 (* A3 *)
 | δ₁ ∨ δ₂ =>
-      (E (Δ' ++ isimp δ₁) _ ⇢ A (Δ' ++ isimp δ₁, ϕ) _)
-  ⊼ (E (Δ' ++ isimp δ₂) _ ⇢ A (Δ' ++ isimp δ₂, ϕ) _)
+      (E (Δ'•δ₁) _ ⇢ A (Δ'•δ₁, ϕ) _)
+  ⊼ (E (Δ'•δ₂) _ ⇢ A (Δ'•δ₂, ϕ) _)
 | Var q → δ =>
     if decide (Var q ∈ Δ) then A (Δ'•δ, ϕ) _ (* A5 modified *)
     else if decide (p = q) then ⊥
-    else q ⊼ A (Δ' ++ isimp δ, ϕ) _ (* A4 *)
+    else q ⊼ A (Δ'•δ, ϕ) _ (* A4 *)
 (* A6 *)
 | (δ₁ ∧ δ₂)→ δ₃ =>
-  A (Δ' ++ isimp (δ₁ → (δ₂ → δ₃)), ϕ) _
+  A (Δ'•(δ₁ → (δ₂ → δ₃)), ϕ) _
 (* A7 *)
 | (δ₁ ∨ δ₂)→ δ₃ =>
-  A ((Δ' ++ isimp (δ₁ → δ₃)) ++ isimp (δ₂ → δ₃), ϕ) _
+  A ((Δ'•(δ₁ → δ₃))•(δ₂ → δ₃), ϕ) _
 (* A8 modified*)
 | ((δ₁→ δ₂)→ δ₃) =>
-  (E ((Δ'  ++ isimp (δ₂ → δ₃)) ++ isimp  δ₁) _ ⇢ A ((Δ'  ++ isimp (δ₂ → δ₃) )++ isimp  δ₁, δ₂) _)
-  ⊼ A (Δ' ++ isimp δ₃, ϕ) _
+  (E (Δ'•(δ₂ → δ₃) • δ₁) _ ⇢ A (Δ'•(δ₂ → δ₃) • δ₁, δ₂) _)
+  ⊼ A (Δ'•δ₃, ϕ) _
 | Bot => ⊥
 | Bot → _ => ⊥
 | □δ => ⊥
-| ((□δ1) → δ2) => (□(E(((□⁻¹ Δ') ++ isimp  δ2 ) ++ isimp  (□δ1)) _  
-                              ⇢ A(((□⁻¹ Δ') ++ isimp  δ2 ) ++ isimp  (□δ1), δ1) _))
-                          ∧ A(Δ' ++ isimp δ2, ϕ) _
+| ((□δ1) → δ2) => (□(E((□⁻¹ Δ')• δ2 • □δ1) _  ⇢ A((□⁻¹ Δ')• δ2 • □δ1, δ1) _)) ∧ A(Δ' • δ2, ϕ) _
 (* using ⊼ here breaks congruence *)
 end.
 
-
-(* make sure that the proof obligations do not depend on EA0 *)
-Obligation Tactic := intros Δ ϕ _ _ _; intros; order_tac.
+Obligation Tactic := intros Δ ϕ _ _; intros; order_tac.
 Program Definition a_rule_form {Δ : list form} {ϕ : form}
-  (EA0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form * form) : form :=
-let E pe0 H := fst (EA0 pe0 H) in
-let A pe0 H := snd (EA0 pe0 H) in 
+  (E : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form)
+  (A : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form) :=
 match ϕ with
 | Var q =>
     if decide (p = q) (* TODO : change this to p∈Vars(ϕ) *)
@@ -167,17 +134,18 @@ match ϕ with
 | Bot => ⊥
 | □δ => □((E ((□⁻¹ Δ) • □δ, δ) _) ⇢ A((□⁻¹ Δ) • □δ, δ) _)
 end.
-(* TODO: use isimp here too? *)
 
 Obligation Tactic := intros; order_tac.
-Program Fixpoint EA (pe : list form * form) {wf pointed_env_order pe} :=
-  let Δ := fst pe in
-  (⋀ (in_map Δ (e_rule EA)),
-   ⋁ (in_map Δ (a_rule_env EA)) ⊻ a_rule_form EA).
-Next Obligation. apply wf_pointed_order. Defined.
+Program Fixpoint EA (b : bool) (pe : list form * form) {wf pointed_env_order pe} : form :=
+  let Δ := pe.1 in
+  let E := EA true in
+  let A := EA false in
+  if b then⋀ (in_map Δ (e_rule E A))
+  else ⋁ (in_map Δ (a_rule_env E A)) ⊻ a_rule_form E A.
+Next Obligation. apply Wf.measure_wf, wf_pointed_order. Defined.
 
-Definition E pe := (EA pe).1.
-Definition A pe := (EA pe).2.
+Definition E := EA true.
+Definition A := EA false.
 
 Definition Ef (ψ : form) := E ([ψ], ⊥).
 Definition Af (ψ : form) := A ([], ψ).
@@ -185,78 +153,92 @@ Definition Af (ψ : form) := A ([], ψ).
 
 (** Congruence lemmas: if we apply any of e_rule, a_rule_env, or a_rule_form
   to two equal environments, then they give the same results. *)
-Lemma e_rule_cong Δ ϕ θ (Hin: θ ∈ Δ) EA1 EA2:
-  (forall pe Hpe, EA1 pe Hpe = EA2 pe Hpe) ->
-  @e_rule Δ ϕ EA1 θ Hin = @e_rule Δ ϕ EA2 θ Hin.
+Lemma e_rule_cong Δ ϕ θ (Hin: θ ∈ Δ) E1 A1 E2 A2:
+  (forall pe Hpe, E1 pe Hpe = E2 pe Hpe) ->
+  (forall pe Hpe, A1 pe Hpe = A2 pe Hpe) ->
+  @e_rule Δ ϕ E1 A1 θ Hin = @e_rule Δ ϕ E2 A2 θ Hin.
 Proof.
-  intro Heq.
+  intros HeqE HeqA.
   destruct θ; simpl; try (destruct θ1); repeat (destruct decide);
-  f_equal; repeat erewrite Heq; trivial.
+  f_equal; repeat erewrite ?HeqE, ?HeqA; trivial.
 Qed.
 
-Lemma e_rule_cong_strong Δ ϕ θ (Hin1 Hin2: θ ∈ Δ) EA1 EA2:
-  (forall pe Hpe1 Hpe2, EA1 pe Hpe1 = EA2 pe Hpe2) ->
-  @e_rule Δ ϕ EA1 θ Hin1 = @e_rule Δ ϕ EA2 θ Hin2.
+Lemma e_rule_cong_strong Δ ϕ θ (Hin1 Hin2: θ ∈ Δ) E1 A1 E2 A2:
+  (forall pe Hpe1 Hpe2, E1 pe Hpe1 = E2 pe Hpe2) ->
+  (forall pe Hpe1 Hpe2, A1 pe Hpe1 = A2 pe Hpe2) ->
+  @e_rule Δ ϕ E1 A1 θ Hin1 = @e_rule Δ ϕ E2 A2 θ Hin2.
 Proof.
-  intro Heq.
+  intros HeqE HeqA.
   destruct θ; simpl; try (destruct θ1); repeat (destruct decide);
-  f_equal; repeat erewrite Heq; trivial.
+  f_equal; repeat erewrite ?HeqE, ?HeqA; trivial.
 Qed.
 
-Lemma a_rule_env_cong Δ ϕ θ Hin EA1 EA2:
-  (forall pe Hpe, EA1 pe Hpe = EA2 pe Hpe) ->
-  @a_rule_env Δ ϕ EA1 θ Hin = @a_rule_env Δ ϕ EA2 θ Hin.
+Lemma a_rule_env_cong Δ ϕ θ Hin  E1 A1 E2 A2:
+  (forall pe Hpe, E1 pe Hpe = E2 pe Hpe) ->
+  (forall pe Hpe, A1 pe Hpe = A2 pe Hpe) ->
+  @a_rule_env Δ ϕ E1 A1 θ Hin = @a_rule_env Δ ϕ E2 A2 θ Hin.
 Proof.
-  intro Heq.
+  intros HeqE HeqA.
   destruct θ; simpl; trivial; repeat (destruct decide);
-  f_equal; repeat erewrite Heq; trivial;
+  f_equal; repeat erewrite ?HeqE, ?HeqA; trivial;
   destruct θ1; try (destruct decide); trivial; simpl;
-  repeat erewrite Heq; trivial; (destruct decide); trivial.
+  repeat erewrite ?HeqE, ?HeqA; trivial; (destruct decide); trivial.
 Qed.
 
-Lemma a_rule_env_cong_strong Δ ϕ θ Hin1 Hin2 EA1 EA2:
-  (forall pe Hpe1 Hpe2, EA1 pe Hpe1 = EA2 pe Hpe2) ->
-  @a_rule_env Δ ϕ EA1 θ Hin1 = @a_rule_env Δ ϕ EA2 θ Hin2.
+Lemma a_rule_env_cong_strong Δ ϕ θ Hin1 Hin2  E1 A1 E2 A2:
+  (forall pe Hpe1 Hpe2, E1 pe Hpe1 = E2 pe Hpe2) ->
+  (forall pe Hpe1 Hpe2, A1 pe Hpe1 = A2 pe Hpe2) ->
+  @a_rule_env Δ ϕ E1 A1 θ Hin1 = @a_rule_env Δ ϕ E2 A2 θ Hin2.
 Proof.
-  intro Heq.
+  intros HeqE HeqA.
   destruct θ; simpl; trivial; repeat (destruct decide);
-  f_equal; repeat erewrite Heq; trivial;
+  f_equal; repeat erewrite ?HeqE, ?HeqA; trivial;
   destruct θ1; try (destruct decide); trivial; simpl;
-  repeat erewrite Heq; trivial; (destruct decide); trivial.
+  repeat erewrite ?HeqE, ?HeqA; trivial; (destruct decide); trivial.
 Qed.
 
-Lemma a_rule_form_cong Δ ϕ EA1 EA2:
-  (forall pe Hpe, EA1 pe Hpe = EA2 pe Hpe) ->
-  @a_rule_form Δ ϕ EA1 = @a_rule_form Δ ϕ EA2.
+
+Lemma a_rule_form_cong Δ ϕ  E1 A1 E2 A2:
+  (forall pe Hpe, E1 pe Hpe = E2 pe Hpe) ->
+  (forall pe Hpe, A1 pe Hpe = A2 pe Hpe) ->
+  @a_rule_form Δ ϕ E1 A1 = @a_rule_form Δ ϕ E2 A2.
 Proof.
-  intro Heq.
+  intros HeqE HeqA.
   destruct ϕ; simpl; repeat (destruct decide); trivial;
-  repeat (erewrite Heq; eauto); trivial.
+  repeat (erewrite ?HeqE, ?HeqA; eauto); trivial.
 Qed.
 
-Lemma a_rule_form_cong_strong Δ ϕ EA1 EA2:
-  (forall pe Hpe1 Hpe2, EA1 pe Hpe1 = EA2 pe Hpe2) ->
-  @a_rule_form Δ ϕ EA1 = @a_rule_form Δ ϕ EA2.
+
+Lemma a_rule_form_cong_strong Δ ϕ  E1 A1 E2 A2:
+  (forall pe Hpe1 Hpe2, E1 pe Hpe1 = E2 pe Hpe2) ->
+  (forall pe Hpe1 Hpe2, A1 pe Hpe1 = A2 pe Hpe2) ->
+  @a_rule_form Δ ϕ E1 A1 = @a_rule_form Δ ϕ E2 A2.
 Proof.
-  intro Heq.
+  intros HeqE HeqA.
   destruct ϕ; simpl; repeat (destruct decide); trivial;
-  repeat (erewrite Heq; eauto); trivial.
+  repeat (erewrite ?HeqE, ?HeqA; eauto); trivial.
 Qed.
 
 Lemma EA_eq Δ ϕ:
-  (E (Δ, ϕ) =  ⋀ (in_map Δ (@e_rule Δ ϕ (λ pe _, EA pe)))) /\
-  (A (Δ, ϕ) = (⋁ (in_map Δ (@a_rule_env Δ ϕ (λ pe _, EA pe)))) ⊻
-       @a_rule_form Δ ϕ (λ pe _, EA pe)).
+  (E (Δ, ϕ) =  ⋀ (in_map Δ (@e_rule Δ ϕ (λ pe _, E pe) (λ pe _, A pe)))) /\
+  (A (Δ, ϕ) = (⋁ (in_map Δ (@a_rule_env Δ ϕ (λ pe _, E pe) (λ pe _, A pe)))) ⊻
+       @a_rule_form Δ ϕ (λ pe _, E pe) (λ pe _, A pe)).
 Proof.
 simpl. unfold E, A, EA. simpl.
-rewrite -> Wf.Fix_eq.
-- simpl. split; trivial.
-- intros Δ' f g Heq. f_equal; f_equal.
-  + apply in_map_ext. intros. apply e_rule_cong; intros.
+unfold EA_func at 1.
+rewrite -> Wf.Fix_eq; simpl.
+-  split; trivial.
+   unfold EA_func at 1. rewrite -> Wf.Fix_eq; simpl; trivial.
+    intros [[|] Δ'] f g Heq; simpl; f_equal.
+  + apply in_map_ext. intros. trivial. apply e_rule_cong; intros; now rewrite Heq.
+  + f_equal. apply in_map_ext. intros. apply a_rule_env_cong; intros;
       now rewrite Heq.
-  + f_equal. apply in_map_ext. intros. apply a_rule_env_cong; intros.
+  + apply a_rule_form_cong; intros; now rewrite Heq.
+- intros [[|] Δ'] f g Heq; simpl; f_equal.
+  + apply in_map_ext. intros. trivial. apply e_rule_cong; intros; now rewrite Heq.
+  + f_equal. apply in_map_ext. intros. apply a_rule_env_cong; intros;
       now rewrite Heq.
-  + apply a_rule_form_cong; intros. now rewrite Heq.
+  + apply a_rule_form_cong; intros; now rewrite Heq.
 Qed.
 
 Definition E_eq Δ ϕ := proj1 (EA_eq Δ ϕ).
@@ -293,8 +275,6 @@ try match goal with
 | H : occurs_in _ (?a ⇢ ?b) |- _ => apply occurs_in_make_impl in H
 | H : occurs_in _ (?a ⊻ ?b) |- _ => apply occurs_in_make_disj in H
 | H : occurs_in _ (?a ⊼ ?b) |- _ => apply occurs_in_make_conj in H
-|H1 : ?x0 ∈ (?Δ ++ _), H2 : occurs_in ?x ?x0 |- _ => repeat rewrite elem_of_app in H1
-|H1 : ?x0 ∈ (isimp _), H2 : occurs_in ?x ?x0 |- _ => apply (isim_vars H2) in H1
 |H1 : ?x0 ∈ (⊗ ?Δ), H2 : occurs_in ?x ?x0 |- _ =>
       apply (occurs_in_open_boxes _ _ _ H2) in H1
 |H1 : ?x0 ∈ (map open_box ?Δ), H2 : occurs_in ?x ?x0 |- _ =>
@@ -309,11 +289,13 @@ try multimatch goal with
 (** *** (a)  *)
 
 Lemma e_rule_vars Δ (θ : form) (Hin : θ ∈ Δ) (ϕ : form)
-  (EA0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form * form) x
+  (E0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form)
+  (A0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form)
+   x
   (HEA0 : ∀ pe Hpe, 
-      (occurs_in x (fst (EA0 pe Hpe)) -> x ≠ p ∧ ∃ θ, θ ∈ pe.1 /\ occurs_in x θ) /\
-      (occurs_in x (snd (EA0 pe Hpe)) -> x ≠ p ∧ (occurs_in x pe.2 \/ ∃ θ, θ ∈ pe.1 /\ occurs_in x θ))) :
-occurs_in x (e_rule EA0 θ Hin) -> x ≠ p ∧ ∃ θ, θ ∈ Δ /\ occurs_in x θ.
+      (occurs_in x (E0 pe Hpe) -> x ≠ p ∧ ∃ θ, θ ∈ pe.1 /\ occurs_in x θ) /\
+      (occurs_in x (A0 pe Hpe) -> x ≠ p ∧ (occurs_in x pe.2 \/ ∃ θ, θ ∈ pe.1 /\ occurs_in x θ))) :
+occurs_in x (e_rule E0 A0 θ Hin) -> x ≠ p ∧ ∃ θ, θ ∈ Δ /\ occurs_in x θ.
 Proof. 
 destruct θ; unfold e_rule; simpl; try tauto; try solve [repeat case decide; repeat vars_tac].
 destruct θ1; repeat case decide; repeat vars_tac.
@@ -323,11 +305,13 @@ Qed.
 (** *** (b) *)
 
 Lemma a_rule_env_vars Δ θ Hin ϕ
-  (EA0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form * form) x
+  (E0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form)
+  (A0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form)
+   x
   (HEA0 : ∀ pe Hpe, 
-      (occurs_in x (fst (EA0 pe Hpe)) -> x ≠ p ∧ ∃ θ, θ ∈ pe.1 /\ occurs_in x θ) /\
-      (occurs_in x (snd (EA0 pe Hpe)) -> x ≠ p ∧ (occurs_in x pe.2 \/ ∃ θ, θ ∈ pe.1 /\ occurs_in x θ))):
-occurs_in x (a_rule_env EA0 θ Hin) -> x ≠ p ∧ (occurs_in x ϕ \/ ∃ θ, θ ∈ Δ /\ occurs_in x θ).
+      (occurs_in x (E0 pe Hpe) -> x ≠ p ∧ ∃ θ, θ ∈ pe.1 /\ occurs_in x θ) /\
+      (occurs_in x (A0 pe Hpe) -> x ≠ p ∧ (occurs_in x pe.2 \/ ∃ θ, θ ∈ pe.1 /\ occurs_in x θ))):
+occurs_in x (a_rule_env E0 A0 θ Hin) -> x ≠ p ∧ (occurs_in x ϕ \/ ∃ θ, θ ∈ Δ /\ occurs_in x θ).
 Proof. 
 destruct θ; unfold a_rule_env; simpl; try tauto; try solve [repeat case decide; repeat vars_tac].
 destruct θ1; repeat case decide; repeat vars_tac.
@@ -335,11 +319,13 @@ Qed.
 
 
 Lemma a_rule_form_vars Δ ϕ
-  (EA0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form * form) x
+  (E0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form)
+  (A0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form)
+   x
   (HEA0 : ∀ pe Hpe, 
-      (occurs_in x (fst (EA0 pe Hpe)) -> x ≠ p ∧ ∃ θ, θ ∈ pe.1 /\ occurs_in x θ) /\
-      (occurs_in x (snd (EA0 pe Hpe)) -> x ≠ p ∧ (occurs_in x pe.2 \/ ∃ θ, θ ∈ pe.1 /\ occurs_in x θ))):
-  occurs_in x (a_rule_form EA0) -> x ≠ p ∧ (occurs_in x ϕ \/ ∃ θ, θ ∈ Δ /\ occurs_in x θ).
+      (occurs_in x (E0 pe Hpe) -> x ≠ p ∧ ∃ θ, θ ∈ pe.1 /\ occurs_in x θ) /\
+      (occurs_in x (A0 pe Hpe) -> x ≠ p ∧ (occurs_in x pe.2 \/ ∃ θ, θ ∈ pe.1 /\ occurs_in x θ))):
+  occurs_in x (a_rule_form E0 A0) -> x ≠ p ∧ (occurs_in x ϕ \/ ∃ θ, θ ∈ Δ /\ occurs_in x θ).
 Proof. 
 destruct ϕ; unfold a_rule_form; simpl; try tauto; try solve [repeat case decide; repeat vars_tac].
 Qed.
@@ -397,9 +383,11 @@ Local Ltac l_tac := repeat rewrite list_to_set_disj_open_boxes;
 || rewrite (proper_Provable _ _ (equiv_disj_union_compat_r (equiv_disj_union_compat_r (list_to_set_disj_env_add _ _))) _ _ eq_refl)
 || rewrite (proper_Provable _ _ (equiv_disj_union_compat_r(equiv_disj_union_compat_r (equiv_disj_union_compat_r (list_to_set_disj_env_add _ _)))) _ _ eq_refl).
 
-Lemma a_rule_env_spec (Δ : list form) θ ϕ Hin (EA0 : ∀ pe, (pe ≺· (Δ, ϕ)) → form * form)
-  (HEA : forall Δ ϕ Hpe, (list_to_set_disj Δ ⊢ fst (EA0 (Δ, ϕ) Hpe)) * (list_to_set_disj  Δ• snd(EA0 (Δ, ϕ) Hpe) ⊢ ϕ)) :
-  (list_to_set_disj  Δ • a_rule_env EA0 θ Hin ⊢ ϕ).
+Lemma a_rule_env_spec (Δ : list form) θ ϕ Hin
+  (E0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form)
+  (A0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form)
+  (HEA : forall Δ ϕ Hpe, (list_to_set_disj Δ ⊢ E0 (Δ, ϕ) Hpe) * (list_to_set_disj  Δ• A0 (Δ, ϕ) Hpe ⊢ ϕ)) :
+  (list_to_set_disj  Δ • a_rule_env E0 A0 θ Hin ⊢ ϕ).
 Proof with (auto with proof).
 assert (HE := λ Δ0 ϕ0 Hpe, fst (HEA Δ0 ϕ0 Hpe)).
 assert (HA := λ Δ0 ϕ0 Hpe, snd (HEA Δ0 ϕ0 Hpe)).
@@ -411,14 +399,7 @@ rewrite (proper_Provable _ _ (equiv_disj_union_compat_r (equiv_disj_union_compat
   + subst. case_decide; subst; auto with proof.
   + exch 0...
 - constructor 2.
-- simpl; exch 0. apply AndL.
-(* requires a specific lemma using isimp_complete_L, equiv_assoc and list_to_set_disj_app *)
-assert((list_to_set_disj (((rm (θ1 ∧ θ2) Δ) ++ isimp θ1) ++ isimp θ2)
- • (EA0 ((rm (θ1 ∧ θ2) Δ ++ isimp θ1) ++ isimp θ2, ϕ)
-      (a_rule_env_obligation_1 Δ ϕ (θ1 ∧ θ2) Hin θ1 θ2 eq_refl)).2) ⊢ ϕ).
-      
-auto with proof.
- exch 1; exch 0. do 2 l_tac...
+- simpl; exch 0. apply AndL. exch 1; exch 0. do 2 l_tac...
 - apply make_conj_sound_L.
   exch 0. apply OrL; exch 0.
   + apply AndL. apply make_impl_sound_L. exch 0. apply make_impl_sound_L.
@@ -542,21 +523,21 @@ destruct φ'1; repeat rewrite (Hind _ φ) by (trivial; order_tac); trivial.
 Qed.
 
 Lemma E_left {Γ} {θ} {Δ} {φ φ'} (Hin : φ ∈ Δ) :
-(Γ•e_rule (λ pe (_ : pe ≺· (Δ, φ')),  EA pe)  φ Hin) ⊢ θ ->
-Γ•E (Δ, φ') ⊢ θ.
+(Γ • e_rule (λ pe (_ : pe ≺· (Δ, φ')),  E pe) (λ pe (_ : pe ≺· (Δ, φ')),  A pe)  φ Hin) ⊢ θ ->
+Γ • E (Δ, φ') ⊢ θ.
 Proof. 
 intro Hp. rewrite E_eq.
-destruct (@in_map_in _ _ _  (e_rule (λ pe (_ : pe ≺· (Δ, φ')), EA pe)) _ Hin) as [Hin' Hrule].
+destruct (@in_map_in _ _ _  (e_rule (λ pe (_ : pe ≺· (Δ, φ')), E pe) (λ pe (_ : pe ≺· (Δ, φ')), A pe) ) _ Hin) as [Hin' Hrule].
 eapply conjunction_L.
 - apply Hrule.
 - exact Hp.
 Qed.
 
 Lemma A_right {Γ} {Δ} {φ φ'} (Hin : φ ∈ Δ) :
-Γ ⊢ a_rule_env (λ pe (_ : pe ≺· (Δ, φ')), EA pe) φ Hin ->
+Γ ⊢ a_rule_env  (λ pe (_ : pe ≺· (Δ, φ')), E pe) (λ pe (_ : pe ≺· (Δ, φ')), A pe) φ Hin ->
 Γ ⊢ A (Δ, φ').
 Proof.  intro Hp. rewrite A_eq.
-destruct (@in_map_in _ _ _  (a_rule_env (λ pe (_ : pe ≺· (Δ, φ')), EA pe)) _ Hin) as [Hin' Hrule].
+destruct (@in_map_in _ _ _  (a_rule_env  (λ pe (_ : pe ≺· (Δ, φ')), E pe) (λ pe (_ : pe ≺· (Δ, φ')), A pe)) _ Hin) as [Hin' Hrule].
 eapply make_disj_sound_R, OrR1, disjunction_R.
 - exact Hrule.
 - exact Hp.
