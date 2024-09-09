@@ -21,6 +21,7 @@ induction l as [|x l].
     * right. simpl. intros z [Hz|Hz]; subst; try rewrite Heq; auto with *.
 Defined.
 
+
 (* This function computes a proof tree of a sequent, if there is one, or produces a proof that there is none *)
 Proposition Proof_tree_dec Γ φ :
   {_ : list_to_set_disj Γ ⊢ φ & True} + {forall H : list_to_set_disj  Γ ⊢ φ, False}.

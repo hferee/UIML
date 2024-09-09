@@ -1,41 +1,12 @@
-Require Import ISL.Sequents ISL.SequentProps ISL.Order ISL.Optimizations ISL.DecisionProcedure.
 Require Import Coq.Program.Equality. (* for dependent induction *)
-
-(** * Overview: Propositional Quantifiers
-
-The main theorem proved in this file was first proved as Theorem 1 in:
-
-(Pitts 1992). A. M. Pitts. On an interpretation of second order quantification in first order intuitionistic propositional logic. J. Symb. Log., 57(1):33–52.
-It has been further extended to handle iSL
-
-It consists of two parts: 
-
-1) the inductive construction of the propositional quantifiers; 
-
-2) a proof of its correctness. *)
+Require Import ISL.PropQuantifiers ISL.Sequents ISL.SequentProps.
+Require Import ISL.Order ISL.DecisionProcedure.
 
 Section UniformInterpolation.
 
-(** Throughout the construction and proof, we fix a variable p, with respect to
-  which the propositional quantifier will be computed. *)
-Variable p : variable.
-
-
-(** * Definition of propositional quantifiers. *)
-
-Section PropQuantDefinition.
-
-(** We define the formulas Eφ and Aφ associated to any formula φ. This
-  is an implementation of Pitts' Table 5, together with a (mostly automatic)
-  proof that the definition terminates*)
-
-Local Notation "Δ '•' φ" := (cons φ Δ).
-
-Notation "□⁻¹ Γ" := (map open_box Γ) (at level 75).
-
 Definition applicable_AndR φ: {φ1 & {φ2 | φ = (And φ1 φ2)}} + (∀ φ1 φ2, φ ≠ (And φ1 φ2)).
 Proof. (destruct φ; eauto). Defined.
-
+(*
 Definition applicable_other_var (Γ : list form): {q | p ≠ q /\ Var q ∈ Γ} + (∀ q, p ≠ q -> Var q ∈ Γ -> False).
 Proof.
   pose (fA := (fun θ => match θ with |Var q => if decide (p = q)  then false else true | _ => false end)).
@@ -46,6 +17,7 @@ Proof.
   - right. intros ψ1 ψ2 Hψ. rewrite elem_of_list_In in Hψ. apply Hf in Hψ. subst fA. simpl in Hψ.
      case decide in Hψ; auto with *.
 Defined.
+*)
 
 Definition applicable_AndL (Γ : list form): {ψ1 & {ψ2 | (And ψ1 ψ2) ∈ Γ}} + (∀ ψ1 ψ2, (And ψ1 ψ2) ∈ Γ -> False).
 Proof.
@@ -69,6 +41,7 @@ Proof.
   - right. intros ψ1 ψ2 Hψ. rewrite elem_of_list_In in Hψ. apply Hf in Hψ. subst fA. simpl in Hψ. tauto.
 Defined.
 
+(*
 Definition applicable_ImpL_other_Var (Γ : list form):
   {q & {ψ | q ≠ p /\ (Implies (Var q) ψ) ∈ Γ}} +
   (∀ q ψ, q ≠ p -> (Implies (Var q) ψ) ∈ Γ -> False).
@@ -83,6 +56,7 @@ Proof.
   - right. intros q ψ Hp Hψ. rewrite elem_of_list_In in Hψ. apply Hf in Hψ. subst fIp.
     simpl in Hψ. rewrite decide_False in Hψ; trivial; auto with *.
 Defined.
+*)
 
 Definition applicable_ImpLVar (Γ : list form):
   {q & {ψ | Var q ∈ Γ /\ (Implies (Var q) ψ) ∈ Γ}} +
@@ -151,6 +125,7 @@ Proof. destruct φ; eauto with *. Defined.
 Definition applicable_BoxR φ: {φ' | φ = (□ φ')} + (∀ φ', φ = (□ φ') -> False).
 Proof. destruct φ; eauto with *. Defined.
 
+(*
 Definition applicable_ImpLImp (Γ : list form):
   {φ1 & {φ2 & {φ3 | ((φ1 → φ2) → φ3) ∈ Γ}}} +(forall φ1 φ2 φ3, ((φ1 → φ2) → φ3) ∈ Γ -> False).
 Proof.
@@ -160,6 +135,7 @@ Proof.
       destruct θ1. 1-4, 6: auto with *. do 3 eexists; apply elem_of_list_In; eauto.
     - right. intros ψ1 ψ2 ψ3 Hψ. rewrite elem_of_list_In in Hψ. apply Hf in Hψ. subst fII. simpl in Hψ. tauto.
 Defined.
+*)
 
 (* can this be replaced with generalised axiom?*)
 Definition applicable_Atom q (Δ : list form) ϕ :
@@ -204,100 +180,76 @@ Notation "cond '?' A ':1' B" := (sumor_bind1 cond A B) (at level 150, right asso
 Notation "cond '?' A ':2' B" := (sumor_bind2 cond A B) (at level 150, right associativity).
 Notation "cond '?' A ':3' B" := (sumor_bind3 cond A B) (at level 150, right associativity).
 
-(* solves the obligations of the following programs *)
-Obligation Tactic := simpl; intros; order_tac.
-Program Definition e_rule {Δ : list form } {ϕ : form}
-  (EA0 : ∀ bool pe (Hpe : pe ≺· (Δ, ϕ)), form)
-  (θ: form) (Hin : θ ∈ Δ) : form :=
-let E Δ H := EA0 true (Δ, ϕ) H in
-let A pe0 H := EA0 false pe0 H in
-let Δ'  := rm θ Δ in
-match θ with
-| Var q → δ => if decide (p = q) then ⊤ else q → E (Δ'•δ) _ (* E5 modified *)
-(* E8 modified *)
-| ((δ₁→ δ₂)→ δ₃) =>
-  (E (Δ'•(δ₂ → δ₃) • δ₁) _⇢ A (Δ'•(δ₂ → δ₃) • δ₁, δ₂) _) ⇢ E (Δ'•δ₃) _
-| □ φ => □(E ((□⁻¹ Δ') • φ ) _) (* very redundant ; identical for each box *)
-| (□δ1 → δ2) =>  (□(E((□⁻¹ Δ') • δ2 • □δ1) _ ⇢ A((□⁻¹ Δ') • δ2 • □δ1, δ1) _)) ⇢ E(Δ' • δ2) _
-| _ => ⊤
-end.
+(* TODO: plan:
+  - reuse propquantifiers (esp, don't redefine erule); 
+  - define propquant' as the same fixpoint as propquant, but with a simplification step
+  - the simplification shold look like the monadic simplifications done here, but more general
+  - to ensure that' it's still correct, prove that simplified sequents are "equivalent" to the original ones
+  -  show (by induction on the definition of EA and EA') that EA equiv EA'
+  *)
+  
+Local Notation "Δ '•' φ" := (cons φ Δ).
 
-(** The implementation of the rules for defining A is separated into two pieces.
-    Referring to Table 5 in Pitts, the definition a_rule_env handles A1-8 and A10,
-    and the definition a_rule_form handles A9 and A11-13. *)
-Program Definition a_rule_env {Δ : list form} {ϕ : form}
-  (EA0 : ∀ bool pe (Hpe : pe ≺· (Δ, ϕ)), form)
-  (θ: form) (Hin : θ ∈ Δ) : form :=
-let E Δ H := EA0 true (Δ, ϕ) H in
-let A pe0 H := EA0 false pe0 H in
-let Δ'  := rm θ Δ in
-match θ with
-| Var q → δ => if decide (p = q) then ⊥ else q ⊼ A (Δ'•δ, ϕ) _ (* A4 *)
-(* A6 *)
-(* A8 modified*)
-| ((δ₁→ δ₂)→ δ₃) =>
-  (E (Δ'•(δ₂ → δ₃) • δ₁) _ ⇢ A (Δ'•(δ₂ → δ₃) • δ₁, δ₂) _)
-  ⊼ A (Δ'•δ₃, ϕ) _
-| ((□δ1) → δ2) => (□(E((□⁻¹ Δ')• δ2 • □δ1) _  ⇢ A((□⁻¹ Δ')• δ2 • □δ1, δ1) _)) ∧ A(Δ' • δ2, ϕ) _
-(* using ⊼ here breaks congruence *)
-| _ => ⊥
-end.
+Infix "⊢?" := Provable_dec (at level 80).
 
-Program Definition a_rule_form {Δ : list form} {ϕ : form}
-  (EA0 : ∀ bool pe (Hpe : pe ≺· (Δ, ϕ)), form) :=
-let E pe0:= EA0 true pe0 in
-let A pe0 H := EA0 false pe0 H in
-match ϕ with
-| Var q =>
-    if decide (p = q)
-    then ⊥
-    else Var q (* A9 *)
-(* A12 *)
-| ϕ₁ ∨ ϕ₂ => A (Δ, ϕ₁) _ ⊻ A (Δ, ϕ₂) _
-| □δ => □((E ((□⁻¹ Δ) • □δ, δ) _) ⇢ A((□⁻¹ Δ) • □δ, δ) _)
-| _ => ⊥
-end.
+(* Probably very costly *)
+Definition applicable_strong_weakening (Γ : list form):
+  {φ : form | φ ∈ Γ /\ exists (_ : list_to_set_disj (rm φ Γ) ⊢ φ), True}
+  + (∀ φ, φ ∈ Γ -> forall (_ : list_to_set_disj (rm φ Γ) ⊢ φ), False).
+Proof.
+destruct (exists_dec (λ φ, if Provable_dec (rm φ Γ) φ then true else false) Γ) as [[φ [Hin Hφ]]| Hf].
+- left. exists φ; split.
+  + now apply elem_of_list_In.
+  + destruct ((rm φ Γ) ⊢? φ). trivial. contradict Hφ.
+- right. intros φ Hin Hφ. apply (Hf φ). now apply elem_of_list_In.
+   destruct ((rm φ Γ) ⊢? φ). auto with *. tauto.
+Defined.
+
+Obligation Tactic := (simpl; intuition order_tac).
+Program Fixpoint simp_env (Δ : list form) {wf env_order Δ} : list form :=
+    (* invertible left rules *)
+    applicable_AndL Δ ? λ δ₁ δ₂  _, simp_env ((rm (δ₁ ∧ δ₂) Δ•δ₁)•δ₂) :2
+    applicable_ImpLVar Δ ? λ q ψ  _, simp_env ((rm (Var q → ψ) Δ • ψ)) :2
+    applicable_ImpLAnd Δ ? λ δ₁ δ₂ δ₃  _, simp_env ((rm ((δ₁ ∧ δ₂)→ δ₃) Δ • (δ₁ → (δ₂ → δ₃)))) :3
+    applicable_ImpLOr Δ ? λ δ₁ δ₂ δ₃  _, simp_env (rm ((δ₁ ∨ δ₂)→ δ₃) Δ • (δ₁ → δ₃) • (δ₂ → δ₃)) :3
+    (* remove redundant assumptions *)
+    applicable_strong_weakening Δ ? λ φ _, simp_env (rm φ Δ) :1
+    Δ
+.
+Next Obligation. apply Wf.measure_wf, wf_env_order. Qed.
+
+Definition simp_form φ:= ⋀ (simp_env [φ]).
+
+Definition pointed_env_order_refl pe1 pe2 := env_order_refl (pe1.2 :: pe1.2 :: pe1.1) (pe2.2 :: pe2.2 :: pe2.1).
+
+Lemma simp_env_order pe : env_order_refl (simp_env pe) pe.
+Proof.
+Admitted.
+
+Variable p : variable.
 
 Obligation Tactic := solve[simpl; intros; simpl in *; intuition;  order_tac] || (try (apply Wf.measure_wf, wf_pointed_order)).
-Program Fixpoint EA (b : bool) (pe : list form * form) {wf pointed_env_order pe} :=
-  let Δ := fst pe in
-  let ϕ := snd pe in
-  let E := EA true in
-  let A := EA false in
+Program Fixpoint EA (b : bool) (pe : pointed_env) {wf pointed_env_order pe} : form :=
+  let Δ := simp_env pe.1 in (* because pattern matchin in lets is not broken *)
+  let ϕ := pe.2 in
+  let E pe H := EA true pe in
+  let A pe H := EA false pe in
   (* E *)
   if b then
-    if decide (⊥ ∈ Δ) then ⊥ else
-    applicable_other_var Δ ? λ q _, q ⊼ E (rm (Var q) Δ, ϕ) _ :1
-    applicable_AndL Δ ? λ δ₁ δ₂  _, E ((rm (δ₁ ∧ δ₂) Δ•δ₁)•δ₂, ϕ) _ :2
-    applicable_OrL Δ ? λ δ₁ δ₂  _, E ((rm (δ₁ ∨ δ₂) Δ•δ₁, ϕ)) _ ⊻E ((rm (δ₁ ∨ δ₂) Δ•δ₂, ϕ)) _ :2
-    applicable_ImpLVar Δ ? λ q ψ  _, E ((rm (Var q → ψ) Δ • ψ, ϕ)) _ :2
-    applicable_ImpLAnd Δ ? λ δ₁ δ₂ δ₃  _, E ((rm ((δ₁ ∧ δ₂)→ δ₃) Δ • (δ₁ → (δ₂ → δ₃)), ϕ)) _ :3
-    applicable_ImpLOr Δ ? λ δ₁ δ₂ δ₃  _, E (rm ((δ₁ ∨ δ₂)→ δ₃) Δ • (δ₁ → δ₃) • (δ₂ → δ₃), ϕ) _ :3
-    ⋀ (in_map Δ (e_rule EA)) (* the non-invertible rules *)
-
+    ⋀ (in_map Δ (@e_rule p Δ ϕ E A))
   (* A *)
   else
-    applicable_other_var Δ ? λ q _, A (rm (Var q) Δ, ϕ) _ :1
-    applicable_AndL Δ ? λ δ₁ δ₂  _, A ((rm (δ₁ ∧ δ₂) Δ•δ₁)•δ₂, ϕ) _ :2
-    applicable_OrL Δ ? λ δ₁ δ₂  _, (E ((rm (δ₁ ∨ δ₂) Δ•δ₁, ϕ)) _ ⇢ A ((rm (δ₁ ∨ δ₂) Δ•δ₁, ϕ)) _) ⊼
-                                                          (E ((rm (δ₁ ∨ δ₂) Δ•δ₂, ϕ)) _ ⇢ A ((rm (δ₁ ∨ δ₂) Δ•δ₂, ϕ)) _) :2
-    applicable_ImpLVar Δ ? λ q ψ _, A (rm (Var q → ψ) Δ • ψ, ϕ) _ :2
-    applicable_ImpLAnd Δ ? λ δ₁ δ₂ δ₃  _, A ((rm ((δ₁ ∧ δ₂)→ δ₃) Δ • (δ₁ → (δ₂ → δ₃)), ϕ)) _ :3
-    applicable_ImpLOr Δ ? λ δ₁ δ₂ δ₃  _, A (rm ((δ₁ ∨ δ₂)→ δ₃) Δ • (δ₁ → δ₃) • (δ₂ → δ₃), ϕ) _ :3
-    applicable_Atom p Δ ϕ ? λ _, ⊤ :0
-    applicable_AndR ϕ ? λ ϕ₁ ϕ₂ _, A (Δ, ϕ₁) _ ⊼ A (Δ, ϕ₂) _ :2
-    applicable_ImpR ϕ ? λ ϕ₁ ϕ₂ _, E (Δ • ϕ₁, ϕ₂) _ ⇢ A (Δ • ϕ₁, ϕ₂) _ :2
-    (⋁ (in_map Δ (a_rule_env EA)) ⊻ a_rule_form EA) (* the non-invertible rules *)
-.
+    ⋁ (in_map Δ (@a_rule_env p  Δ ϕ E A)) ⊻ @a_rule_form p  Δ ϕ E A.
+Next Obligation. intros. subst Δ ϕ. eapply env_order_lt_le_trans; [exact H|].
+order_tac. do 2 apply env_order_eq_add. apply simp_env_order. Qed.
+Next Obligation. intros. subst Δ ϕ. eapply env_order_lt_le_trans; [exact H|].
+order_tac. do 2 apply env_order_eq_add. apply simp_env_order. Qed.
 
 
-Definition E pe := EA true pe.
-Definition A pe := EA false pe.
+Definition E := EA true.
+Definition A := EA false.
 
 Definition Ef (ψ : form) := E ([ψ], ⊥).
 Definition Af (ψ : form) := A ([], ψ).
 
-End PropQuantDefinition.
-
 End UniformInterpolation.
-

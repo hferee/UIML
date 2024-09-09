@@ -34,7 +34,7 @@ Qed.
 
 Definition env_order_refl Δ Δ' := (Δ ≺ Δ') \/ Δ ≡ₚ Δ'.
 
-Local Notation "Δ ≼ Δ'" := (env_order_refl Δ Δ') (at level 150).
+Global Notation "Δ ≼ Δ'" := (env_order_refl Δ Δ') (at level 150).
 
 Global Instance Proper_env_weight: Proper ((≡ₚ) ==> (=)) env_weight.
 Proof.
@@ -391,6 +391,15 @@ induction Δ as [|x Δ].
 Qed.
 
 Global Hint Resolve openboxes_env_order : order.
+
+Lemma weight_Arrow_1 φ ψ : 1 < weight (φ → ψ).
+Proof. simpl. pose (weight_pos  φ). lia. Qed.
+
+Lemma weight_Box_1 φ: 1 < weight (□ φ).
+Proof. simpl. pose (weight_pos  φ). lia. Qed.
+
+Global Hint Resolve weight_Arrow_1 : order.
+Global Hint Resolve weight_Box_1 : order.
 
 Ltac order_tac :=
 try unfold pointed_env_ms_order; prepare_order;

@@ -527,10 +527,10 @@ match goal with
 end.
 Qed.
 
-Require Import ISL.PropQuantifiers.
+Require Import ISL.InvPropQuantifiers.
 
-Definition E_simplified (p: variable) (ψ: form) := simp (E p ([ψ],  ⊥)).
-Definition A_simplified (p: variable) (ψ: form) := simp (Af p (ψ)).
+Definition E_simplified (p: variable) (ψ: form) := simp_form (E p ([ψ],  ⊥)).
+Definition A_simplified (p: variable) (ψ: form) := simp_form (Af p (ψ)).
 
 (*
 Lemma bot_vars_incl V: vars_incl ⊥ V.
