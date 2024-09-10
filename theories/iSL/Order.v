@@ -406,3 +406,18 @@ try unfold pointed_env_ms_order; prepare_order;
 repeat rewrite elements_env_add; 
 simpl; auto 10 with order;
 try (apply env_order_disj_union_compat_right; order_tac).
+
+Global Hint Extern 5 (?a ≺ ?b) => order_tac : proof.
+Hint Extern 5 (?a ≺· ?b) => order_tac : proof.
+
+Lemma pointed_env_order_bot_R pe Δ φ: (pe ≺· (Δ, ⊥)) -> pe ≺· (Δ, φ).
+Proof.
+Admitted.
+
+Hint Resolve pointed_env_order_bot_R : order.
+
+Lemma pointed_env_order_bot_L pe Δ φ: ((Δ, φ) ≺· pe) -> (Δ, ⊥) ≺· pe.
+Proof.
+Admitted.
+
+Hint Resolve pointed_env_order_bot_L : order.

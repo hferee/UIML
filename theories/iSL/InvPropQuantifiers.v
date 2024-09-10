@@ -1,7 +1,7 @@
 Require Import Coq.Program.Equality. (* for dependent induction *)
 Require Import ISL.PropQuantifiers ISL.Sequents ISL.SequentProps.
 Require Import ISL.Order ISL.DecisionProcedure.
-
+Require Import Coq.Classes.RelationClasses.
 Section UniformInterpolation.
 
 Definition applicable_AndR φ: {φ1 & {φ2 | φ = (And φ1 φ2)}} + (∀ φ1 φ2, φ ≠ (And φ1 φ2)).
@@ -245,11 +245,90 @@ order_tac. do 2 apply env_order_eq_add. apply simp_env_order. Qed.
 Next Obligation. intros. subst Δ ϕ. eapply env_order_lt_le_trans; [exact H|].
 order_tac. do 2 apply env_order_eq_add. apply simp_env_order. Qed.
 
-
-Definition E := EA true.
+Definition E Δ := EA true (Δ, ⊥).
 Definition A := EA false.
 
-Definition Ef (ψ : form) := E ([ψ], ⊥).
+Lemma EA_eq Δ ϕ: let Δ' := simp_env Δ in 
+  (E Δ = ⋀ (in_map Δ' (@e_rule p Δ' ϕ (λ pe _, E pe.1) (λ pe _, A pe)))) /\
+  (A (Δ, ϕ) = (⋁ (in_map Δ' (@a_rule_env p Δ' ϕ (λ pe _, E pe.1) (λ pe _, A pe)))) ⊻
+       @a_rule_form p Δ' ϕ (λ pe _, E pe.1) (λ pe _, A pe)).
+Proof.
+simpl. unfold E, A, EA. simpl.
+unfold EA_func at 1.
+rewrite -> Wf.Fix_eq; simpl.
+-  split; trivial.
+   unfold EA_func at 1. rewrite -> Wf.Fix_eq; simpl; trivial.
+    intros [[|] Δ'] f g Heq; simpl; f_equal.
+  + apply in_map_ext. intros. trivial. apply e_rule_cong; intros; now rewrite Heq.
+  + f_equal. apply in_map_ext. intros. apply a_rule_env_cong; intros;
+      now rewrite Heq.
+  + apply a_rule_form_cong; intros; now rewrite Heq.
+- intros [[|] Δ'] f g Heq; simpl; f_equal.
+  + apply in_map_ext. intros. trivial. apply e_rule_cong; intros; now rewrite Heq.
+  + f_equal. apply in_map_ext. intros. apply a_rule_env_cong; intros;
+      now rewrite Heq.
+  + apply a_rule_form_cong; intros; now rewrite Heq.
+Qed.
+
+Definition Ef (ψ : form) := E [ψ].
 Definition Af (ψ : form) := A ([], ψ).
 
 End UniformInterpolation.
+
+Section Equivalence.
+
+Definition equiv_form φ ψ : Type := (φ ≼ ψ) * (ψ ≼ φ).
+
+Definition equiv_env Δ Γ: Set := (list_to_set_disj Δ ⊢ ⋀ Γ) * (list_to_set_disj Γ ⊢ ⋀ Δ).
+
+Lemma symmetric_equiv_env Δ Γ: equiv_env Δ Γ -> equiv_env Γ Δ .
+Proof. intros [H1 H2]. split; trivial. Qed.
+
+Lemma equiv_env_L1 Γ Δ Δ' φ: (equiv_env Δ Δ') ->
+  Γ ⊎ list_to_set_disj Δ ⊢ φ ->  Γ ⊎ list_to_set_disj Δ' ⊢ φ.
+Proof.
+intros [H1 H2].
+Admitted.
+
+Lemma equiv_env_L2 Γ Δ Δ' φ: (equiv_env Δ Δ') ->
+  list_to_set_disj Δ  ⊎ Γ ⊢ φ ->  list_to_set_disj Δ' ⊎ Γ ⊢ φ.
+Proof.
+Admitted.
+
+End Equivalence.
+
+Infix "≡f" := equiv_form (at level 120).
+
+Global Infix "≡e" := equiv_env (at level 120).
+(*
+Section Soundness.
+
+Variable p : variable.
+
+Proposition entail_correct_equiv_env Δ Δ' ϕ : (Δ ≡e Δ') ->
+  (list_to_set_disj Δ ⊢ PropQuantifiers.E p Δ') *
+  (list_to_set_disj Δ • PropQuantifiers.A p (Δ', ϕ) ⊢ ϕ).
+Proof.
+intro Heq. split.
+- peapply (equiv_env_L1 gmultiset_empty Δ' Δ); eauto. now apply symmetric_equiv_env.
+  peapply (entail_correct p Δ' ϕ).1 .
+- peapply (equiv_env_L2 {[PropQuantifiers.A p (Δ', ϕ)]} Δ' Δ); eauto. now apply symmetric_equiv_env.
+  peapply (entail_correct p Δ' ϕ).2.
+Qed.
+
+Lemma pq_correct_equiv_env Γ Δ ϕ Δ':
+  (∀ φ0, φ0 ∈ Γ -> ¬ occurs_in p φ0) ->
+  (Γ ⊎ list_to_set_disj Δ ⊢ ϕ) ->
+  (Δ ≡e Δ') ->
+  (¬ occurs_in p ϕ -> Γ• PropQuantifiers.E p Δ' ⊢ ϕ) *
+  (Γ• PropQuantifiers.E p Δ' ⊢ PropQuantifiers.A p (Δ', ϕ)).
+Proof.
+intros Hocc Hp Heq. split.
+- intro Hocc'. apply pq_correct; trivial. eapply equiv_env_L1; eauto.
+- apply pq_correct; trivial. eapply equiv_env_L1; eauto.
+Qed.
+
+
+
+End Soundness.
+*)
