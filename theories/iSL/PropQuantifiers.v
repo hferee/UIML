@@ -598,7 +598,6 @@ assert(Ho' :  pointed_env_order_refl (elements Γ ++ simp_env Δ, ϕ) (elements 
 assert(Hind' := λ Γ0 Δ0 ψ Ho, Hind (elements Γ0 ++ Δ0, ψ) (env_order_lt_le_trans _ _ _ Ho Ho') _ _ _ eq_refl). simpl in Hind'. clear Ho'.
 clear Hind. rename Hind' into Hind.
 rewrite <- E_simp_env, <- A_simp_env.
-(simp_env_equiv_env Δ).1  Hp
 assert(Hp' := equiv_env_L1 Γ _ _ _ (symmetric_equiv_env _ _ (simp_env_equiv_env Δ)) Hp).
 remember (simp_env Δ) as Δ'. clear Hp.
 rename Hp' into Hp.
