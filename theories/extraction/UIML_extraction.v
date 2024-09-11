@@ -8,6 +8,7 @@ Require Import KS_export.
 Require Import ISL.PropQuantifiers ISL.DecisionProcedure ISL.Simp.
 
 
+
 Fixpoint MPropF_of_form (f : Formulas.form) : MPropF  :=
 match f with
 | Formulas.Var n => Var n
