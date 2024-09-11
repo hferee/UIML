@@ -18,8 +18,8 @@ let string_of_formula ?(classical = false) =
 (* double negation *)
 | Implies(Implies(f, Bot), Bot) when classical -> string_of_formula f
 | Box f -> "□ " ^ bracket f
-| And (f, g) -> bracket f ^ " ∧ " ^ bracket g
-| Or (f, g) -> bracket f ^ " ∨ " ^ bracket g
+| And (f, g) -> and_bracket f ^ " ∧ " ^ and_bracket g
+| Or (f, g) -> or_bracket f ^ " ∨ " ^ or_bracket g
 | Implies (f, Bot) -> "¬ " ^ bracket f (* pretty print ¬ *)
 | Implies (f, g) -> bracket f ^ " → " ^ bracket g
 and bracket e = match e with
@@ -27,4 +27,10 @@ and bracket e = match e with
 | Implies(Box(Implies(f, Bot)),Bot) when classical -> "⋄ " ^ bracket f
 | Var _ | Bot | Implies(_, Bot) | Box _ -> string_of_formula e
 | e -> "(" ^ string_of_formula e ^ ")"
+and or_bracket e = match e with
+| Or (f, g) -> or_bracket f ^ " ∨ " ^ or_bracket g
+| _ -> bracket e
+and and_bracket e = match e with
+| And (f, g) -> and_bracket f ^ " ∧ " ^ and_bracket g
+| _ -> bracket e
   in string_of_formula
