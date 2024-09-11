@@ -36,6 +36,14 @@ Definition env_order_refl Δ Δ' :=  (env_weight Δ) ≤(env_weight Δ').
 
 Global Notation "Δ ≼ Δ'" := (env_order_refl Δ Δ') (at level 150).
 
+Lemma env_order_env_order_refl Δ Δ' : env_order Δ Δ' -> env_order_refl Δ Δ'.
+Proof. unfold env_order, env_order_refl, ltof. lia. Qed.
+
+Global Hint Resolve env_order_env_order_refl: order.
+
+Lemma env_order_self Δ : Δ ≼ Δ.
+Proof. unfold env_order_refl. trivial. Qed.
+
 Global Instance Proper_env_weight: Proper ((≡ₚ) ==> (=)) env_weight.
 Proof.
 intros Γ Δ Heq. unfold env_weight. now rewrite Heq.
@@ -396,12 +404,22 @@ Hint Extern 5 (?a ≺· ?b) => order_tac : proof.
 
 Lemma pointed_env_order_bot_R pe Δ φ: (pe ≺· (Δ, ⊥)) -> pe ≺· (Δ, φ).
 Proof.
-Admitted.
+intro Hlt. destruct pe as (Γ, ψ). unfold pointed_env_order. simpl.
+eapply env_order_lt_le_trans. exact Hlt. simpl.
+unfold env_order_refl. repeat rewrite env_weight_add.
+assert(Hle: weight ⊥ ≤ weight φ) by (destruct φ; simpl; lia).
+apply Nat.pow_le_mono_r with (a := 5) in Hle; lia.
+Qed.
 
 Hint Resolve pointed_env_order_bot_R : order.
 
 Lemma pointed_env_order_bot_L pe Δ φ: ((Δ, φ) ≺· pe) -> (Δ, ⊥) ≺· pe.
 Proof.
-Admitted.
+intro Hlt. destruct pe as (Γ, ψ). unfold pointed_env_order. simpl.
+eapply env_order_le_lt_trans; [|exact Hlt]. simpl.
+unfold env_order_refl. repeat rewrite env_weight_add.
+assert(Hle: weight ⊥ ≤ weight φ) by (destruct φ; simpl; lia).
+apply Nat.pow_le_mono_r with (a := 5) in Hle; lia.
+Qed.
 
 Hint Resolve pointed_env_order_bot_L : order.

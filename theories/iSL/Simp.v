@@ -527,7 +527,7 @@ match goal with
 end.
 Qed.
 
-Require Import ISL.InvPropQuantifiers.
+Require Import ISL.PropQuantifiers ISL.Simp_env.
 
 Definition E_simplified (p: variable) (ψ: form) := simp_form (E p [ψ]).
 Definition A_simplified (p: variable) (ψ: form) := simp_form (Af p (ψ)).

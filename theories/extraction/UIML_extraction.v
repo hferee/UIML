@@ -5,7 +5,7 @@ Require Import ExtrOcamlBasic ExtrOcamlString.
 
 Require Import K.Interpolation.UIK_braga.
 Require Import KS_export.
-Require Import ISL.InvPropQuantifiers ISL.DecisionProcedure ISL.Simp.
+Require Import ISL.PropQuantifiers ISL.DecisionProcedure ISL.Simp.
 
 
 Fixpoint MPropF_of_form (f : Formulas.form) : MPropF  :=

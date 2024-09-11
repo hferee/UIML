@@ -74,6 +74,7 @@ match θ with
 | (□δ1 → δ2) =>  (□(E((□⁻¹ Δ') • δ2 • □δ1) _ ⇢ A((□⁻¹ Δ') • δ2 • □δ1, δ1) _)) ⇢ E(Δ' • δ2) _
 end.
 
+
 (** The implementation of the rules for defining A is separated into two pieces.
     Referring to Table 5 in Pitts, the definition a_rule_env handles A1-8 and A10,
     and the definition a_rule_form handles A9 and A11-13. *)
@@ -448,7 +449,7 @@ split. {
 (* E *)
 apply conjunction_R1. intros φ Hin. apply in_in_map in Hin.
 destruct Hin as (ψ&Hin&Heq). subst φ.
-apply (equiv_env_L0 Δ'); [subst Δ'; apply simp_env_equiv_env|].
+apply simp_env_equiv_env.
 rewrite <- HeqΔ' in *. clear HeqΔ' Δ. rename Δ' into Δ.
 assert(Hi : ψ ∈ list_to_set_disj  Δ) by now apply elem_of_list_to_set_disj.
 destruct ψ; unfold e_rule; exhibit Hi 0; rewrite (proper_Provable _ _ (equiv_disj_union_compat_r (list_to_set_disj_rm _ _)) _ _ eq_refl).
@@ -479,10 +480,9 @@ destruct ψ; unfold e_rule; exhibit Hi 0; rewrite (proper_Provable _ _ (equiv_di
             ++ do 2 l_tac. apply HA. order_tac.
          -- exch 0. l_tac. apply weakening, HE. order_tac.
 -  apply BoxR. apply weakening. box_tac. l_tac. apply HE. order_tac.
-  
 }
 (* A *)
-apply (equiv_env_L2 _ Δ'); [subst Δ'; apply simp_env_equiv_env|].
+apply ImpR_rev, simp_env_equiv_env, ImpR.
 rewrite <- HeqΔ' in *. clear HeqΔ' Δ. rename Δ' into Δ.
 apply make_disj_sound_L, OrL.
 - apply disjunction_L. intros φ Hin.
@@ -598,6 +598,7 @@ assert(Ho' :  pointed_env_order_refl (elements Γ ++ simp_env Δ, ϕ) (elements 
 assert(Hind' := λ Γ0 Δ0 ψ Ho, Hind (elements Γ0 ++ Δ0, ψ) (env_order_lt_le_trans _ _ _ Ho Ho') _ _ _ eq_refl). simpl in Hind'. clear Ho'.
 clear Hind. rename Hind' into Hind.
 rewrite <- E_simp_env, <- A_simp_env.
+(simp_env_equiv_env Δ).1  Hp
 assert(Hp' := equiv_env_L1 Γ _ _ _ (symmetric_equiv_env _ _ (simp_env_equiv_env Δ)) Hp).
 remember (simp_env Δ) as Δ'. clear Hp.
 rename Hp' into Hp.
@@ -792,7 +793,8 @@ end; simpl.
            exch 1; exch 0. apply Hind.
            --  order_tac. (* cannot handle it. manual proof *)
                rewrite  elements_open_boxes.
-               do 2 apply env_order_cancel_right. apply env_order_4; simpl; try lia. left. 
+               do 2 apply env_order_cancel_right. apply env_order_4; simpl; try lia.
+               apply env_order_env_order_refl.
                apply env_order_disj_union_compat_strong_left; order_tac.
            -- occ. intro HF. destruct (occurs_in_open_boxes _ _ _ HF Hin1) as (θ0 & Hθ0 & Hinθ).
                apply (Hnin θ0); ms.
@@ -829,7 +831,8 @@ end; simpl.
            exch 1; exch 0. apply Hind.
          -- order_tac.
              rewrite  elements_open_boxes.
-               do 2 apply env_order_cancel_right. apply env_order_4; simpl; try lia. left. 
+               do 2 apply env_order_cancel_right. apply env_order_4; simpl; try lia.
+               apply env_order_env_order_refl.
                apply env_order_disj_union_compat_strong_left; order_tac.
          -- occ. intro HF. destruct (occurs_in_open_boxes _ _ _ HF Hin1) as (θ0 & Hθ0 & Hinθ).
              apply (Hnin θ0); ms.
@@ -918,7 +921,7 @@ end; simpl.
             repeat rewrite Permutation_middle.
             apply env_order_disj_union_compat_strong_left. order_tac.
             apply env_order_2. simpl; lia. simpl; lia.
-            apply env_order_eq_add. left. order_tac.
+            apply env_order_eq_add. apply env_order_env_order_refl. order_tac.
         -- intros φ0 Hφ0 HF. apply gmultiset_elem_of_disj_union in Hφ0.
             destruct Hφ0 as [Hφ0|]; [|ms].
             destruct (occurs_in_open_boxes _ _ _ HF Hφ0) as (θ0 & Hθ0 & Hinθ). apply (Hnin θ0); ms.
@@ -934,7 +937,7 @@ end; simpl.
              rewrite elements_open_boxes.
             repeat rewrite Permutation_middle.
             apply env_order_disj_union_compat_strong_left. order_tac.
-            apply env_order_2. simpl; lia. simpl; lia. now right.
+            apply env_order_2. simpl; lia. simpl; lia. unfold env_order_refl. trivial.
          -- intros φ0 Hφ0 HF. apply gmultiset_elem_of_disj_union in Hφ0.
             destruct Hφ0 as [Hφ0|]; [|ms].
             destruct (occurs_in_open_boxes _ _ _ HF Hφ0) as (θ0 & Hθ0 & Hinθ). apply (Hnin θ0); ms.
