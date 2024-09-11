@@ -4,6 +4,7 @@ Require Import ISL.Order ISL.DecisionProcedure.
 Require Import Coq.Classes.RelationClasses.
 Require Import ISL.Cut ISL.Optimizations.
 
+(* TODO: sort this file out *)
 Definition applicable_AndL (Γ : list form): {ψ1 & {ψ2 | (And ψ1 ψ2) ∈ Γ}} + (∀ ψ1 ψ2, (And ψ1 ψ2) ∈ Γ -> False).
 Proof.
   pose (fA := (fun θ => match θ with |And _ _ => true | _ => false end)).
@@ -88,8 +89,6 @@ Notation "cond '?' A ':2' B" := (sumor_bind2 cond A B) (at level 150, right asso
 Notation "cond '?' A ':3' B" := (sumor_bind3 cond A B) (at level 150, right associativity).
 
 Local Notation "Δ '•' φ" := (cons φ Δ).
-
-Infix "⊢?" := Provable_dec (at level 80).
 
 (* Probably very costly *)
 Definition applicable_strong_weakening (Γ : list form):
@@ -284,12 +283,6 @@ Ltac l_tac' := repeat rewrite list_to_set_disj_open_boxes;
 || rewrite (proper_Provable _ _ (equiv_disj_union_compat_r (symmetry (list_to_set_disj_env_add _ _))) _ _ eq_refl)
 || rewrite (proper_Provable _ _ (equiv_disj_union_compat_r (equiv_disj_union_compat_r (symmetry (list_to_set_disj_env_add _ _)))) _ _ eq_refl)
 || rewrite (proper_Provable _ _ (equiv_disj_union_compat_r(equiv_disj_union_compat_r (equiv_disj_union_compat_r (symmetry (list_to_set_disj_env_add _ _))))) _ _ eq_refl).
-
-Lemma Provable_dec_of_Prop Γ φ: (∃ _ : list_to_set_disj Γ ⊢ φ, True) -> (list_to_set_disj Γ ⊢ φ).
-Proof.
-destruct (Proof_tree_dec Γ φ) as [[Hφ1' _] | Hf']. tauto.
-intros Hf. exfalso. destruct Hf as [Hf _]. tauto.
-Qed.
 
 Lemma simp_env_equiv_env Δ: equiv_env (simp_env Δ) Δ.
 Proof.

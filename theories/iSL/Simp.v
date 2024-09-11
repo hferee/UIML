@@ -36,6 +36,7 @@ match (φ,ψ) with
   |(φ1, ψ1 → ψ2) => simp_imps (simp_ands φ1 ψ1) ψ2
   |(φ, ψ) => simp_imp φ ψ
 end.
+
 Fixpoint simp φ :=
 match φ with
   | φ ∨ ψ => simp_ors (simp φ) (simp ψ)
@@ -394,7 +395,7 @@ case decide as [HφTop |].
       * apply weakening. apply generalised_axiom.
       * eapply additive_cut with ⊥.
        -- exch 0. apply weakening, obviously_smaller_compatible_LT, HψBot.
-       -- do 2 (exch 0; apply weakening). now apply obviously_smaller_compatible_LT.
+       -- apply ExFalso.
   + apply ImpR. exch 0. apply ImpL.
       * apply weakening, generalised_axiom.
       * exch 0. apply weakening, generalised_axiom.
@@ -750,12 +751,13 @@ repeat split.
 Qed.
 *)
 
-
+(*
 Require Import String.
 Local Open Scope string_scope.
 
+
 Example ex1: simp (Implies (Var "a")  (And (Var "b") (Var "b" ))) = Implies (Var "a")  (Var "b").
-Proof. reflexivity. Qed.
+Proof. reflexivity Qed.
 
 
 Example ex2: simp (Implies (Var "a")  (Or (Var "b") (Var "b" ))) = Implies (Var "a")  (Var "b").
@@ -774,3 +776,5 @@ Proof. reflexivity. Qed.
 
 Example ex6: simp (Or ⊥ (And (Var "a")  (Var "b")))= (And (Var "a")  (Var "b")).
 Proof. reflexivity. Qed.
+
+*)

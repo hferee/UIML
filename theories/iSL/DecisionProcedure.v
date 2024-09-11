@@ -616,3 +616,11 @@ intro Hp. inversion Hp; subst; try eqt; eauto 2.
   + now rw (proper_open_boxes _ _ Heq) 2.
   + now rw Heq 1.
 Defined.
+
+Global Infix "⊢?" := Provable_dec (at level 80).
+
+Lemma Provable_dec_of_Prop Γ φ: (∃ _ : list_to_set_disj Γ ⊢ φ, True) -> (list_to_set_disj Γ ⊢ φ).
+Proof.
+destruct (Proof_tree_dec Γ φ) as [[Hφ1' _] | Hf']. tauto.
+intros Hf. exfalso. destruct Hf as [Hf _]. tauto.
+Qed.

@@ -5,7 +5,7 @@ Require Import ExtrOcamlBasic ExtrOcamlString.
 
 Require Import K.Interpolation.UIK_braga.
 Require Import KS_export.
-Require Import ISL.PropQuantifiers ISL.DecisionProcedure ISL.Simp.
+Require Import ISL.PropQuantifiers ISL.DecisionProcedure ISL.Simp ISL.Simp_env.
 
 
 
@@ -34,7 +34,9 @@ Definition k_UI p s := form_of_MPropF(proj1_sig (K.Interpolation.UIK_braga.GUI_t
 Definition isl_E v f := Ef v f.
 Definition isl_A v f := Af v f.
 
-Definition isl_simp f := simp f.
+(* simp_form seems to improve over simp in most cases.
+  Notable exception: (a ∨b) → c *)
+Definition isl_simp f := simp_form f.
 
 Definition isl_simplified_E v f := E_simplified v f.
 Definition isl_simplified_A v f := A_simplified v f.

@@ -1,4 +1,4 @@
-Require Import ISL.Environments ISL.Sequents ISL.SequentProps ISL.Cut.
+Require Import ISL.Environments ISL.Sequents ISL.SequentProps ISL.Cut ISL.DecisionProcedure.
 Require Import Program Equality.
 
 Definition Lindenbaum_Tarski_preorder φ ψ :=
@@ -23,35 +23,13 @@ Proof.
   apply ImpR. apply ExFalso.
 Qed.
 
+Global Hint Resolve top_provable : proof.
 
-(* Checks "obvious" entailment conditions. If φ ⊢ ψ "obviously" then it returns Lt,
-if ψ ⊢ φ "obviously" then it returns Gt. Eq corresponds to the unknown category, 
-this means that we don't have enough information to determine a possible entailment. *)
-Fixpoint obviously_smaller (φ : form) (ψ : form) :=
-match (φ, ψ) with 
-  |(Bot, _) => Lt
-  |(_, Bot) => Gt
-  |(Bot → _, _) => Gt
-  |(_, Bot → _) => Lt
-  |(φ ∧ ψ, ϴ) => match (obviously_smaller φ ϴ, obviously_smaller ψ ϴ) with
-      | (Lt, _) | (_, Lt) => Lt
-      | (Gt, Gt) => Gt
-      | _ => Eq
-      end
-  |(φ ∨ ψ, ϴ) => match (obviously_smaller φ ϴ, obviously_smaller ψ ϴ) with
-      | (Gt, _) | (_, Gt) => Gt
-      | (Lt, Lt) => Lt
-      | _ => Eq
-      end
-  |(φ, ψ) => if decide (φ = ψ) then Lt else
-                       if decide (is_double_negation φ ψ) then Gt else
-                       if decide (is_double_negation ψ φ) then Lt else
-                       if decide (is_implication φ ψ) then Gt else
-                       if decide (is_implication ψ φ ) then Lt else
-                       Eq
-end.
-
-
+(* decides whether one formula entails the other or not ; in the latter case return Eq *)
+Definition obviously_smaller (φ : form) (ψ : form) :=
+  if [φ] ⊢? ψ then Lt
+  else if [ψ] ⊢? φ then Gt
+  else Eq.
 
 Definition choose_conj φ ψ :=
 match obviously_smaller φ ψ with
@@ -59,6 +37,11 @@ match obviously_smaller φ ψ with
   | Gt => ψ
   | Eq => φ ∧ ψ
  end.
+ 
+ 
+Lemma occurs_in_choose_conj v φ ψ : occurs_in v (choose_conj φ ψ) -> occurs_in v φ \/ occurs_in v ψ.
+Proof. unfold choose_conj; destruct obviously_smaller; simpl; intros; tauto. Qed.
+
 
 Definition make_conj φ ψ := 
 match ψ with
@@ -68,10 +51,6 @@ match ψ with
       | Gt => ψ1 ∧ ψ2
       | Eq => φ ∧ (ψ1 ∧ ψ2)
       end
-  | ψ1 ∨ ψ2 =>
-      if decide (obviously_smaller φ ψ1 = Lt ) then φ
-      else if decide (obviously_smaller φ ψ2 = Lt ) then φ
-      else choose_conj φ (ψ1 ∨ ψ2)
   | ψ1 → ψ2 => 
       if decide (obviously_smaller φ ψ1 = Lt) then choose_conj φ ψ2
       else choose_conj φ ψ
@@ -92,22 +71,19 @@ generalize ψ.
 induction φ; intro ψ0; destruct ψ0;
 intro H; unfold make_conj in H; unfold choose_conj in H;
 repeat match goal with 
-    | H: occurs_in _  (if ?cond then _ else _) |- _ => case decide in H
-    | H: occurs_in _ (match ?x with _ => _ end) |- _ => destruct x
+    | H: occurs_in _ (choose_conj _ _) |- _ => apply occurs_in_choose_conj in H; destruct H as [H|H]; simpl in H; try tauto
+    | H: occurs_in _  (if ?cond then _ else _) |- _ => case decide in H; simpl in H; try tauto
+    | H: occurs_in _ (match ?x with _ => _ end) |- _ => destruct x; simpl in H; try tauto
     | |- _ => simpl; simpl in H; tauto
 end.
-Qed.
+Qed. (* TODO: long *)
 
 
 Definition choose_disj φ ψ :=
 match obviously_smaller φ ψ with
   | Lt => ψ
   | Gt => φ
-  | Eq =>match obviously_smaller ψ φ with
-    | Lt => φ
-    | Gt => ψ
-    | Eq => φ ∨ ψ
-    end
+  | Eq => φ ∨ ψ
  end.
 
 Definition make_disj  φ ψ := 
@@ -144,10 +120,7 @@ Qed.
 (* "lazy" implication, which produces a potentially simpler, equivalent formula *)
 
 (* Same as `simp_ors` but for nested implications. *)
-Fixpoint make_impl φ ψ :=
-match ψ with
-  |(ψ1 → ψ2) => make_impl (make_conj φ ψ1) ψ2
-  |_ =>
+Definition choose_impl φ ψ:=
      if decide (obviously_smaller φ ψ = Lt) then ⊤
      else if decide (obviously_smaller φ ⊥ = Lt) then ⊤
      else if decide (obviously_smaller ψ ⊤ = Gt) then ⊤
@@ -155,24 +128,33 @@ match ψ with
      else if decide (obviously_smaller ψ ⊥ = Lt) then ¬φ
      else if decide (is_negation φ ψ) then ¬φ
      else if decide (is_negation ψ φ) then ψ
-    else φ → ψ
+    else φ → ψ.
+
+Fixpoint make_impl φ ψ :=
+match ψ with
+  |(ψ1 → ψ2) => make_impl (make_conj φ ψ1) ψ2
+  |_ => choose_impl φ ψ
 end.
 
 Infix "⇢" := make_impl (at level 66).
 
-Lemma occurs_in_make_impl v x y : occurs_in v (x ⇢ y) -> occurs_in v x ∨ occurs_in v y.
+Lemma occurs_in_choose_impl v x y : occurs_in v (choose_impl x y) -> occurs_in v x ∨ occurs_in v y.
 Proof.
-generalize x.
-induction y; intro ψ0;
-intro H; unfold make_impl in H; fold make_impl in H;
+intro H; unfold choose_impl in H; fold make_impl in H;
 repeat match goal with 
     | H: occurs_in _  (if ?cond then _ else _) |- _ => case decide in H
     | H: occurs_in _ (match ?x with _ => _ end) |- _ => destruct x
     | |- _ => simpl; simpl in H; tauto
 end.
-apply IHy2 in H. destruct H as [H|H]; [ apply occurs_in_make_conj in H|]; simpl; tauto.
 Qed.
 
+Lemma occurs_in_make_impl v x y : occurs_in v (x ⇢ y) -> occurs_in v x ∨ occurs_in v y.
+Proof.
+generalize x.
+induction y; intro ψ0;
+intro H; unfold make_impl in H; try apply occurs_in_choose_impl in H; try tauto.
+apply IHy2 in H. destruct H as [H|H]; [ apply occurs_in_make_conj in H|]; simpl; tauto.
+Qed.
 
 Lemma occurs_in_make_impl2 v x y z: occurs_in v (x ⇢ (y ⇢ z)) -> occurs_in v x ∨ occurs_in v y ∨ occurs_in v z.
 Proof.
@@ -288,68 +270,21 @@ Qed.
 Lemma obviously_smaller_compatible_LT φ ψ :
   obviously_smaller φ ψ = Lt -> φ ≼ ψ.
 Proof.
-intro H.
-induction φ; destruct ψ;
-repeat (unfold obviously_smaller in H; fold obviously_smaller in H; try discriminate; eq_clean); bot_clean;
-
-repeat match goal with
-  | [ H : obviously_smaller _ (?f → _) = Lt |- _ ≼ ?f → _ ] => 
-      destruct f; simpl in H; try discriminate; bot_clean
-  | |- _ ∧ _ ≼ ?f =>
-    case_eq (obviously_smaller φ1 f); case_eq (obviously_smaller φ2 f); 
-    intros H0 H1;
-    simpl in H; try rewrite H0 in H; try rewrite H1 in H; try discriminate; induction_auto
-  | |- _ ∨ _ ≼ ?f =>
-    case_eq (obviously_smaller φ1 f); case_eq (obviously_smaller φ2 f);
-    intros H0 H1; 
-    simpl in H; rewrite H0 in H; rewrite H1 in H; try discriminate;
-    apply OrL; induction_auto
-  | |- (?f → _) ≼ _ => destruct f; try eq_clean; discriminate
-end;
-try destruct ψ1; try discriminate; bot_clean;
-simpl in H; try case decide in H; try discriminate; bot_clean;
-try (now apply double_negation_obviously_smaller);
-try case decide in H;
-try (now apply is_implication_obviously_smaller);
-try (inversion e; subst; apply generalised_axiom);
-try solve[destruct φ1; inversion H];
-destruct φ1; repeat case decide in H; try discriminate;
-   try (now apply is_implication_obviously_smaller);
-   try (now apply double_negation_obviously_smaller).
+unfold obviously_smaller, Lindenbaum_Tarski_preorder.
+case ([φ] ⊢? ψ); intros Hp Hf.
+- apply Provable_dec_of_Prop in Hp.  peapply Hp.
+- contradict Hf. case ([ψ] ⊢? φ); discriminate.
 Qed.
-
 
 Lemma obviously_smaller_compatible_GT φ ψ :
   obviously_smaller φ ψ = Gt -> ψ ≼ φ .
 Proof.
-intro H.
-induction φ; destruct ψ;
-try match goal with H : ?H0 -> _ |- _ => assert(Hw' : H0) by lia; specialize (Hw Hw') end;
-try (unfold obviously_smaller in H; try discriminate; eq_clean); bot_clean;
-repeat match goal with
-  | |-  ?f ≼ _ ∧ _ =>
-    case_eq (obviously_smaller φ1 f); case_eq (obviously_smaller φ2 f); intros H0 H1;
-    simpl in H; rewrite H0 in H; rewrite H1 in H; try discriminate; apply AndR; induction_auto
-  | |- ?f ≼ _∨ _  =>
-    case_eq (obviously_smaller φ1 f); case_eq (obviously_smaller φ2 f); intros H0 H1;
-    simpl in H; rewrite H0 in H; rewrite H1 in H; try discriminate; induction_auto
-  | |- (?f1 → _) ≼ ?f2 → _ =>
-    simpl in H; destruct f1; destruct f2; bot_clean; try eq_clean; discriminate
-  | |- (?f → _) ≼ _ => destruct f; discriminate
-  | |- (∅ • (?f → _)) ⊢ _ => destruct f; discriminate
-  | |- _ ≼ (?f → _) => destruct f; bot_clean; discriminate
-end;
-simpl in H;
-try solve[destruct ψ1; try discriminate; eq_clean];
-  destruct φ1; try discriminate; repeat eq_clean;
-  try destruct ψ1;
- try (unfold obviously_smaller in H; try discriminate; eq_clean); bot_clean;
- repeat case decide in H; try discriminate; bot_clean;
-try (now apply double_negation_obviously_smaller);
-try (now apply is_implication_obviously_smaller);
-try (now apply ImpR, weakening, IHφ2).
+unfold obviously_smaller, Lindenbaum_Tarski_preorder.
+case ([ψ] ⊢? φ).
+- case ([φ] ⊢? ψ). discriminate.
+  intros _ Hp _. apply Provable_dec_of_Prop in Hp.  peapply Hp.
+- case ([φ] ⊢? ψ); discriminate.
 Qed.
-
 
 Lemma and_congruence φ ψ φ' ψ':
   (φ ≼ φ') -> (ψ ≼ ψ') -> (φ ∧ ψ) ≼ φ' ∧ ψ'.
@@ -416,10 +351,14 @@ destruct ψ'; try (apply choose_conj_equiv_L; assumption).
     * assumption.
     * apply AndR_rev in Hψ; apply Hψ.
   + apply AndL. exch 0. apply weakening. assumption.
-- repeat case decide; intros.
-  + apply AndL. now apply weakening.
-  + apply AndL. now apply weakening.
-  + apply choose_conj_equiv_L ; assumption.
+- destruct φ'; try (apply choose_conj_equiv_L; assumption).
+  case decide; intro; try (apply choose_conj_equiv_L; assumption).
+  apply obviously_smaller_compatible_LT in e.
+  apply weak_cut with ((φ ∧ φ'1) ∧ ψ).
+  + apply AndL; repeat apply AndR.  auto with proof.
+      * exch 0. apply weakening;  apply weak_cut with (ψ'1 ∨ ψ'2); assumption.
+      * apply generalised_axiom.
+  + apply choose_conj_equiv_L; auto with proof.
 - case (decide (obviously_smaller φ' ψ'1 = Lt)); intro.
   + apply weak_cut with (φ ∧ (φ ∧ ψ)).
      * apply AndR; auto with proof.
@@ -463,18 +402,8 @@ destruct  ψ'.
       -- apply obviously_smaller_compatible_GT; apply Heq.
       -- assumption.
     * assumption.
-- repeat case decide; intros.
-  + apply AndR.
-    * assumption.
-    * eapply weak_cut.
-      -- apply obviously_smaller_compatible_LT; eassumption.
-      -- apply OrL_rev in Hψ; apply Hψ.
-  + apply AndR.
-    * assumption.
-    * eapply weak_cut.
-      -- apply obviously_smaller_compatible_LT; eassumption.
-      -- apply OrL_rev in Hψ; apply Hψ.
-  + apply choose_conj_equiv_R; assumption.
+- destruct φ'; try case decide; intros; apply choose_conj_equiv_R; try assumption.
+   eapply imp_cut; eassumption.
 - case decide; intro Heq.
   + apply choose_conj_equiv_R. assumption. eapply weak_cut; [|exact Hψ]. auto with proof.
   + apply choose_conj_equiv_R; assumption.
@@ -528,7 +457,6 @@ eapply additive_cut.
 Qed.
 
 
-
 Lemma or_congruence φ ψ φ' ψ':
   (φ ≼ φ') -> (ψ ≼ ψ') -> (φ ∨ ψ) ≼ φ' ∨ ψ'.
 Proof.
@@ -546,14 +474,8 @@ unfold choose_disj.
 case_eq (obviously_smaller φ' ψ'); intro Heq.
 - case_eq (obviously_smaller ψ' φ'); intro Heq'.
   + apply or_congruence; assumption.
-  + apply OrL. assumption.
-       eapply weak_cut.
-        * apply Hψ.
-        * apply obviously_smaller_compatible_LT; assumption.
-  + apply OrL; [| assumption].
-       eapply weak_cut.
-        * apply Hφ.
-        * apply obviously_smaller_compatible_GT; assumption.
+  + auto with proof. 
+  + auto with proof.
 - apply OrL.
   + eapply weak_cut.
     * apply Hφ.
@@ -577,8 +499,7 @@ intros Hφ Hψ.
 unfold choose_disj.
 case_eq (obviously_smaller φ' ψ'); intro Heq;
 [| apply OrR2| apply OrR1]; try assumption.
-case_eq (obviously_smaller ψ' φ'); intro Heq';
-[apply or_congruence| apply OrR1| apply OrR2]; try assumption.
+auto with proof.
 Qed.
 
 Lemma make_disj_equiv_L φ ψ φ' ψ' : 
@@ -815,15 +736,27 @@ Proof. apply ExFalso. Qed.
 Local Hint Resolve Lindenbaum_Tarski_preorder_Bot : proof.
 
 
-Lemma make_impl_sound_L Γ φ ψ θ: Γ•(φ → ψ) ⊢ θ -> Γ•(φ ⇢ ψ) ⊢ θ.
+Lemma choose_impl_sound_L Γ φ ψ θ: Γ•(φ → ψ) ⊢ θ -> Γ•(choose_impl φ ψ) ⊢ θ.
 Proof.
-revert φ. induction ψ; intros φ HP; simpl; repeat case decide; intros;
+intro HP.
+unfold choose_impl; repeat case decide; intros;
 repeat match goal with
 | H : obviously_smaller _ _ = Lt |- _ => apply obviously_smaller_compatible_LT in H
 | H : obviously_smaller _ _ = Gt |- _ => apply obviously_smaller_compatible_GT in H
 | H : is_negation _ _ |- _ =>  eapply additive_cut; [| exch 0; apply weakening, HP]; apply ImpR, exfalso; exch 0; auto with proof
 end; trivial; try (solve [eapply imp_cut; eauto]);
 try solve[apply weakening, (tautology_cut HP); trivial; try apply weak_cut with ⊥; auto with proof].
+- apply weakening, (tautology_cut HP); trivial. apply additive_cut with (φ := ⊤); auto with proof. 
+- eapply additive_cut with (φ :=  (φ → ψ)).
+  + apply ImpR. exch 0. apply ImpL; auto with proof.
+  + auto with proof.
+- unfold is_negation in *. subst. auto with proof.
+Qed.
+
+Lemma make_impl_sound_L Γ φ ψ θ: Γ•(φ → ψ) ⊢ θ -> Γ•(φ ⇢ ψ) ⊢ θ.
+Proof.
+revert φ. induction ψ; intros φ HP; simpl; repeat case decide; intros.
+1-4, 6: now apply choose_impl_sound_L.
 apply IHψ2.
 apply ImpLAnd in HP.
 apply additive_cut with ((φ ∧ ψ1 → ψ2) → θ).
@@ -835,10 +768,10 @@ Qed.
 
 Global Hint Resolve make_impl_sound_L : proof.
 
-
-Lemma make_impl_sound_R Γ φ ψ: Γ ⊢ (φ → ψ) -> Γ ⊢ φ ⇢ ψ.
+Lemma choose_impl_sound_R Γ φ ψ: Γ ⊢ (φ → ψ) -> Γ ⊢ choose_impl φ ψ.
 Proof.
-revert φ. induction ψ; intros φ HP; simpl; repeat case decide; intros;
+unfold choose_impl.
+ repeat case decide; intros;
 repeat match goal with
 | |- _ ⊢ ⊤ => apply ImpR, ExFalso
 | H : obviously_smaller _ _ = Lt |- _ => apply obviously_smaller_compatible_LT in H
@@ -846,11 +779,22 @@ repeat match goal with
 | H : is_negation _ _ |- _ =>  rewrite H  in *; apply ImpR;  eapply additive_cut; [apply ImpR_rev, HP| exch 0; auto with *]
 end; trivial; auto with proof;
 try (solve[peapply (cut ∅ Γ φ); auto with proof; eapply TopL_rev; eauto]).
+- apply ImpR, additive_cut with (φ:= ψ).
+  + now apply ImpR_rev.
+  + apply generalised_weakeningL. peapply e.
+- unfold is_negation in *. subst. auto with proof.
+- unfold is_negation in *. subst. auto with proof.
+Qed.
+
+
+Lemma make_impl_sound_R Γ φ ψ: Γ ⊢ (φ → ψ) -> Γ ⊢ φ ⇢ ψ.
+Proof.
+revert φ. induction ψ; intros φ HP; simpl. 
+1-4, 6: now apply choose_impl_sound_R.
 apply IHψ2, ImpR, make_conj_sound_L, AndL, ImpR_rev, ImpR_rev, HP.
 Qed.
 
 Global Hint Resolve make_impl_sound_R : proof.
-
 
 Lemma make_impl_sound_L2 Γ φ1 φ2 ψ θ: Γ•(φ1 → (φ2 → ψ)) ⊢ θ -> Γ•(φ1 ⇢ (φ2 ⇢ ψ)) ⊢ θ.
 Proof.
