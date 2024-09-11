@@ -158,15 +158,16 @@ dependent induction Hp generalizing Γ' Hp; intros φ0 Hin.
         -- backward. rewrite <- Heq. apply IHHp2. auto with *.
       * intro Hneq. case (decide (open_box φ0 = φ2)).
           -- intro Heq. subst φ2. apply ImpBox; box_tac.
-              ++ peapply (IHHp1 (⊙ φ0)); [ms|].
+              ++ (erewrite proper_Provable;  [| |reflexivity]);  [eapply (IHHp1 (⊙ φ0))|].
+                      ms.
                       autorewrite with proof; [|ms]. repeat rewrite env_replace.
                      ** ms.
                      ** auto with proof.
                      ** apply env_in_add. right. auto with proof; ms.
               ++ box_tac. backward. apply (IHHp2 φ0). auto with *.
           -- intro Hneq'. apply ImpBox; repeat box_tac.
-            ++ exch 0. box_tac. backward. backward. apply (IHHp1 (⊙ φ0)).
-                    apply env_in_add. now right.
+            ++ exch 0. box_tac. assert((⊙ φ0) ∈ (⊗ Γ)) by (now apply In_open_boxes).
+                    backward. backward. eapply (IHHp1 (⊙ φ0)). ms.
             ++ backward. apply IHHp2.  apply env_in_add. now right.
 - case (decide (open_box φ0 = □ φ)).
   + intro Heq; rewrite Heq. apply generalised_axiom.
@@ -608,15 +609,6 @@ destruct Hp; simpl in Hleh.
 - forward. apply ImpLImp.
   + backward. apply IHh with Hp1. lia. ms.
   + backward. apply IHh with Hp2. lia. ms.
-  (*
-case (decide (((φ0 → φ4) → φ5) = ((φ1 → φ2) → φ3))); intro Heq.
-  + inversion Heq; subst.
-    apply weak_ImpL.
-    * exch 0. apply ImpR_rev. peapply Hp1.
-    * do 2 (exch 0; apply weakening). peapply Hp2.
-  + forward. apply ImpLImp; backward.
-    * apply IHh with Hp1. lia. ms.
-    * apply IHh with Hp2. lia. ms. *)
 - case (decide ((□ φ0 → φ3) = □ φ1 → φ2)); intro Heq.
   + inversion Heq; subst.
       exch 0. apply weakening. exch 0. apply weakening. peapply Hp2.
