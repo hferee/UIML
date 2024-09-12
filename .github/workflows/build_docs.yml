@@ -33,7 +33,7 @@ jobs:
             startGroup "Build project"
               opam update -y
               ./install.sh -y
-              make -j 4
+              make -j 4 pretty-timed
               make -j 4 doc
               dune exec benchmark > benchmark.md
             endGroup
@@ -53,6 +53,11 @@ jobs:
         with:
           name: benchmark
           path: benchmark.md
+      - name: Upload build time log
+        uses: actions/upload-artifact@master
+        with:
+          name: build-time
+          path: time-of-build-pretty.log
 
       - name: Revert permissions
         # to avoid a warning at cleanup time
