@@ -66,7 +66,8 @@ let expr : form t =
     let modality = chainmod factor modal  in
     let term   = chainl1 modality conj in
     let disjunctions = spaces *> chainl1 term disj <* spaces in
-    spaces *> chainr1 disjunctions impl <* spaces
+    let implications = spaces *> chainr1 disjunctions impl <* spaces in
+      spaces *> chainr1 implications iff <* spaces
     )
 
 exception ParseError
