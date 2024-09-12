@@ -22,7 +22,10 @@ let disj = spaces *> ((char '\xE2' *> char '\x88' *> char '\xA8') <|> char '|') 
 let conj = spaces *> ((char '\xE2' *> char '\x88' *> char '\xA7') <|> char '&') *> spaces *> return (fun x y -> And (x, y))
 
 let modal (p : form t) : form t = box p <|> neg p <|> diamond p
-let impl = spaces *> ((char '\xE2' *> char '\x86' *> char '\x92') <|> (char '-' *> char '>')) *> spaces *> return (fun x y -> Implies(x, y))
+let impl = spaces *> ((char '\xE2' *> char '\x86' *> char '\x92') <|> (char '-' *> char '>')) *> spaces *>
+  return (fun x y -> Implies(x, y))
+let iff = spaces *> ((char '\xE2' *> char '\x86' *> char '\x94') <|> (char '<' *> char '-' *> char '>')) *> spaces *>
+  return (fun x y -> And(Implies(x, y), Implies(y, x)))
 
 (* this is ⊥ *)
 let bot = spaces *> ((char '\xE2' *> char '\x8A' *> char '\xA5') <|> char '#'
