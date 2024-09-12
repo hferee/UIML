@@ -804,10 +804,11 @@ end; simpl.
                rewrite list_to_set_disj_rm. ms.
                }
                clear Heq'. clear Hθ.
+               do 2 setoid_rewrite <- (gmultiset_disj_union_assoc).
               (erewrite proper_Provable;  [| |reflexivity]);  [eapply Hp1|].
               rewrite Heq''. rewrite open_boxes_disj_union.
               repeat rewrite  <- ?list_to_set_disj_open_boxes,  <- list_to_set_disj_env_add.
-              rewrite open_boxes_add. simpl. ms.
+              rewrite open_boxes_add. simpl. ms. (* TODO way too long *)
           -- intro HF. apply (Hnin _ Hin0). simpl. tauto.
         * exch 0. apply weakening. exch 0. apply Hind; [order_tac | occ|peapply' Hp2| trivial].
   + assert(Heq'' : (⊗ Γ0) ≡ ((⊗Γ  ∖ {[□ φ1 → φ2]}) ⊎ ⊗ (list_to_set_disj Δ'))). {

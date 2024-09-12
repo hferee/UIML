@@ -102,6 +102,9 @@ Qed.
 
 Global Hint Resolve generalised_axiom : proof.
 
+Local Ltac lazy_apply th:=
+(erewrite proper_Provable;  [| |reflexivity]);  [eapply th|].
+
 Lemma open_box_L Γ φ ψ : Γ • φ ⊢ ψ -> Γ • ⊙ φ ⊢ ψ.
 Proof.
 intro Hp.
@@ -149,8 +152,8 @@ dependent induction Hp generalizing Γ' Hp; intros φ0 Hin.
       * backward. apply IHHp2. ms.
 - case (decide (φ0 =  (□ φ1 → φ2))).
   + intro; subst; simpl. apply ImpBox.
-      * peapply Hp1; autorewrite with proof; ms.
-      * peapply Hp2; autorewrite with proof.
+      * lazy_apply Hp1; autorewrite with proof; ms.
+      * peapply Hp2.
   + intro. forward.
       case (decide (open_box φ0 = □ φ1)).
       * intro Heq. repeat rewrite Heq. apply ImpBox; box_tac.
@@ -173,9 +176,9 @@ dependent induction Hp generalizing Γ' Hp; intros φ0 Hin.
   + intro Heq; rewrite Heq. apply generalised_axiom.
   + intro. backward. apply BoxR. box_tac.
       case (decide (open_box φ0 = open_box (open_box φ0))).
-      * intro Heq. peapply Hp. autorewrite with proof. rewrite <- Heq. ms. ms.
+      * intro Heq. lazy_apply Hp. autorewrite with proof. rewrite <- Heq. ms. ms.
       * intro. assert( open_box φ0 ∈ open_boxes Γ) by (now apply In_open_boxes).
-        peapply (IHHp (open_box φ0)).
+         lazy_apply (IHHp (open_box φ0)).
         -- ms.
         -- autorewrite with proof. repeat rewrite env_replace; ms. ms.
 Qed.
@@ -187,7 +190,7 @@ Proof.
 revert ψ.
 induction Γ using gmultiset_rec; intro ψ.
 - rewrite open_boxes_empty. trivial.
-- intro HP. peapply (open_box_L  (⊗ Γ • φ) x ψ).
+- intro HP. lazy_apply (open_box_L  (⊗ Γ • φ) x ψ).
   + apply ImpR_rev, IHΓ, ImpR. peapply HP.
   + rewrite open_boxes_disj_union, open_boxes_singleton; ms.
 Qed.
@@ -204,7 +207,7 @@ induction Hp; intros φ0 ψ0 Hin; try forward.
 (* auto takes care of the right rules easily *)
 - auto with proof.
 - auto with proof.
-- auto with proof.
+- apply AndR; auto with proof.
 (* the main case *)
 - case(decide ((φ ∧ ψ) = (φ0 ∧ ψ0))); intro Heq0.
   + inversion Heq0; subst. peapply Hp.
@@ -212,8 +215,8 @@ induction Hp; intros φ0 ψ0 Hin; try forward.
 (* only left rules remain. Now it's all a matter of putting the right principal
    formula at the front, apply the rule; and put back the front formula at the back
    before applying the induction hypothesis *)
-- auto with proof.
-- auto with proof.
+- apply OrR1. auto with proof.
+- apply OrR2. auto with proof.
 - constructor 7; backward; [apply IHHp1 | apply IHHp2]; ms.
 - constructor 8. backward. apply IHHp. ms.
 - forward. exch 0. constructor 9. exch 0. do 2 backward. apply IHHp. ms.
@@ -230,7 +233,7 @@ induction Hp; intros φ0 ψ0 Hin; try forward.
 - constructor 14. repeat box_tac.
   exch 0. apply open_box_L.
   exch 1; exch 0. apply open_box_L.
-  peapply (IHHp φ0 ψ0).
+  lazy_apply (IHHp φ0 ψ0).
   + apply env_in_add. right. apply In_open_boxes in Hin. auto with proof.
   + autorewrite with proof. simpl. rewrite <- env_replace. ms.
       apply In_open_boxes in Hin. auto with proof.
@@ -306,10 +309,10 @@ rw Heq 1. clear Γ HH Heq.
 induction Hp; try forward.
 - auto with proof.
 - auto with proof.
-- auto with proof.
+- apply AndR; auto with proof.
 - apply AndL. exch 0. do 2 backward. apply IHHp. ms.
-- auto with proof.
-- auto with proof.
+- apply OrR1. auto with proof.
+- apply OrR2. auto with proof.
 - apply OrL; backward; apply IHHp1 || apply IHHp2; ms.
 - apply ImpR. backward. apply IHHp. ms.
 - case (decide ((Var p0 → φ0) = (Var p → φ))); intro Heq0.
@@ -335,10 +338,10 @@ rw Heq 1. clear Γ HH Heq.
 induction Hp; try forward.
 - auto with proof.
 - auto with proof.
-- auto with proof.
+- apply AndR; auto with proof.
 - apply AndL. exch 0; do 2 backward. apply IHHp. ms.
-- auto with proof.
-- auto with proof.
+- apply OrR1. auto with proof.
+- apply OrR2. auto with proof.
 -  apply OrL; backward; [apply IHHp1 | apply IHHp2]; ms.
 - apply ImpR. backward. apply IHHp. ms.
 - forward. exch 0. apply ImpLVar. exch 0. do 2 backward. apply IHHp. ms.
@@ -364,10 +367,10 @@ rw Heq 1. clear Γ HH Heq.
 induction Hp; try forward.
 - auto with proof.
 - auto with proof.
-- auto with proof.
+- apply AndR; auto with proof.
 - apply AndL. exch 0; do 2 backward. apply IHHp. ms.
-- auto with proof.
-- auto with proof.
+- apply OrR1. auto with proof.
+- apply OrR2. auto with proof.
 -  apply OrL; backward; [apply IHHp1 | apply IHHp2]; ms.
 - apply ImpR. backward. apply IHHp. ms.
 - forward. exch 0. apply ImpLVar. exch 0. do 2 backward. apply IHHp. ms.
@@ -393,10 +396,10 @@ rw Heq 2. clear Γ HH Heq.
 induction Hp; try forward.
 - auto with proof.
 - auto with proof.
-- auto with proof.
+- apply AndR; auto with proof.
 - constructor 4. exch 0; do 2 backward. apply IHHp. ms.
-- auto with proof.
-- auto with proof.
+- apply OrR1. auto with proof.
+- apply OrR2. auto with proof.
 - constructor 7; backward; [apply IHHp1 | apply IHHp2]; ms.
 - constructor 8. backward. apply IHHp. ms.
 - forward. exch 0. constructor 9. exch 0. do 2 backward. apply IHHp. ms.
@@ -421,10 +424,10 @@ rw Heq 1. clear Γ HH Heq.
 induction Hp; try forward.
 - auto with proof.
 - auto with proof.
-- auto with proof.
+- apply AndR; auto with proof.
 - constructor 4. exch 0; do 2 backward. apply IHHp. ms.
-- auto with proof.
-- auto with proof.
+- apply OrR1. auto with proof.
+- apply OrR2. auto with proof.
 - constructor 7; backward; [apply IHHp1 | apply IHHp2]; ms.
 - constructor 8. backward. apply IHHp. ms.
 - forward. exch 0. constructor 9. exch 0. do 2 backward. apply IHHp. ms.
@@ -473,20 +476,20 @@ Proof. intro Hd. dependent induction Hd; auto with proof. Qed.
 Lemma weak_ImpL Γ φ ψ θ :Γ ⊢ φ -> Γ•ψ ⊢ θ -> Γ•(φ → ψ) ⊢ θ.
 Proof with (auto with proof).
 intro Hp. revert ψ θ. induction Hp; intros ψ0 θ0 Hp'.
-- auto with proof.
+- apply ImpLVar, Hp'.
 - auto with proof.
 - auto with proof.
 - exch 0; constructor 4; exch 1; exch 0...
 - auto with proof.
 - apply ImpLOr. exch 0...
-- exch 0; constructor 7; exch 0...
+- exch 0; constructor 7; exch 0.
   + apply IHHp1. exch 0. eapply fst, OrL_rev. exch 0. exact Hp'.
   + apply IHHp2. exch 0. eapply snd, OrL_rev. exch 0. exact Hp'.
 - auto with proof.
 - exch 0; exch 1. constructor 9. exch 1; exch 0...
 - exch 0. apply ImpLAnd. exch 0...
 - exch 0. apply ImpLOr. exch 1; exch 0...
-- exch 0. apply ImpLImp; exch 0... apply IHHp2. exch 0...
+- exch 0. apply ImpLImp; exch 0. auto with proof. apply IHHp2. exch 0.
   eapply ImpLImp_prev. exch 0. eassumption.
 - exch 0. apply ImpBox; box_tac.
   + exch 1; exch 0...
@@ -672,7 +675,7 @@ destruct Hp; simpl in Hleh, Hle.
   + subst. exhibit Hin' 0. apply AndL.
     apply p_contr. simpl in Hle. apply IHw. lia. ms. rewrite union_difference_R; ms.
     exch 1. exch 0. apply p_contr. apply IHw. lia. ms. rewrite union_difference_R; ms.
-    exch 1. exch 0. apply AndL_rev. exch 0. exch 1. peapply Hp.
+    exch 1. exch 0. apply AndL_rev. exch 0. exch 1. lazy_apply Hp.
     rewrite <- (difference_singleton _ _ Hin'). ms.
   + rewrite union_difference_L in Hin' by ms.
     forward. apply AndL. exch 0. do 2 backward. apply (IHh ψ Hle) with Hp. lia. ms. ms.
@@ -682,10 +685,10 @@ destruct Hp; simpl in Hleh, Hle.
   + subst. exhibit Hin' 0.
     apply OrL.
     * apply p_contr. simpl in Hle. apply IHw. lia. ms. rewrite union_difference_R; ms.
-      refine (fst (OrL_rev _ φ ψ0 _ _)). exch 0. peapply Hp1.
+      refine (fst (OrL_rev _ φ ψ0 _ _)). exch 0. lazy_apply Hp1.
       rewrite <- env_replace; ms.
     * apply p_contr. simpl in Hle. apply IHw. lia. ms. rewrite union_difference_R; ms.
-      refine (snd (OrL_rev _ φ ψ0 _ _)). exch 0. peapply Hp2.
+      refine (snd (OrL_rev _ φ ψ0 _ _)). exch 0. lazy_apply Hp2.
       rewrite <- env_replace; ms.
   + rewrite union_difference_L in Hin' by ms.
     forward. apply OrL; backward.
@@ -697,7 +700,7 @@ destruct Hp; simpl in Hleh, Hle.
     assert(Hcut : (((Γ•Var p) ∖ {[Var p → φ]}•(Var p → φ)) ⊢ ψ0)); [|peapply Hcut].
     forward. exch 0. apply ImpLVar, p_contr.
     apply IHw. simpl in Hle; lia. ms.  rewrite union_difference_L; ms.
-    exch 1. apply ImpLVar_rev. exch 0; exch 1. peapply Hp.
+    exch 1. apply ImpLVar_rev. exch 0; exch 1. lazy_apply Hp.
     rewrite <- env_replace; ms.
   + rewrite union_difference_L in Hin' by ms.
       forward. case (decide (ψ = Var p)).
@@ -709,7 +712,7 @@ destruct Hp; simpl in Hleh, Hle.
   + subst. exhibit Hin' 0. rewrite union_difference_R in Hin' by ms.
     apply ImpLAnd. apply p_contr.
     apply IHw. simpl in *; lia. ms.  rewrite union_difference_L; ms.
-    apply ImpLAnd_rev. exch 0. peapply Hp.
+    apply ImpLAnd_rev. exch 0. lazy_apply Hp.
     rewrite <- env_replace; ms.
   + rewrite union_difference_L in Hin' by ms.
     forward. apply ImpLAnd. backward. apply (IHh ψ Hle) with Hp. lia. ms. ms.
@@ -719,7 +722,7 @@ destruct Hp; simpl in Hleh, Hle.
     apply IHw. simpl in *; lia. ms. rewrite union_difference_L; ms.
     exch 1; exch 0. apply p_contr.
     apply IHw. simpl in *. lia. ms. rewrite union_difference_L; ms.
-    exch 1; exch 0. apply ImpLOr_rev. exch 0. exch 1. peapply Hp.
+    exch 1; exch 0. apply ImpLOr_rev. exch 0. exch 1. lazy_apply Hp.
     rewrite <- env_replace; ms.
   + rewrite union_difference_L in Hin' by ms.
     forward. apply ImpLOr. exch 0. do 2 backward. apply (IHh ψ Hle) with Hp. lia. ms. ms.
@@ -730,7 +733,7 @@ destruct Hp; simpl in Hleh, Hle.
       do 3 (exch 0; apply p_contr; apply IHw; [simpl in *; lia|ms|rewrite union_difference_L; ms|exch 1]).
       exch 1; apply ImpLImp_dup. (* key lemma *)
       exch 0; exch 1. apply ImpR_rev.
-      peapply Hp1. rewrite <- env_replace; ms.
+      lazy_apply Hp1. rewrite <- env_replace; ms.
     * apply p_contr; apply IHw; [simpl in *; lia|ms|rewrite union_difference_L; ms|].
       apply (ImpLImp_prev _ φ1 φ2 φ3). exch 0.
       peapply Hp2. rewrite <- env_replace; ms.
@@ -748,11 +751,11 @@ destruct Hp; simpl in Hleh, Hle.
        assert(Heq : (⊗ (Γ • (□ φ1 → φ2)) ∖ {[□ φ1 → φ2]} ∖ {[□ φ1 → φ2]}) ≡ (⊗ (Γ∖ {[□ φ1 → φ2]})))
        by (autorewrite with proof; simpl; ms).
        rw Heq 5. clear Heq.
-       apply ImpBox_dup. exch 0; exch 1. peapply Hp1. rewrite open_boxes_remove; [|ms]. simpl.
+       apply ImpBox_dup. exch 0; exch 1. lazy_apply Hp1. rewrite open_boxes_remove; [|ms]. simpl.
        rewrite <- difference_singleton. ms. apply open_boxes_spec'.  left. simpl; split; trivial. ms.
       * apply p_contr; apply IHw; [simpl in *; lia|ms|rewrite union_difference_L; ms|].
          apply (ImpLBox_prev _ φ1 φ2). exch 0.
-         peapply Hp2. rewrite <- env_replace; ms.
+         lazy_apply Hp2. rewrite <- env_replace; ms.
   + rewrite union_difference_L in Hin' by ms.
       assert(Hinψ : ψ ∈ (Γ ∖ {[ψ]})) by ms. apply In_open_boxes in Hinψ.
       forward. apply ImpBox. box_tac. exch 0; do 2 backward.

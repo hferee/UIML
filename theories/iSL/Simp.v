@@ -31,10 +31,10 @@ Definition simp_imp φ ψ :=
   else φ → ψ.
 
 (* Same as `simp_ors` but for nested implications. *)
-Fixpoint simp_imps φ ψ :=
-match (φ,ψ) with
-  |(φ1, ψ1 → ψ2) => simp_imps (simp_ands φ1 ψ1) ψ2
-  |(φ, ψ) => simp_imp φ ψ
+Fixpoint simp_imps φ ψ {struct ψ} :=
+match ψ with
+  |ψ1 → ψ2 => simp_imps (simp_ands φ ψ1) ψ2
+  |_ => simp_imp φ ψ
 end.
 
 Fixpoint simp φ :=
