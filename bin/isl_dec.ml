@@ -18,7 +18,7 @@ let usage_string =
   "isl_dec φ: decides the provability of the modal formula φ in iSL.\n"
 
 let print_decision = function
-  | Coq_inl _ -> "Probable"
+  | Coq_inl _ -> "Provable"
   | _ -> "Not provable"
 
 let () =
