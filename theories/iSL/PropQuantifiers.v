@@ -32,13 +32,12 @@ Section PropQuantDefinition.
   is an implementation of Pitts' Table 5, together with a (mostly automatic)
   proof that the definition terminates*)
 
-Local Notation "Δ '•' φ" := (cons φ Δ).
-
 (* solves the obligations of the following programs *)
 Obligation Tactic := intros; order_tac.
 
 Notation "□⁻¹ Γ" := (map open_box Γ) (at level 75).
 
+Open Scope list_scope.
 
 (** First, the implementation of the rules for calculating E. The names of the rules
   refer to the table in Pitts' paper. *)

@@ -1,4 +1,5 @@
 Require Import Coq.Program.Equality.
+Require Import ISL.Optimizations.
 Require Import ISL.Sequents ISL.SequentProps.
 Require Import ISL.Order ISL.DecisionProcedure.
 Require Import Coq.Classes.RelationClasses.
@@ -88,7 +89,7 @@ Notation "cond '?' A ':1' B" := (sumor_bind1 cond A B) (at level 150, right asso
 Notation "cond '?' A ':2' B" := (sumor_bind2 cond A B) (at level 150, right associativity).
 Notation "cond '?' A ':3' B" := (sumor_bind3 cond A B) (at level 150, right associativity).
 
-Local Notation "Δ '•' φ" := (cons φ Δ).
+Local Notation "Δ '•' φ" := (cons φ Δ) : list_scope.
 
 (* Probably very costly *)
 Definition applicable_strong_weakening (Γ : list form):

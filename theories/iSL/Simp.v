@@ -46,6 +46,8 @@ match φ with
   | _ => φ
 end.
 
+Open Scope provability.
+
 Lemma or_comm φ ψ: φ ∨ ψ ≼  ψ ∨ φ.
 Proof.
 apply OrL; [apply OrR2 | apply OrR1]; apply generalised_axiom.

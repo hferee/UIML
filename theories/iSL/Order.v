@@ -8,8 +8,7 @@ Proof.
 unfold env_weight. now rewrite map_app, list_sum_app.
 Qed.
 
-(* TODO: dirty hack *)
-Local Notation "Δ '•' φ" := (cons φ Δ).
+Notation "Δ '•' φ" := (cons φ Δ) : list_scope.
 
 Lemma env_weight_add Γ φ : env_weight (Γ • φ) = env_weight Γ +  (5 ^ weight φ).
 Proof.
@@ -76,7 +75,6 @@ Definition pointed_env := (list form * form)%type.
 
 (* The order on pointed environments is given by considering the
  * environment order on the sum of Δ and {φ}. *)
- (* TODO: modified from G4IP : right-hand side counts twice, to account for the right box rule. Is this working? *)
 Definition pointed_env_order (pe1 : pointed_env) (pe2 : pointed_env) :=
   env_order (fst pe1 • snd pe1 • snd pe1) (fst pe2 • snd pe2 •  snd pe2).
 
@@ -206,11 +204,6 @@ apply Nat.lt_add_pos_r. transitivity (5 ^ 0). simpl. lia. apply Nat.pow_lt_mono_
 apply weight_pos.
 Qed.
 
-(* TODO: ok? to replace env_order_* ?
-Lemma env_order_l (Δ' Δ: env) φ1 φ: weight φ1 < weight φ -> (Δ' ≺ Δ • φ) -> (Δ' • φ1) ≺ (Δ • φ).
-Proof.
-*)
-
 Local Lemma pow5_gt_0 n : 1 ≤ 5 ^ n.
 Proof. transitivity (5^0). simpl. lia. apply Nat.pow_le_mono_r; lia. Qed.
 
@@ -266,11 +259,8 @@ pose (pow5_gt_0 (Init.Nat.pred (weight φ))).
 lia.
 Qed.
 
-
-
 Lemma env_order_cancel_right Δ Δ' φ:  (Δ ≺ Δ') -> Δ ≺ (Δ' • φ).
 Proof. etransitivity; [|apply env_order_0].	 assumption. Qed.
-
 
 Lemma env_order_eq_add Δ Δ' φ: (Δ ≼ Δ') -> (Δ • φ) ≼ (Δ' • φ).
 Proof. unfold env_order_refl. do 2 rewrite env_weight_add. lia. Qed.
@@ -292,12 +282,12 @@ Ltac get_diff_form g := match g with
 | _ (rm ?φ _) => φ
 | (rm ?φ _) => φ
 | ?Γ ++ _ => get_diff_form Γ
-| ?Γ • _ => get_diff_form Γ
+| _ :: ?Γ => get_diff_form Γ
 end.
 
 Ltac get_diff_env g := match g with
 | ?Γ ∖{[?φ]} => Γ
-| ?Γ • _ => get_diff_env Γ
+| _ :: ?Γ => get_diff_env Γ
 end.
 
 Global Hint Rewrite open_boxes_remove : order.
@@ -355,9 +345,9 @@ unfold pointed_env_order; subst; simpl; repeat rewrite open_boxes_add; try match
 | H : ?ψ ∈ ?Γ |- ?Γ' ≺ ?Γ => let ψ' := (get_diff_form Γ') in
     apply (env_order_equiv_right_compat (difference_singleton Γ ψ' H)) ||
     (eapply env_order_lt_le_trans ; [| apply (remove_In_env_order_refl _ ψ'); try apply elem_of_list_In; trivial])
-| H : ?ψ ∈ ?Γ |- ?Γ' ≺ ?Γ • ?φ => let ψ' := (get_diff_form Γ') in
+| H : ?ψ ∈ ?Γ |- ?Γ' ≺ (?φ :: ?Γ)  => let ψ' := (get_diff_form Γ') in
     apply (env_order_equiv_right_compat (equiv_disj_union_compat_r(difference_singleton Γ ψ' H)))
-| H : ?ψ ∈ ?Γ |- ?Γ' ≺ ?Γ • _ • _ => let ψ' := (get_diff_form Γ') in
+| H : ?ψ ∈ ?Γ |- ?Γ' ≺ (_ :: _ :: ?Γ) => let ψ' := (get_diff_form Γ') in
 apply (env_order_equiv_right_compat (equiv_disj_union_compat_r(equiv_disj_union_compat_r(difference_singleton Γ ψ' H)))) ||
 (eapply env_order_le_lt_trans; [| apply env_order_add_compat; 
 eapply env_order_lt_le_trans; [| (apply env_order_eq_add; apply (remove_In_env_order_refl _ ψ'); try apply elem_of_list_In; trivial) ] ] )
@@ -377,7 +367,7 @@ induction Δ as [|x Δ].
   eapply (@env_order_equiv_left_compat  _ _ (map open_box Δ • δ • δ •  ⊙ x)).
   + do 2 (rewrite (Permutation_swap δ (⊙ x)); apply Permutation_skip). trivial.
   + case x; intros; simpl; try (solve[now apply env_order_add_compat]).
-      transitivity (Δ • □δ • f).
+      transitivity (f :: (□δ) :: Δ).
       * auto with *.
       * apply env_order_1. simpl. auto.
 Qed.

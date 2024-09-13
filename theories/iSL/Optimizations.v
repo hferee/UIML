@@ -4,7 +4,11 @@ Require Import Program Equality.
 Definition Lindenbaum_Tarski_preorder φ ψ :=
   ∅ • φ ⊢ ψ.
 
-Notation "φ ≼ ψ" := (Lindenbaum_Tarski_preorder φ ψ) (at level 150).
+Declare Scope provability.
+Open Scope provability.
+
+Notation "φ ≼ ψ" := (Lindenbaum_Tarski_preorder φ ψ) (at level 150) : provability.
+
 
 Corollary weak_cut φ ψ θ:
   (φ ≼ ψ) -> (ψ ≼ θ) ->
