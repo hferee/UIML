@@ -107,6 +107,8 @@ end.
 
 Infix "⊻" := make_disj (at level 65).
 
+Lemma occurs_in_choose_disj v φ ψ : occurs_in v (choose_disj φ ψ) -> occurs_in v φ \/ occurs_in v ψ.
+Proof. unfold choose_disj; destruct obviously_smaller; simpl; intros; tauto. Qed.
 
 Lemma occurs_in_make_disj v φ ψ : occurs_in v (φ ⊻ ψ) -> occurs_in v φ ∨ occurs_in v ψ.
 Proof.
@@ -127,8 +129,8 @@ Qed.
 Definition choose_impl φ ψ:=
      if decide (obviously_smaller φ ψ = Lt) then ⊤
      else if decide (obviously_smaller φ ⊥ = Lt) then ⊤
-     else if decide (obviously_smaller ψ ⊤ = Gt) then ⊤
-     else if decide (obviously_smaller φ ⊤ = Gt) then ψ
+     else if decide (obviously_smaller ⊤ ψ = Lt) then ⊤
+     else if decide (obviously_smaller ⊤ φ = Lt) then ψ
      else if decide (obviously_smaller ψ ⊥ = Lt) then ¬φ
      else if decide (is_negation φ ψ) then ¬φ
      else if decide (is_negation ψ φ) then ψ
@@ -272,23 +274,28 @@ Qed.
 
 
 Lemma obviously_smaller_compatible_LT φ ψ :
-  obviously_smaller φ ψ = Lt -> φ ≼ ψ.
+  (obviously_smaller φ ψ = Lt -> φ ≼ ψ) *
+  ((φ ≼ ψ) -> obviously_smaller φ ψ = Lt ).
 Proof.
 unfold obviously_smaller, Lindenbaum_Tarski_preorder.
-case ([φ] ⊢? ψ); intros Hp Hf.
-- apply Provable_dec_of_Prop in Hp.  peapply Hp.
-- contradict Hf. case ([ψ] ⊢? φ); discriminate.
+case ([φ] ⊢? ψ); intros Hp.
+- apply Provable_dec_of_Prop in Hp. split; intro.  peapply Hp. trivial.
+- split; intro Hf. 
+  + contradict Hf. case ([ψ] ⊢? φ); discriminate.
+  + tauto.
 Qed.
 
 Lemma obviously_smaller_compatible_GT φ ψ :
-  obviously_smaller φ ψ = Gt -> ψ ≼ φ .
+  (obviously_smaller φ ψ = Gt -> ψ ≼ φ) *
+  (((φ ≼ ψ) -> False) -> (ψ ≼ φ) -> obviously_smaller φ ψ = Gt ).
 Proof.
 unfold obviously_smaller, Lindenbaum_Tarski_preorder.
-case ([ψ] ⊢? φ).
-- case ([φ] ⊢? ψ). discriminate.
-  intros _ Hp _. apply Provable_dec_of_Prop in Hp.  peapply Hp.
-- case ([φ] ⊢? ψ); discriminate.
-Qed.
+case ([ψ] ⊢? φ); intro Hp; case ([φ] ⊢? ψ); intro Hp'; split; try discriminate; trivial.
+- intros Hf _. destruct Hp'. contradict Hf. tauto.
+- intros. apply Provable_dec_of_Prop in Hp.  peapply Hp.
+- intros _ Hf. destruct Hp'. contradict Hf. tauto.
+- intros _ Hf. destruct Hp'. contradict Hf. tauto.
+Qed.	
 
 Lemma and_congruence φ ψ φ' ψ':
   (φ ≼ φ') -> (ψ ≼ ψ') -> (φ ∧ ψ) ≼ φ' ∧ ψ'.
@@ -301,17 +308,18 @@ apply AndR.
 Qed.
 
 
-Lemma choose_conj_equiv_L φ ψ φ' ψ':
-  (φ ≼ φ') -> (ψ ≼ ψ') -> (φ ∧ ψ) ≼ choose_conj φ' ψ'.
+Lemma choose_conj_sound_L Δ φ ψ:
+  (Δ ⊢ φ) -> (Δ ⊢ ψ) -> Δ ⊢ choose_conj φ ψ.
 Proof.
 intros Hφ Hψ.
-unfold choose_conj.
-case_eq (obviously_smaller φ' ψ'); intro Heq.
-- apply and_congruence; assumption.
-- apply AndL, weakening, Hφ.
-- apply AndL. exch 0. apply weakening, Hψ.
+unfold choose_conj. case obviously_smaller; auto with proof.
 Qed.
 
+Corollary choose_conj_equiv_L φ ψ φ' ψ':
+  (φ ≼ φ') -> (ψ ≼ ψ') -> (φ ∧ ψ) ≼ choose_conj φ' ψ'.
+Proof.
+intros H1 H2. apply choose_conj_sound_L; apply AndL; auto with proof.
+Qed.
 
 Lemma choose_conj_equiv_R φ ψ φ' ψ':
   (φ' ≼ φ) -> (ψ' ≼ ψ) -> choose_conj φ' ψ' ≼  φ ∧ ψ.
@@ -468,6 +476,24 @@ intros Hφ Hψ.
 apply OrL.
 - now apply OrR1.
 - now apply OrR2.
+Qed.
+
+Lemma choose_disj_sound_L1 Δ φ ψ:
+  (Δ ⊢ φ) -> Δ ⊢ choose_disj φ ψ.
+Proof.
+intros Hφ.
+unfold choose_disj. case_eq (obviously_smaller φ ψ); auto with proof.
+intro Hs. apply obviously_smaller_compatible_LT in Hs.
+apply additive_cut with φ. trivial. now apply specialised_weakening.
+Qed.
+
+Lemma choose_disj_sound_L2 Δ φ ψ:
+  (Δ ⊢ ψ) -> Δ ⊢ choose_disj φ ψ.
+Proof.
+intros Hφ.
+unfold choose_disj. case_eq (obviously_smaller φ ψ); auto with proof.
+intro Hs. apply obviously_smaller_compatible_GT in Hs.
+apply additive_cut with ψ. trivial. now apply specialised_weakening.
 Qed.
 
 Lemma choose_disj_equiv_L φ ψ φ' ψ':
