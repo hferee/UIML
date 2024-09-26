@@ -84,10 +84,10 @@ match qH with
 | inr _ => c
 end.
 
-Notation "cond '?' A ':0' B" := (sumor_bind0 cond A B) (at level 150, right associativity).
-Notation "cond '?' A ':1' B" := (sumor_bind1 cond A B) (at level 150, right associativity).
-Notation "cond '?' A ':2' B" := (sumor_bind2 cond A B) (at level 150, right associativity).
-Notation "cond '?' A ':3' B" := (sumor_bind3 cond A B) (at level 150, right associativity).
+Notation "cond '?' A '⋮₀' B" := (sumor_bind0 cond A B) (at level 150, right associativity).
+Notation "cond '?' A '⋮₁' B" := (sumor_bind1 cond A B) (at level 150, right associativity).
+Notation "cond '?' A '⋮₂' B" := (sumor_bind2 cond A B) (at level 150, right associativity).
+Notation "cond '?' A '⋮₃' B" := (sumor_bind3 cond A B) (at level 150, right associativity).
 
 Local Notation "Δ '•' φ" := (cons φ Δ) : list_scope.
 
@@ -280,15 +280,15 @@ Local Obligation Tactic := (simpl; intuition order_tac).
 Program Fixpoint simp_env (Δ : list form) {wf env_order Δ} : list form :=
     (* invertible left rules *)
     if Δ ⊢? ⊥ then [⊥] else
-    applicable_AndL Δ ? λ δ₁ δ₂  _, simp_env ((rm (δ₁ ∧ δ₂) Δ•δ₁)•δ₂) :2
-    applicable_ImpLVar Δ ? λ q ψ  _, simp_env ((rm (Var q → ψ) Δ • ψ)) :2
-    applicable_ImpLAnd Δ ? λ δ₁ δ₂ δ₃  _, simp_env ((rm ((δ₁ ∧ δ₂)→ δ₃) Δ • (δ₁ → (δ₂ → δ₃)))) :3
-    applicable_ImpLOr Δ ? λ δ₁ δ₂ δ₃  _, simp_env (rm ((δ₁ ∨ δ₂)→ δ₃) Δ • (δ₁ → δ₃) • (δ₂ → δ₃)) :3
+    applicable_AndL Δ ? λ δ₁ δ₂  _, simp_env ((rm (δ₁ ∧ δ₂) Δ•δ₁)•δ₂) ⋮₂
+    applicable_ImpLVar Δ ? λ q ψ  _, simp_env ((rm (Var q → ψ) Δ • ψ)) ⋮₂
+    applicable_ImpLAnd Δ ? λ δ₁ δ₂ δ₃  _, simp_env ((rm ((δ₁ ∧ δ₂)→ δ₃) Δ • (δ₁ → (δ₂ → δ₃)))) ⋮₃
+    applicable_ImpLOr Δ ? λ δ₁ δ₂ δ₃  _, simp_env (rm ((δ₁ ∨ δ₂)→ δ₃) Δ • (δ₁ → δ₃) • (δ₂ → δ₃)) ⋮₃
     (* remove redundant assumptions *)
-    applicable_strong_weakening Δ ? λ φ _, simp_env (rm φ Δ) :1
+    applicable_strong_weakening Δ ? λ φ _, simp_env (rm φ Δ) ⋮₁
     (* simplify individual formulas in their context. should be done earlier ?
          this is probably quite costly *)
-    applicable_contextual_simp_form Δ? λ φ φ' _, simp_env(rm φ Δ • φ') :2
+    applicable_contextual_simp_form Δ? λ φ φ' _, simp_env(rm φ Δ • φ') ⋮₂
     Δ
 .
 Next Obligation. apply Wf.measure_wf, wf_env_order. Qed.
@@ -297,13 +297,13 @@ Next Obligation. apply Wf.measure_wf, wf_env_order. Qed.
 Lemma simp_env_eq (Δ : list form): simp_env Δ =
     (* invertible left rules *)
     if Δ ⊢? ⊥ then [⊥] else
-    applicable_AndL Δ ? λ δ₁ δ₂  _, simp_env ((rm (δ₁ ∧ δ₂) Δ•δ₁)•δ₂) :2
-    applicable_ImpLVar Δ ? λ q ψ  _, simp_env ((rm (Var q → ψ) Δ • ψ)) :2
-    applicable_ImpLAnd Δ ? λ δ₁ δ₂ δ₃  _, simp_env ((rm ((δ₁ ∧ δ₂)→ δ₃) Δ • (δ₁ → (δ₂ → δ₃)))) :3
-    applicable_ImpLOr Δ ? λ δ₁ δ₂ δ₃  _, simp_env (rm ((δ₁ ∨ δ₂)→ δ₃) Δ • (δ₁ → δ₃) • (δ₂ → δ₃)) :3
+    applicable_AndL Δ ? λ δ₁ δ₂  _, simp_env ((rm (δ₁ ∧ δ₂) Δ•δ₁)•δ₂) ⋮₂
+    applicable_ImpLVar Δ ? λ q ψ  _, simp_env ((rm (Var q → ψ) Δ • ψ)) ⋮₂
+    applicable_ImpLAnd Δ ? λ δ₁ δ₂ δ₃  _, simp_env ((rm ((δ₁ ∧ δ₂)→ δ₃) Δ • (δ₁ → (δ₂ → δ₃)))) ⋮₃
+    applicable_ImpLOr Δ ? λ δ₁ δ₂ δ₃  _, simp_env (rm ((δ₁ ∨ δ₂)→ δ₃) Δ • (δ₁ → δ₃) • (δ₂ → δ₃)) ⋮₃
     (* remove redundant assumptions *)
-    (applicable_strong_weakening Δ ? λ φ _, simp_env (rm φ Δ) :1
-    applicable_contextual_simp_form Δ? λ φ φ' _, simp_env(rm φ Δ • φ') :2
+    (applicable_strong_weakening Δ ? λ φ _, simp_env (rm φ Δ) ⋮₁
+    applicable_contextual_simp_form Δ? λ φ φ' _, simp_env(rm φ Δ • φ') ⋮₂
     Δ).
 Proof.
 simpl. unfold simp_env. simpl.
