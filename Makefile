@@ -18,8 +18,8 @@ makefile.coq:
 
 
 doc: makefile.coq demo
+	rm -fr html docs
 	mkdir docs
-	rm -fr html docs/*
 	COQDOCEXTRAFLAGS='--external $(PUBLIC_URL)'
 	@$(MAKE) -f makefile.coq html
 	cp html/* _build/default/bin/uiml_demo.bc.js docs
