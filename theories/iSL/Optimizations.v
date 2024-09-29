@@ -29,7 +29,9 @@ Qed.
 
 Global Hint Resolve top_provable : proof.
 
-(* decides whether one formula entails the other or not ; in the latter case return Eq *)
+(* Decides whether one formula entails the other or not ; in the latter case return Eq.
+   It uses the decision procedure for iSL defined at `DecisionProcedure.v`
+*)
 Definition obviously_smaller (φ : form) (ψ : form) :=
   if [φ] ⊢? ψ then Lt
   else if [ψ] ⊢? φ then Gt
@@ -45,7 +47,6 @@ match obviously_smaller φ ψ with
  
 Lemma occurs_in_choose_conj v φ ψ : occurs_in v (choose_conj φ ψ) -> occurs_in v φ \/ occurs_in v ψ.
 Proof. unfold choose_conj; destruct obviously_smaller; simpl; intros; tauto. Qed.
-
 
 Definition make_conj φ ψ := 
 match ψ with
@@ -125,7 +126,6 @@ Qed.
 
 (* "lazy" implication, which produces a potentially simpler, equivalent formula *)
 
-(* Same as `simp_ors` but for nested implications. *)
 Definition choose_impl φ ψ:=
      if decide (obviously_smaller φ ψ = Lt) then ⊤
      else if decide (obviously_smaller φ ⊥ = Lt) then ⊤
@@ -688,7 +688,6 @@ Qed.
 (** ** Generalized invertibility of AndR *)
 
 
-
 (** ** Generalized AndR *)
 
 Lemma conjunction_R1 Γ Δ : (forall φ, φ ∈ Δ -> Γ  ⊢ φ) -> (Γ  ⊢ ⋀ Δ).
@@ -749,7 +748,10 @@ Qed.
 (* TODO move up *)
 (** * Correctness of optimizations 
 
-To make the definitions of the propositional quantifiers that we extract from the Coq definition more readable, we introduced functions "make_impl", "make_conj" and "make_disj" in Environments.v which perform obvious simplifications such as reducing φ ∧ ⊥ to ⊥ and φ ∨ ⊥ to φ. The following results show that the definitions of these functions are correct, in the sense that it does not make a difference for provability of a sequent whether one uses the literal conjunction, disjunction, and implication, or its optimized version. *)
+To make the definitions of the propositional quantifiers that we extract from the Coq definition more readable, we introduced the
+functions "make_impl", "make_conj" and "make_disj" in Optimizations.v which perform obvious simplifications such as reducing φ ∧ ⊥
+to ⊥ and φ ∨ ⊥ to φ. The following results show that the definitions of these functions are correct, in the sense that it does not 
+make a difference for provability of a sequent whether one uses the literal conjunction, disjunction, and implication, or its optimized version. *)
 
 (* TODO: suitable name *)
 Lemma tautology_cut {Γ} {φ ψ θ : form} : Γ • (φ → ψ) ⊢ θ -> (φ ≼ ψ) -> Γ ⊢ θ.
