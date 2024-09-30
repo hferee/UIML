@@ -1,6 +1,19 @@
 Require Import ISL.Environments ISL.Sequents ISL.SequentProps ISL.Cut ISL.DecisionProcedure.
 Require Import Program Equality.
 
+(** * Optimizing formulas
+
+   This file contains a series of functions that simplify formulas.
+
+   To make the definitions of the propositional quantifiers that we extract from the Coq definition more readable, we introduced the
+   functions "make_impl", "make_conj" and "make_disj"  which perform obvious simplifications such as reducing φ ∧ ⊥ to ⊥ and φ ∨ ⊥ to φ. 
+
+   The idea is to write functions for each binary connector that are equivalent under entailment and that no variable is added. If 
+   we take the conjunction as an example then we have that :
+      - (φ ∧ ψ  ≼ make_conj φ ψ) and  (make_conj φ ψ ≼ φ ∧ ψ)
+      - occurs_in v (make_conj φ ψ) -> occurs_in v (φ ∧ ψ)
+*)
+
 Definition Lindenbaum_Tarski_preorder φ ψ :=
   ∅ • φ ⊢ ψ.
 
@@ -9,7 +22,7 @@ Open Scope provability.
 
 Notation "φ ≼ ψ" := (Lindenbaum_Tarski_preorder φ ψ) (at level 150) : provability.
 
-
+(* Particular case of `additive_cut` easier to use *)
 Corollary weak_cut φ ψ θ:
   (φ ≼ ψ) -> (ψ ≼ θ) ->
   φ ≼ θ.
@@ -52,7 +65,7 @@ Definition make_conj φ ψ :=
 match ψ with
   | ψ1 ∧ ψ2 =>
       match obviously_smaller φ ψ1 with
-      | Lt => φ ∧ ψ2
+        | Lt => φ ∧ ψ2
       | Gt => ψ1 ∧ ψ2
       | Eq => φ ∧ (ψ1 ∧ ψ2)
       end
@@ -214,47 +227,14 @@ intro Hocc. apply Hcut in Hocc. simpl in Hocc. tauto.
 Qed.
 
 
-(* Some tactics for the obviously_smaller proofs. *)
+(** * Correctness of optimizations 
 
-(* Solve goals involving the equality decision at the end of the match *)
-Ltac eq_clean := match goal with 
-| H : (if decide (?f1 = ?f2) then ?t else Eq) = ?t |- _ => 
-    case decide in H;
-    match goal with
-    | e : ?f1 = ?f2 |- _ => rewrite e; apply generalised_axiom
-    | _ => discriminate
-    end
-| H : (if decide (?f1 = ?f2) then Lt else Eq) = Gt |- _ => 
-    case decide in H; discriminate
-| H : match ?φ with _ => _ end = _ |- _ => destruct φ; try discriminate; eq_clean
-end.
+    The following results show that the definitions of these functions are correct, in the sense that it does not make a difference for 
+    provability of a sequent whether one uses the literal conjunction, disjunction, and implication, or its optimized version. 
+*)
 
 
-(* Solve goals that involve directly using ExFalso *)
-Ltac bot_clean  := match goal with
-| [ |- Bot ≼ _] => apply ExFalso
-| [ |- _ ≼ Bot  → _ ] => apply ImpR; apply ExFalso
-| _ => idtac
-end.
-
-(* Solve induction goals *)
-Ltac induction_auto := match goal with
-| IH : obviously_smaller ?f ?f2 = Lt → ?f ≼ ?f2 , H :  obviously_smaller ?f ?f2 = Lt |- (∅ • ?f) ⊢ ?f2 => 
-    apply IH; assumption
-| IH : obviously_smaller ?f ?f2 = Gt → ?f2 ≼ ?f , H :  obviously_smaller ?f ?f2 = Gt |- (∅ • ?f2) ⊢ ?f => 
-    apply IH; assumption
-
-| IH : obviously_smaller ?f _ = Lt → ?f ≼ _ , H :  obviously_smaller ?f _ = Lt |- ?f ∧ _ ≼ _ => 
-    apply AndL; apply weakening; apply IH; assumption
-| IH : obviously_smaller ?f _ = Lt → ?f ≼ _ , H :  obviously_smaller ?f _ = Lt |- _ ∧ ?f ≼ _ =>
-    apply AndL; exch 0; apply weakening; apply IH; assumption
-
-| IH : obviously_smaller ?f _ = Gt → _ ≼ ?f , H :  obviously_smaller ?f _ = Gt |- _ ≼ ?f ∨ _ => 
-    apply OrR1;  apply IH; assumption
-| IH : obviously_smaller ?f _ = Gt → _ ≼ ?f , H :  obviously_smaller ?f _ = Gt |- _ ≼ _ ∨ ?f => 
-    apply OrR2;  apply IH; assumption
-| _ => idtac
-end.
+(** Useful lemmas about `obviously_smaller` *)
 
 Lemma double_negation_obviously_smaller φ ψ:
  is_double_negation φ ψ -> ψ ≼ φ.
@@ -296,6 +276,9 @@ case ([ψ] ⊢? φ); intro Hp; case ([φ] ⊢? ψ); intro Hp'; split; try discri
 - intros _ Hf. destruct Hp'. contradict Hf. tauto.
 - intros _ Hf. destruct Hp'. contradict Hf. tauto.
 Qed.	
+
+
+(** Equivalence of the conjunction optimizations *)
 
 Lemma and_congruence φ ψ φ' ψ':
   (φ ≼ φ') -> (ψ ≼ ψ') -> (φ ∧ ψ) ≼ φ' ∧ ψ'.
@@ -469,6 +452,8 @@ eapply additive_cut.
 Qed.
 
 
+(** Equivalence of the disjonction optimizations *)
+
 Lemma or_congruence φ ψ φ' ψ':
   (φ ≼ φ') -> (ψ ≼ ψ') -> (φ ∨ ψ) ≼ φ' ∨ ψ'.
 Proof.
@@ -519,8 +504,6 @@ case_eq (obviously_smaller φ' ψ'); intro Heq.
       -- apply obviously_smaller_compatible_GT. apply Heq.
     * apply generalised_axiom.
 Qed.
-
-
 
 Lemma choose_disj_equiv_R φ ψ φ' ψ' : 
   (φ' ≼ φ) -> (ψ' ≼ ψ) -> choose_disj φ' ψ' ≼  φ ∨ ψ.
@@ -626,132 +609,9 @@ eapply additive_cut.
 - apply make_disj_sound_L, generalised_axiom.
 Qed.
 
-(** * Generalized rules 
 
-In this section we prove that generalizations of or-left and and-right rules
-that take more than two formulas are admissible and invertible in the calculus
-G4ip. This is important in the correctness proof of propositional quantifiers
-because the propositional quantifiers are defined as large disjunctions /
-conjunctions of various individual formulas.
-*)
+(** Equivalence of the implication optimizations *)
 
-(** ** Generalized OrL and its invertibility *)
-
-Lemma disjunction_L Γ Δ θ :
-  ((forall φ, φ ∈ Δ -> (Γ•φ ⊢ θ)) -> (Γ•⋁ Δ ⊢ θ)) *
-  ((Γ•⋁ Δ ⊢ θ) -> (forall φ, φ ∈ Δ -> (Γ•φ ⊢ θ))).
-Proof.
-unfold disjunction.
-assert(Hcut :
-  (forall ψ, (Γ•ψ ⊢ θ) -> (forall φ, φ ∈ Δ -> (Γ•φ ⊢ θ)) ->
-    (Γ•foldl make_disj ψ  (nodup form_eq_dec Δ) ⊢ θ)) *
-  (forall ψ,((Γ•foldl make_disj ψ  (nodup form_eq_dec Δ)) ⊢ θ ->
-    (Γ•ψ ⊢ θ) * (∀ φ : form, φ ∈ Δ → (Γ•φ) ⊢ θ)))).
-{
-  induction Δ; simpl; split; intros ψ Hψ.
-  - intro. apply Hψ.
-  - split; trivial. intros φ Hin. contradict Hin. auto with *.
-  - intro Hall. case in_dec; intro; apply (fst IHΔ); auto with *.
-  - case in_dec in Hψ; apply IHΔ in Hψ;
-    destruct Hψ as [Hψ Hind].
-    + split; trivial;  intros φ Hin; destruct (decide (φ = a)); auto 2 with *.
-        subst. apply Hind. now apply elem_of_list_In.
-    + apply make_disj_complete_L in Hψ.
-        apply OrL_rev in Hψ as [Hψ Ha].
-        split; trivial;  intros φ Hin; destruct (decide (φ = a)); auto with *.
-}
-split; apply Hcut. constructor 2.
-Qed.
-
-
-(** ** Generalized OrR *)
-
-Lemma disjunction_R Γ Δ φ : (φ ∈ Δ) -> (Γ  ⊢ φ) -> (Γ  ⊢ ⋁ Δ).
-Proof.
-intros Hin Hprov. unfold disjunction. revert Hin.
-assert(Hcut : forall θ, ((Γ ⊢ θ) + (φ ∈ Δ)) -> Γ ⊢ foldl make_disj θ (nodup form_eq_dec Δ)).
-{
-  induction Δ; simpl; intros θ [Hθ | Hin].
-  - assumption.
-  - contradict Hin; auto with *.
-  - case in_dec; intro; apply IHΔ; left; trivial. apply make_disj_sound_R. now apply OrR1.
-  - apply elem_of_cons in Hin.
-    destruct (decide (φ = a)).
-    + subst. case in_dec; intro; apply IHΔ.
-        * right. now apply elem_of_list_In.
-        *  left. apply make_disj_sound_R. now apply OrR2.
-    + case in_dec; intro; apply IHΔ; right; tauto.
-}
-intro Hin. apply Hcut; now right.
-Qed.  
-
-(** ** Generalized invertibility of AndR *)
-
-
-(** ** Generalized AndR *)
-
-Lemma conjunction_R1 Γ Δ : (forall φ, φ ∈ Δ -> Γ  ⊢ φ) -> (Γ  ⊢ ⋀ Δ).
-Proof.
-intro Hprov. unfold conjunction.
-assert(Hcut : forall θ, Γ ⊢ θ -> Γ ⊢ foldl make_conj θ (nodup form_eq_dec Δ)).
-{
-  induction Δ; intros θ Hθ; simpl; trivial.
-  case in_dec; intro; auto with *.
-  apply IHΔ.
-  - intros; apply Hprov. now right.
-  - apply make_conj_sound_R, AndR; trivial. apply Hprov. now left.
-}
-apply Hcut. apply ImpR, ExFalso.
-Qed.
-
-Lemma conjunction_R2 Γ Δ : (Γ  ⊢ ⋀ Δ) -> (forall φ, φ ∈ Δ -> Γ  ⊢ φ).
-Proof.
- unfold conjunction.
-assert(Hcut : forall θ, Γ ⊢ foldl make_conj θ (nodup form_eq_dec Δ) -> (Γ ⊢ θ) * (forall φ, φ ∈ Δ -> Γ  ⊢ φ)).
-{
-  induction Δ; simpl; intros θ Hθ.
-  - split; trivial. intros φ Hin; contradict Hin. auto with *.
-  - case in_dec in Hθ; destruct (IHΔ _ Hθ) as (Hθ' & Hi);
-     try (apply make_conj_complete_R in Hθ'; destruct (AndR_rev Hθ')); split; trivial;
-     intros φ Hin; apply elem_of_cons in Hin;
-     destruct (decide (φ = a)); subst; trivial.
-     + apply Hi.  rewrite elem_of_list_In; tauto.
-     + apply (IHΔ _ Hθ). tauto.
-     + apply (IHΔ _ Hθ). tauto.
-}
-apply Hcut.
-Qed.
-
-(** ** Generalized AndL *)
-
-Lemma conjunction_L Γ Δ φ θ: (φ ∈ Δ) -> (Γ•φ ⊢ θ) -> (Γ•⋀ Δ ⊢ θ).
-Proof.
-intros Hin Hprov. unfold conjunction. revert Hin.
-assert(Hcut : forall ψ, ((φ ∈ Δ) + (Γ•ψ ⊢ θ)) -> (Γ•foldl make_conj ψ (nodup form_eq_dec Δ) ⊢ θ)).
-{
-  induction Δ; simpl; intros ψ [Hin | Hψ].
-  - contradict Hin; auto with *.
-  - trivial.
-  - case in_dec; intro; apply IHΔ; destruct (decide (φ = a)).
-    + subst. left. now apply elem_of_list_In.
-    + left. auto with *.
-    + subst. right. apply make_conj_sound_L. auto with proof.
-    + left. auto with *.
-  - case in_dec; intro; apply IHΔ; right; trivial.
-     apply make_conj_sound_L. auto with proof.
-}
-intro Hin. apply Hcut. now left.
-Qed.
-
-
-
-(* TODO move up *)
-(** * Correctness of optimizations 
-
-To make the definitions of the propositional quantifiers that we extract from the Coq definition more readable, we introduced the
-functions "make_impl", "make_conj" and "make_disj" in Optimizations.v which perform obvious simplifications such as reducing φ ∧ ⊥
-to ⊥ and φ ∨ ⊥ to φ. The following results show that the definitions of these functions are correct, in the sense that it does not 
-make a difference for provability of a sequent whether one uses the literal conjunction, disjunction, and implication, or its optimized version. *)
 
 (* TODO: suitable name *)
 Lemma tautology_cut {Γ} {φ ψ θ : form} : Γ • (φ → ψ) ⊢ θ -> (φ ≼ ψ) -> Γ ⊢ θ.
@@ -870,6 +730,123 @@ Lemma make_impl_complete_R Γ φ ψ: Γ ⊢ φ ⇢ ψ -> Γ ⊢ (φ → ψ).
 Proof.
 intro HP.
 apply additive_cut with (φ ⇢ ψ); [apply HP| apply make_impl_sound_L, generalised_axiom ].
+Qed.
+
+(** * Generalized rules 
+
+In this section we prove that generalizations of or-left and and-right rules
+that take more than two formulas are admissible and invertible in the calculus
+G4ip. This is important in the correctness proof of propositional quantifiers
+because the propositional quantifiers are defined as large disjunctions /
+conjunctions of various individual formulas.
+*)
+
+(** ** Generalized OrL and its invertibility *)
+
+Lemma disjunction_L Γ Δ θ :
+  ((forall φ, φ ∈ Δ -> (Γ•φ ⊢ θ)) -> (Γ•⋁ Δ ⊢ θ)) *
+  ((Γ•⋁ Δ ⊢ θ) -> (forall φ, φ ∈ Δ -> (Γ•φ ⊢ θ))).
+Proof.
+unfold disjunction.
+assert(Hcut :
+  (forall ψ, (Γ•ψ ⊢ θ) -> (forall φ, φ ∈ Δ -> (Γ•φ ⊢ θ)) ->
+    (Γ•foldl make_disj ψ  (nodup form_eq_dec Δ) ⊢ θ)) *
+  (forall ψ,((Γ•foldl make_disj ψ  (nodup form_eq_dec Δ)) ⊢ θ ->
+    (Γ•ψ ⊢ θ) * (∀ φ : form, φ ∈ Δ → (Γ•φ) ⊢ θ)))).
+{
+  induction Δ; simpl; split; intros ψ Hψ.
+  - intro. apply Hψ.
+  - split; trivial. intros φ Hin. contradict Hin. auto with *.
+  - intro Hall. case in_dec; intro; apply (fst IHΔ); auto with *.
+  - case in_dec in Hψ; apply IHΔ in Hψ;
+    destruct Hψ as [Hψ Hind].
+    + split; trivial;  intros φ Hin; destruct (decide (φ = a)); auto 2 with *.
+        subst. apply Hind. now apply elem_of_list_In.
+    + apply make_disj_complete_L in Hψ.
+        apply OrL_rev in Hψ as [Hψ Ha].
+        split; trivial;  intros φ Hin; destruct (decide (φ = a)); auto with *.
+}
+split; apply Hcut. constructor 2.
+Qed.
+
+
+(** ** Generalized OrR *)
+
+Lemma disjunction_R Γ Δ φ : (φ ∈ Δ) -> (Γ  ⊢ φ) -> (Γ  ⊢ ⋁ Δ).
+Proof.
+intros Hin Hprov. unfold disjunction. revert Hin.
+assert(Hcut : forall θ, ((Γ ⊢ θ) + (φ ∈ Δ)) -> Γ ⊢ foldl make_disj θ (nodup form_eq_dec Δ)).
+{
+  induction Δ; simpl; intros θ [Hθ | Hin].
+  - assumption.
+  - contradict Hin; auto with *.
+  - case in_dec; intro; apply IHΔ; left; trivial. apply make_disj_sound_R. now apply OrR1.
+  - apply elem_of_cons in Hin.
+    destruct (decide (φ = a)).
+    + subst. case in_dec; intro; apply IHΔ.
+        * right. now apply elem_of_list_In.
+        *  left. apply make_disj_sound_R. now apply OrR2.
+    + case in_dec; intro; apply IHΔ; right; tauto.
+}
+intro Hin. apply Hcut; now right.
+Qed.  
+
+(** ** Generalized AndR *)
+
+Lemma conjunction_R1 Γ Δ : (forall φ, φ ∈ Δ -> Γ  ⊢ φ) -> (Γ  ⊢ ⋀ Δ).
+Proof.
+intro Hprov. unfold conjunction.
+assert(Hcut : forall θ, Γ ⊢ θ -> Γ ⊢ foldl make_conj θ (nodup form_eq_dec Δ)).
+{
+  induction Δ; intros θ Hθ; simpl; trivial.
+  case in_dec; intro; auto with *.
+  apply IHΔ.
+  - intros; apply Hprov. now right.
+  - apply make_conj_sound_R, AndR; trivial. apply Hprov. now left.
+}
+apply Hcut. apply ImpR, ExFalso.
+Qed.
+
+
+(** ** Generalized invertibility of AndR *)
+
+Lemma conjunction_R2 Γ Δ : (Γ  ⊢ ⋀ Δ) -> (forall φ, φ ∈ Δ -> Γ  ⊢ φ).
+Proof.
+ unfold conjunction.
+assert(Hcut : forall θ, Γ ⊢ foldl make_conj θ (nodup form_eq_dec Δ) -> (Γ ⊢ θ) * (forall φ, φ ∈ Δ -> Γ  ⊢ φ)).
+{
+  induction Δ; simpl; intros θ Hθ.
+  - split; trivial. intros φ Hin; contradict Hin. auto with *.
+  - case in_dec in Hθ; destruct (IHΔ _ Hθ) as (Hθ' & Hi);
+     try (apply make_conj_complete_R in Hθ'; destruct (AndR_rev Hθ')); split; trivial;
+     intros φ Hin; apply elem_of_cons in Hin;
+     destruct (decide (φ = a)); subst; trivial.
+     + apply Hi.  rewrite elem_of_list_In; tauto.
+     + apply (IHΔ _ Hθ). tauto.
+     + apply (IHΔ _ Hθ). tauto.
+}
+apply Hcut.
+Qed.
+
+(** ** Generalized AndL *)
+
+Lemma conjunction_L Γ Δ φ θ: (φ ∈ Δ) -> (Γ•φ ⊢ θ) -> (Γ•⋀ Δ ⊢ θ).
+Proof.
+intros Hin Hprov. unfold conjunction. revert Hin.
+assert(Hcut : forall ψ, ((φ ∈ Δ) + (Γ•ψ ⊢ θ)) -> (Γ•foldl make_conj ψ (nodup form_eq_dec Δ) ⊢ θ)).
+{
+  induction Δ; simpl; intros ψ [Hin | Hψ].
+  - contradict Hin; auto with *.
+  - trivial.
+  - case in_dec; intro; apply IHΔ; destruct (decide (φ = a)).
+    + subst. left. now apply elem_of_list_In.
+    + left. auto with *.
+    + subst. right. apply make_conj_sound_L. auto with proof.
+    + left. auto with *.
+  - case in_dec; intro; apply IHΔ; right; trivial.
+     apply make_conj_sound_L. auto with proof.
+}
+intro Hin. apply Hcut. now left.
 Qed.
 
 
