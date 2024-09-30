@@ -5,7 +5,7 @@ Require Import ExtrOcamlBasic ExtrOcamlString.
 
 Require Import K.Interpolation.UIK_braga.
 Require Import KS_export.
-Require Import ISL.PropQuantifiers ISL.DecisionProcedure ISL.Simp ISL.Simp_env.
+Require Import ISL.PropQuantifiers ISL.DecisionProcedure ISL.Simp_env.
 
 
 
@@ -38,8 +38,8 @@ Definition isl_A v f := Af v f.
   Notable exception: (a ∨b) → c *)
 Definition isl_simp f := simp_form f.
 
-Definition isl_simplified_E v f := E_simplified v f.
-Definition isl_simplified_A v f := A_simplified v f.
+Definition isl_simplified_E p ψ := isl_simp (E p [ψ]).
+Definition isl_simplified_A p ψ := isl_simp (Af p (ψ)).
 
 Set Extraction Output Directory "extraction".
 
