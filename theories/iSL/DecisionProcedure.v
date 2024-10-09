@@ -1,3 +1,4 @@
+(** * Decision Procedure *)
 Require Import ISL.Sequents ISL.SequentProps ISL.Order.
 
 (**

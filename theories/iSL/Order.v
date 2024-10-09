@@ -1,3 +1,4 @@
+(** * Ordering *)
 Require Export ISL.Environments.
 
 (* Note 3 or 4 would suffice for IPC ; iSL requires 5 *)

@@ -1,3 +1,5 @@
+(** * Simplifications for formulas and contexts *)
+
 Require Import Coq.Program.Equality.
 Require Import ISL.Optimizations.
 Require Import ISL.Sequents ISL.SequentProps.

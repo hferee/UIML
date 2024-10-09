@@ -227,7 +227,7 @@ intro Hocc. apply Hcut in Hocc. simpl in Hocc. tauto.
 Qed.
 
 
-(** * Correctness of optimizations 
+(** ** Correctness of optimizations 
 
     The following results show that the definitions of these functions are correct, in the sense that it does not make a difference for 
     provability of a sequent whether one uses the literal conjunction, disjunction, and implication, or its optimized version. 
@@ -732,7 +732,7 @@ intro HP.
 apply additive_cut with (φ ⇢ ψ); [apply HP| apply make_impl_sound_L, generalised_axiom ].
 Qed.
 
-(** * Generalized rules 
+(** ** Generalized rules 
 
 In this section we prove that generalizations of or-left and and-right rules
 that take more than two formulas are admissible and invertible in the calculus
@@ -741,7 +741,7 @@ because the propositional quantifiers are defined as large disjunctions /
 conjunctions of various individual formulas.
 *)
 
-(** ** Generalized OrL and its invertibility *)
+(** *** Generalized OrL and its invertibility *)
 
 Lemma disjunction_L Γ Δ θ :
   ((forall φ, φ ∈ Δ -> (Γ•φ ⊢ θ)) -> (Γ•⋁ Δ ⊢ θ)) *
@@ -770,7 +770,7 @@ split; apply Hcut. constructor 2.
 Qed.
 
 
-(** ** Generalized OrR *)
+(** *** Generalized OrR *)
 
 Lemma disjunction_R Γ Δ φ : (φ ∈ Δ) -> (Γ  ⊢ φ) -> (Γ  ⊢ ⋁ Δ).
 Proof.
@@ -791,7 +791,7 @@ assert(Hcut : forall θ, ((Γ ⊢ θ) + (φ ∈ Δ)) -> Γ ⊢ foldl make_disj �
 intro Hin. apply Hcut; now right.
 Qed.  
 
-(** ** Generalized AndR *)
+(** *** Generalized AndR *)
 
 Lemma conjunction_R1 Γ Δ : (forall φ, φ ∈ Δ -> Γ  ⊢ φ) -> (Γ  ⊢ ⋀ Δ).
 Proof.
@@ -808,7 +808,7 @@ apply Hcut. apply ImpR, ExFalso.
 Qed.
 
 
-(** ** Generalized invertibility of AndR *)
+(** *** Generalized invertibility of AndR *)
 
 Lemma conjunction_R2 Γ Δ : (Γ  ⊢ ⋀ Δ) -> (forall φ, φ ∈ Δ -> Γ  ⊢ φ).
 Proof.
@@ -828,7 +828,7 @@ assert(Hcut : forall θ, Γ ⊢ foldl make_conj θ (nodup form_eq_dec Δ) -> (Γ
 apply Hcut.
 Qed.
 
-(** ** Generalized AndL *)
+(** *** Generalized AndL *)
 
 Lemma conjunction_L Γ Δ φ θ: (φ ∈ Δ) -> (Γ•φ ⊢ θ) -> (Γ•⋀ Δ ⊢ θ).
 Proof.

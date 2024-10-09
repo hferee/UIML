@@ -3,7 +3,7 @@ Require Import ISL.Sequents.
 (* Required for dependent induction. *)
 Require Import Coq.Program.Equality. 
 
-(** * Overview: admissible rules in G4ip sequent calculus
+(** * Admissible rules in G4ip sequent calculus
 
 This file contains important properties of the sequent calculus G4ip, defined in
 Sequents.v, namely the admissibility of various inversion rules, weakening and
@@ -16,7 +16,7 @@ Rules for Contraction-Free Systems of Intuitionistic Logic, Journal of Symbolic
 Logic (65):4.
 *)
 
-(** * Weakening *)
+(** ** Weakening *)
 
 (** We prove the admissibility of the weakening rule. *)
 
@@ -56,7 +56,7 @@ Qed.
 
 Global Hint Extern 5 (?a <= ?b) => simpl in *; lia : proof.
 
-(** * Inversion rules *)
+(** ** Inversion rules *)
 
 (** We prove that the following rules are invertible: implication right, and
   left, or left, top left (i.e., the appliction of weakening for the formula
@@ -499,7 +499,7 @@ Qed.
 
 Global Hint Resolve weak_ImpL : proof.
 
-(** * Contraction 
+(** ** Contraction 
 
  The aim of this section is to prove that the contraction rule is admissible in
  G4ip. *)
@@ -786,7 +786,7 @@ induction Γ' as [| x Γ' IHΓ'] using gmultiset_rec; intros Γ Hp.
 - peapply (contraction (Γ' ⊎ Γ) x). peapply (IHΓ' (Γ•x•x)). peapply Hp.
 Qed.
 
-(** * Admissibility of LJ's implication left rule *)
+(** ** Admissibility of LJ's implication left rule *)
 
 (** We show that the general implication left rule of LJ is admissible in G4ip.
   This is Proposition 5.2 in (Dyckhoff Negri 2000). *)

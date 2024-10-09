@@ -1,10 +1,4 @@
-Require Import ISL.Sequents ISL.Formulas.
-Require Import ISL.SequentProps ISL.Order ISL.Optimizations.
-Require Import Coq.Program.Equality. (* for dependent induction *)
-Require Import ISL.Simp_env.
-
-
-(** * Overview: Propositional Quantifiers
+(** * Propositional Quantifiers
 
 The main theorem proved in this file was first proved as Theorem 1 in:
 
@@ -17,6 +11,11 @@ It consists of two parts:
 
 2) a proof of its correctness. *)
 
+Require Import ISL.Sequents ISL.Formulas.
+Require Import ISL.SequentProps ISL.Order ISL.Optimizations.
+Require Import Coq.Program.Equality. (* for dependent induction *)
+Require Import ISL.Simp_env.
+
 Section UniformInterpolation.
 
 (** Throughout the construction and proof, we fix a variable p, with respect to
@@ -24,7 +23,7 @@ Section UniformInterpolation.
 Variable p : variable.
 
 
-(** * Definition of propositional quantifiers. *)
+(** ** Definition of propositional quantifiers. *)
 
 Section PropQuantDefinition.
 
@@ -240,13 +239,13 @@ Definition A_eq Δ ϕ := proj2 (EA_eq Δ ϕ).
 
 End PropQuantDefinition.
 
-(** * Correctness *)
+(** ** Correctness *)
 Section Correctness.
 
 
 (** This section contains the proof of Proposition 5, the main correctness result, stating that the E- and A-formulas defined above are indeed existential and universal propositional quantified versions of the original formula, respectively. *)
 
-(** ** (i) Variables *)
+(** *** (i) Variables *)
 Section VariablesCorrect.
 
 (** In this subsection we prove (i), which states that the variable p no longer
@@ -280,7 +279,7 @@ try multimatch goal with
   solve[try right; exists θ0; split; [eauto using remove_include|simpl; tauto]; eauto] end.
 
 
-(** *** (a)  *)
+(** **** (a)  *)
 
 Lemma e_rule_vars Δ (θ : form) (Hin : θ ∈ Δ) (ϕ : form)
   (E0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form)
@@ -296,7 +295,7 @@ destruct θ1; repeat case decide; repeat vars_tac.
 Qed.
 
 
-(** *** (b) *)
+(** **** (b) *)
 
 Lemma a_rule_env_vars Δ θ Hin ϕ
   (E0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form)
@@ -363,7 +362,7 @@ Ltac foldEA := repeat match goal with
 | |- context C [EA false ?pe] => fold (A pe)
 end.
 
-(** ** (ii) Entailment *)
+(** *** (ii) Entailment *)
 Section EntailmentCorrect.
 
 (** In this section we prove (ii), which states that the E- and A-formula are
@@ -499,7 +498,7 @@ Qed.
 
 End EntailmentCorrect.
 
-(** ** Uniformity *)
+(** *** (iii) Uniformity *)
 Section PropQuantCorrect.
 
 (** The proof in this section, which is the most complex part of the argument,
@@ -965,7 +964,7 @@ End Correctness.
 
 End UniformInterpolation.
 
-(** * Main uniform interpolation Theorem *)
+(** ** Main uniform interpolation Theorem *)
 
 Open Scope type_scope.
 
