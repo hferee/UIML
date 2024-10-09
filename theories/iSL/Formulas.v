@@ -105,7 +105,7 @@ Fixpoint weight (φ : form) : nat := match φ with
 | ⊥ => 1
 | Var _ => 1
 | φ ∧ ψ => 2 + weight φ + weight ψ
-| φ ∨ ψ => 3 + weight φ + weight ψ
+| φ ∨ ψ => 1 + weight φ + weight ψ
 | φ → ψ => 1 + weight φ + weight ψ
 | □φ => 1 + weight φ
 end.
