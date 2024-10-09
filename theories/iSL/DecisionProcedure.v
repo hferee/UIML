@@ -381,6 +381,13 @@ assert(Hind' := λ Γ' φ', Hind(Γ', φ')). simpl in Hind'. clear Hind. rename 
 case (decide (⊥ ∈ Γ)); intro Hbot.
 { left. eexists; trivial. apply elem_of_list_to_set_disj in Hbot. exhibit Hbot 0. apply ExFalso. }
 assert(HAndR : {φ1 & {φ2 & φ = (And φ1 φ2)}} + {∀ φ1 φ2, φ ≠ (And φ1 φ2)}) by (destruct φ; eauto).
+assert(Hvar : {p & φ = Var p & Var p ∈ Γ} + {∀ p, φ = Var p -> Var p ∈ Γ -> False}). {
+  destruct φ. 2-6: right; auto with *.
+  case (decide (Var v ∈ Γ)); intro Hin.
+  - left. exists v; trivial.
+  - right; auto with *. }
+destruct Hvar as [[p Heq Hp]|Hvar].
+{ subst. left. eexists; trivial. apply elem_of_list_to_set_disj in Hp. exhibit Hp 0. apply Atom. }
 destruct HAndR as [(φ1 & φ2 & Heq) | HAndR].
 { subst.
   destruct (Hind Γ φ1) as [Hp1| H1]. order_tac.
@@ -389,13 +396,6 @@ destruct HAndR as [(φ1 & φ2 & Heq) | HAndR].
     + right. intro Hp. apply AndR_rev in Hp. tauto.
   - right. intro Hp. apply AndR_rev in Hp. tauto.
 }
-assert(Hvar : {p & φ = Var p & Var p ∈ Γ} + {∀ p, φ = Var p -> Var p ∈ Γ -> False}). {
-  destruct φ. 2-6: right; auto with *.
-  case (decide (Var v ∈ Γ)); intro Hin.
-  - left. exists v; trivial.
-  - right; auto with *. }
-destruct Hvar as [[p Heq Hp]|Hvar].
-{ subst. left. eexists; trivial. apply elem_of_list_to_set_disj in Hp. exhibit Hp 0. apply Atom. }
 assert(HAndL : {ψ1 & {ψ2 & (And ψ1 ψ2) ∈ Γ}} + {∀ ψ1 ψ2, (And ψ1 ψ2) ∈ Γ -> False}). {
   pose (fA := (fun θ => match θ with |And _ _ => true | _ => false end)).
   destruct (exists_dec fA Γ) as [(θ & Hin & Hθ) | Hf].
@@ -424,31 +424,6 @@ destruct HImpR as [(φ1 & φ2 & Heq) | HImpR].
   destruct (Hind (φ1 :: Γ) φ2) as [Hp1| H1]. order_tac.
   - left. destruct Hp1 as [Hp1 _]. eexists; trivial. apply ImpR. peapply Hp1.
   - right. intro Hf. apply H1. apply ImpR_rev in Hf. peapply Hf.
-}
-assert(HOrL : {ψ1 & {ψ2 & (Or ψ1 ψ2) ∈ Γ}} + {∀ ψ1 ψ2, (Or ψ1 ψ2) ∈ Γ -> False}). {
-  pose (fA := (fun θ => match θ with |Or _ _ => true | _ => false end)).
-  destruct (exists_dec fA Γ) as [(θ & Hin & Hθ) | Hf].
-  - left. subst fA. destruct θ. 4: { eexists. eexists. apply elem_of_list_In. eauto. }
-    all:  auto with *.
-  - right. intros ψ1 ψ2 Hψ. rewrite elem_of_list_In in Hψ. apply Hf in Hψ. subst fA. simpl in Hψ. tauto.
-}
-destruct HOrL as [(ψ1 & ψ2 & Hin)|HOrL].
-{ apply elem_of_list_to_set_disj in Hin.
-  destruct (Hind (ψ1 :: rm (Or ψ1 ψ2) Γ) φ) as [Hp1| Hf]. order_tac.
-  - destruct (Hind (ψ2 :: rm (Or ψ1 ψ2) Γ) φ) as [Hp2| Hf]. order_tac.
-    + left. destruct Hp1 as [Hp1 _]. destruct Hp2 as [Hp2 _]. eexists; trivial. exhibit Hin 0.
-         rewrite (proper_Provable _ _ (equiv_disj_union_compat_r (list_to_set_disj_rm _ _)) _ _ eq_refl).
-         apply OrL. peapply Hp1. peapply Hp2.
-    + right; intro Hf'. assert(Hf'' :list_to_set_disj (rm (Or ψ1 ψ2) Γ) • Or ψ1 ψ2 ⊢ φ). {
-          rw (symmetry (list_to_set_disj_rm Γ(Or ψ1 ψ2))) 1.
-          pose (difference_singleton (list_to_set_disj Γ) (Or ψ1 ψ2)). peapply Hf'.
-         }
-        apply OrL_rev in Hf''. apply Hf. peapply Hf''.
-  - right; intro Hf'. assert(Hf'' :list_to_set_disj (rm (Or ψ1 ψ2) Γ) • Or ψ1 ψ2 ⊢ φ). {
-          rw (symmetry (list_to_set_disj_rm Γ(Or ψ1 ψ2))) 1.
-          pose (difference_singleton (list_to_set_disj Γ) (Or ψ1 ψ2)). peapply Hf'.
-         }
-        apply OrL_rev in Hf''. apply Hf. peapply Hf''.1.
 }
 assert(HImpLVar : {p & {ψ & Var p ∈ Γ /\ (Implies (Var p) ψ) ∈ Γ}} + 
                                  {∀ p ψ, Var p ∈ Γ -> (Implies (Var p) ψ) ∈ Γ -> False}). {
@@ -521,6 +496,31 @@ destruct HImpLOr as [(φ1&φ2&φ3&Hin)|HImpLOr].
      rw (symmetry (list_to_set_disj_rm Γ(Implies (Or φ1 φ2) φ3))) 2.
      apply ImpLOr_rev.
      rw (symmetry (difference_singleton _ _ Hin)) 0. exact Hf'.
+}
+assert(HOrL : {ψ1 & {ψ2 & (Or ψ1 ψ2) ∈ Γ}} + {∀ ψ1 ψ2, (Or ψ1 ψ2) ∈ Γ -> False}). {
+  pose (fA := (fun θ => match θ with |Or _ _ => true | _ => false end)).
+  destruct (exists_dec fA Γ) as [(θ & Hin & Hθ) | Hf].
+  - left. subst fA. destruct θ. 4: { eexists. eexists. apply elem_of_list_In. eauto. }
+    all:  auto with *.
+  - right. intros ψ1 ψ2 Hψ. rewrite elem_of_list_In in Hψ. apply Hf in Hψ. subst fA. simpl in Hψ. tauto.
+}
+destruct HOrL as [(ψ1 & ψ2 & Hin)|HOrL].
+{ apply elem_of_list_to_set_disj in Hin.
+  destruct (Hind (ψ1 :: rm (Or ψ1 ψ2) Γ) φ) as [Hp1| Hf]. order_tac.
+  - destruct (Hind (ψ2 :: rm (Or ψ1 ψ2) Γ) φ) as [Hp2| Hf]. order_tac.
+    + left. destruct Hp1 as [Hp1 _]. destruct Hp2 as [Hp2 _]. eexists; trivial. exhibit Hin 0.
+         rewrite (proper_Provable _ _ (equiv_disj_union_compat_r (list_to_set_disj_rm _ _)) _ _ eq_refl).
+         apply OrL. peapply Hp1. peapply Hp2.
+    + right; intro Hf'. assert(Hf'' :list_to_set_disj (rm (Or ψ1 ψ2) Γ) • Or ψ1 ψ2 ⊢ φ). {
+          rw (symmetry (list_to_set_disj_rm Γ(Or ψ1 ψ2))) 1.
+          pose (difference_singleton (list_to_set_disj Γ) (Or ψ1 ψ2)). peapply Hf'.
+         }
+        apply OrL_rev in Hf''. apply Hf. peapply Hf''.
+  - right; intro Hf'. assert(Hf'' :list_to_set_disj (rm (Or ψ1 ψ2) Γ) • Or ψ1 ψ2 ⊢ φ). {
+          rw (symmetry (list_to_set_disj_rm Γ(Or ψ1 ψ2))) 1.
+          pose (difference_singleton (list_to_set_disj Γ) (Or ψ1 ψ2)). peapply Hf'.
+         }
+        apply OrL_rev in Hf''. apply Hf. peapply Hf''.1.
 }
 (* non invertible right rules *)
 assert(HOrR1 : {φ1 & {φ2 & (exists (_ : list_to_set_disj Γ ⊢ φ1), φ = (Or φ1 φ2))}} +
