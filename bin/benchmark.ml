@@ -103,4 +103,4 @@ let test_cases =
     "(q →  (¬p ∨ ¬¬p)) ∧ ((¬p ∨ ¬¬ p) →  q)";
   ]
 
-let _ = bench test_cases
+let () = bench test_cases
