@@ -41,12 +41,12 @@ let start = if nb_args < 3 then 0 else int_of_string Sys.argv.(1)
 let num = if nb_args < 3 then 1 else int_of_string Sys.argv.(2)
 
 let usage_string =
-"Usage: propquant s n shows n example formulas φ(0), ... φ(n-1),
+"Usage: uiml_cmdline s n shows n example formulas φ(0), ... φ(n-1),
         and computes E x0 φ(i) and A x0 φ(i) for each 0 ≤ i < n.
         The formulas are chosen from an enumeration of all formulas in variables p, q, r, s, t.
         The argument s determines where to start in this enumeration.
 
-        For example, try: propquant.exe 0 10, propquant.exe 5893 100.\n"
+        For example, try: uiml_cmdline.exe 0 10, uiml_cmdline.exe 5893 100.\n"
 
 let v : variable = coqstring_of_camlstring "p"
 

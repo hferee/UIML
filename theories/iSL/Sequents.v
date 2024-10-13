@@ -2,7 +2,7 @@ Require Export ISL.Environments.
 
 Open Scope stdpp_scope.
 
-(** * Overview: Sequent calculus G4ip *)
+(** * Sequent calculus G4iSL *)
 
 (** We implement the sequent calculus G4ip, a contraction-free
  refinement of the usual Gentzen sequent calculus LJ for intuitionistic
@@ -18,7 +18,7 @@ Open Scope stdpp_scope.
 
 
 
-(** * Definition of provability in G4iSL *)
+(** ** Definition of provability in G4iSL *)
 Reserved Notation "Γ ⊢ φ" (at level 90).
 Inductive Provable : env -> form -> Type :=
 | Atom :    ∀ Γ p, Γ • (Var p) ⊢ (Var p)
@@ -71,7 +71,7 @@ Proof. intros Γ Γ' Heq φ φ' Heq'. ms. Qed.
 Ltac peapply th :=
   (erewrite proper_Provable;  [| |reflexivity]);  [eapply th|try ms].
 
-(** * Tactics *)
+(** ** Tactics *)
 
 (** We introduce a few tactics that we will need to prove the admissibility of
   the weakening and exchange rules in the proof calculus. *)

@@ -1,3 +1,4 @@
+(** * Cut Admissibility *)
 Require Import ISL.Formulas ISL.Sequents ISL.Order.
 Require Import ISL.SequentProps .
 

@@ -1,4 +1,4 @@
-(** * Overview: formulas
+(** * Formulas
 
 This file defines propositional formulas, the proof that there are countably many, and the definition of the well-founded ordering on the set of formulas, via weight. *)
 
@@ -9,7 +9,7 @@ From stdpp Require Import countable strings.
 
 Local Open Scope string_scope.
 
-(** * Definitions and notations. *)
+(** ** Definitions and notations. *)
 Definition variable := string.
 
 Inductive form : Type :=
@@ -52,7 +52,7 @@ Global Instance form_eq_dec : EqDecision form.
 Proof. solve_decision . Defined.
 
 Section CountablyManyFormulas.
-(** * Countability of the set of formulas *)
+(** ** Countability of the set of formulas *)
 (** We prove that there are countably many formulas by exhibiting an injection
   into general trees over nat for countability. *)
 Local Fixpoint form_to_gen_tree (φ : form) : gen_tree (option string) :=
@@ -98,14 +98,14 @@ Inductive subform : form -> form -> Prop :=
 | SubBox : ∀ φ ψ, subform φ ψ -> subform φ (□ ψ).
 Local Hint Constructors subform : dyckhoff.
 
-(** * Weight
+(** ** Weight
 
 We define the weight function on formulas, following (Dyckhoff Negri 2000) *)
 Fixpoint weight (φ : form) : nat := match φ with
 | ⊥ => 1
 | Var _ => 1
 | φ ∧ ψ => 2 + weight φ + weight ψ
-| φ ∨ ψ => 3 + weight φ + weight ψ
+| φ ∨ ψ => 1 + weight φ + weight ψ
 | φ → ψ => 1 + weight φ + weight ψ
 | □φ => 1 + weight φ
 end.

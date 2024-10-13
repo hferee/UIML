@@ -1,4 +1,4 @@
-(** * Overview: Environments
+(** * Environments
 
   An environment is a multiset of formulas. We rely on stdpp multisets
   mostly for their powerful multiset equivalence tactic.*)
@@ -55,7 +55,7 @@ symmetry. apply Permutation_cons_append.
 Qed.
 
 
-(** * Multiset utilities *)
+(** ** Multiset utilities *)
 
 Lemma multeq_meq (M N: env) : (forall x, multiplicity x M = multiplicity x N) -> M ≡  N.
   Proof. multiset_solver. Qed.
@@ -101,7 +101,7 @@ Qed.
 Lemma env_add_remove : ∀ (Γ: env) (φ : form), (Γ • φ) ∖ {[φ]} =Γ.
 Proof. intros; ms. Qed.
 
-(** * Conjunction, disjunction, and implication *)
+(** ** Conjunction, disjunction, and implication *)
 (** In the construction of propositional quantifiers, we often want to take the conjunction, disjunction, or implication of a (multi)set of formulas. The following results give some small optimizations of this process, by reducing "obvious" conjunctions such as ⊤ ∧ ϕ, ⊥ ∧ ϕ, etc. *)
 
 Definition irreducible (Γ : env) :=
@@ -126,7 +126,7 @@ Defined.
 Definition is_negation φ ψ := φ = ¬ ψ.
 Global Instance decidable_is_negation φ ψ : Decision (is_negation φ ψ) := decide (φ =  ¬ ψ).
 
-(** * A dependent version of `map` *)
+(** ** A dependent version of `map` *)
 (* a dependent map on lists, with knowledge that we are on that list *)
 (* should work with any set-like type *)
 
@@ -324,7 +324,7 @@ Proof. intros Γ Γ' Heq Δ Heq'. ms. Qed.
 
 Definition var_not_in_env p (Γ : env):=  (∀ φ0, φ0 ∈ Γ -> ¬ occurs_in p φ0).
 
-(** * Tactics *)
+(** ** Tactics *)
 (* helper tactic split cases given an assumption about belonging to a multiset *)
 
 Ltac in_tac :=

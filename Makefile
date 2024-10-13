@@ -1,7 +1,7 @@
 EXTRA_DIR:= doc-config
 COQDOCFLAGS:= \
-  --toc --toc-depth 2 --html --interpolate \
-	-d docs \
+  --toc --toc-depth 3 --html --interpolate \
+	-d docs -s --lib-subtitles \
   --index indexpage --no-lib-name --parse-comments \
   --with-header $(EXTRA_DIR)/header.html --with-footer $(EXTRA_DIR)/footer.html
 export COQDOCFLAGS

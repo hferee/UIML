@@ -1,3 +1,4 @@
+(** * Ordering *)
 Require Export ISL.Environments.
 
 (* Note 3 or 4 would suffice for IPC ; iSL requires 5 *)
@@ -413,3 +414,8 @@ apply Nat.pow_le_mono_r with (a := 5) in Hle; lia.
 Qed.
 
 Hint Resolve pointed_env_order_bot_L : order.
+
+Lemma weight_or_bot a b: weight(⊥) < weight (a ∨b).
+Proof. destruct a; simpl; lia. Qed.
+
+Hint Resolve weight_or_bot : order.
