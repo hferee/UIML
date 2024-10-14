@@ -1,17 +1,15 @@
 Require Import ISL.Environments ISL.Sequents ISL.SequentProps ISL.Cut ISL.DecisionProcedure.
 Require Import Program Equality.
 
-(** * Optimizing formulas
+(** * Optimizations of formulas
 
-   This file contains a series of functions that simplify formulas.
-
-   To make the definitions of the propositional quantifiers that we extract from the Coq definition more readable, we introduced the
-   functions "make_impl", "make_conj" and "make_disj"  which perform obvious simplifications such as reducing φ ∧ ⊥ to ⊥ and φ ∨ ⊥ to φ. 
-
-   The idea is to write functions for each binary connector that are equivalent under entailment and that no variable is added. If 
-   we take the conjunction as an example then we have that :
-      - (φ ∧ ψ  ≼ make_conj φ ψ) and  (make_conj φ ψ ≼ φ ∧ ψ)
-      - occurs_in v (make_conj φ ψ) -> occurs_in v (φ ∧ ψ)
+   This file sets up a series of functions that simplify formulas, while maintaining equivalence.
+  We also introduce the Lindenbaum-Tarski preorder ≼ on formulas to formalize this.
+  We rely on the decision procedure to decide when φ ≼ ψ holds.
+  We then introduce the functions "make_impl", "make_conj" and "make_disj", which
+  perform obvious simplifications such as reducing φ ∧ ⊥ to ⊥ and φ ∨ ⊥ to φ. 
+  We also formally verify that these reductions maintain equivalence and do not introduce any
+  new variables.
 *)
 
 Definition Lindenbaum_Tarski_preorder φ ψ :=

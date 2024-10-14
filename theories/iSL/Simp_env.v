@@ -1,13 +1,23 @@
-(** * Simplifications for formulas and contexts *)
+(** * Simplifications for formulas and contexts 
+
+This file defines the main simplifications for formulas and contexts, maintaining intuitionistic
+equivalence.
+
+*)
 
 Require Import Coq.Program.Equality.
-Require Import ISL.Optimizations.
+Require Import Coq.Classes.RelationClasses.
 Require Import ISL.Sequents ISL.SequentProps.
 Require Import ISL.Order ISL.DecisionProcedure.
-Require Import Coq.Classes.RelationClasses.
-Require Import ISL.Cut ISL.Optimizations.
+Require Import ISL.Cut.
+Require Import ISL.Optimizations. (* NB This import must come last. *)
 
-(* TODO: sort this file out *)
+(** ** Applicability of rules
+
+  This section provides definitions for checking the applicability of various logical rules 
+  within a given context (list of formulas). The definitions use decidable existence checks 
+  to determine if specific patterns of formulas are present in the context.
+*)
 Definition applicable_AndL (Γ : list form): {ψ1 & {ψ2 | (And ψ1 ψ2) ∈ Γ}} + (∀ ψ1 ψ2, (And ψ1 ψ2) ∈ Γ -> False).
 Proof.
   pose (fA := (fun θ => match θ with |And _ _ => true | _ => false end)).
@@ -57,6 +67,28 @@ Proof.
     - right. intros ψ1 ψ2 ψ3 Hψ. rewrite elem_of_list_In in Hψ. apply Hf in Hψ. subst fII. simpl in Hψ. tauto.
 Defined.
 
+
+(* Probably very costly *)
+Definition applicable_strong_weakening (Γ : list form):
+  {φ : form | φ ∈ Γ /\ exists (_ : list_to_set_disj (rm φ Γ) ⊢ φ), True}
+  + (∀ φ, φ ∈ Γ -> forall (_ : list_to_set_disj (rm φ Γ) ⊢ φ), False).
+Proof.
+destruct (exists_dec (λ φ, if Provable_dec (rm φ Γ) φ then true else false) Γ) as [[φ [Hin Hφ]]| Hf].
+- left. exists φ; split.
+  + now apply elem_of_list_In.
+  + destruct ((rm φ Γ) ⊢? φ). trivial. contradict Hφ.
+- right. intros φ Hin Hφ. apply (Hf φ). now apply elem_of_list_In.
+   destruct ((rm φ Γ) ⊢? φ). auto with *. tauto.
+Defined.
+
+(** ** Ternary if notation
+  This section defines a set of functions and notations for handling ternary conditional logic. The functions [sumor_bind0], [sumor_bind1], [sumor_bind2], and 
+  [sumor_bind3] provide a way to handle different levels of nested dependent sums and 
+  propositions. Each function takes a sum type and applies a function to the left component 
+  if it exists, or returns a default value otherwise.
+  The notations `cond '?' A '⋮₀' B`, `cond '?' A '⋮₁' B`, `cond '?' A '⋮₂' B`, and `cond '?' A '⋮₃' B` are provided to simplify the usage of these functions.
+  This notation is used in the definition of [simp_env].
+*)
 Definition sumor_bind0 {A} {B : Prop} {C}: A + B -> (A -> C) -> C -> C :=
 λ qH f c,
 match qH with
@@ -93,18 +125,11 @@ Notation "cond '?' A '⋮₃' B" := (sumor_bind3 cond A B) (at level 150, right 
 
 Local Notation "Δ '•' φ" := (cons φ Δ) : list_scope.
 
-(* Probably very costly *)
-Definition applicable_strong_weakening (Γ : list form):
-  {φ : form | φ ∈ Γ /\ exists (_ : list_to_set_disj (rm φ Γ) ⊢ φ), True}
-  + (∀ φ, φ ∈ Γ -> forall (_ : list_to_set_disj (rm φ Γ) ⊢ φ), False).
-Proof.
-destruct (exists_dec (λ φ, if Provable_dec (rm φ Γ) φ then true else false) Γ) as [[φ [Hin Hφ]]| Hf].
-- left. exists φ; split.
-  + now apply elem_of_list_In.
-  + destruct ((rm φ Γ) ⊢? φ). trivial. contradict Hφ.
-- right. intros φ Hin Hφ. apply (Hf φ). now apply elem_of_list_In.
-   destruct ((rm φ Γ) ⊢? φ). auto with *. tauto.
-Defined.
+(** ** Definition of contextual simplification *)
+
+(** The [contextual_simp_form] function performs contextual simplification on a given formula [φ] within a context [Δ]. 
+  It recursively simplifies conjunctions, disjunctions, and implications by considering the context in which each subformula appears.
+*)
 
 Fixpoint contextual_simp_form Δ φ := match φ with
 | φ1 ∧ φ2 => choose_conj (contextual_simp_form Δ φ1) (contextual_simp_form (φ1 :: Δ) φ2)
@@ -113,10 +138,41 @@ Fixpoint contextual_simp_form Δ φ := match φ with
 | _ => if (Δ ⊢? φ) then ⊤ else φ (* TODO: simplify under box *)
 end.
 
+(** ** Weight lemmas
+  This section contains several lemmas related to the properties of logical formulas
+  and their weights in the context of the Lindenbaum-Tarski preorder. The lemmas
+  are used to reason about the relationship between the weights of formulas and 
+  their simplified forms.
+*)
+
+(* begin details *)
+(**
+  - [choose_conj_topL]: The conjunction of a formula with ⊤ is the formula itself.
+  - [empty_entails_not_bot]: The empty context does not entail ⊥.
+  - [var_not_tautology]: A variable cannot be a tautology.
+  - [bot_not_tautology]: ⊥ is not a tautology.
+  - [box_var_not_tautology]: A boxed variable cannot be a tautology.
+  - [box_bot_not_tautology]: A boxed ⊥ cannot be a tautology.
+  - [weight_tautology]: A tautology is either equal to ⊤ or has a weight of at least 3.
+  - [choose_impl_weight]: The weight of the chosen implication is less than or equal to the weight of the implication.
+  - [choose_impl_top_weight]: The weight of the chosen implication with ⊤ is less than or equal to the weight of the formula.
+  - [obviously_smaller_top_not_Eq]: ⊤ is not obviously smaller than any formula.
+  - [contextual_simp_form_weight]: The simplified form of a formula in a given context is either ⊤, or has a weight less than or equal to the original formula.
+*)
+(* end details *)
+
 Lemma choose_conj_topL φ : (choose_conj φ ⊤ = φ).
 Proof.
 unfold make_conj, choose_conj.
 rewrite (obviously_smaller_compatible_LT _ _).2. trivial. auto with proof.
+Qed.
+
+
+Lemma empty_entails_not_bot : (∅ ⊢ ⊥) -> False.
+Proof.
+intro Hf. dependent destruction Hf; simpl in *;
+match goal with x : _ ⊎ {[+?φ+]} = _ |- _ =>
+exfalso; eapply (gmultiset_elem_of_empty φ); setoid_rewrite <- x; ms end. 
 Qed.
 
 Lemma var_not_tautology v: (⊤ ≼ Var v) -> False.
@@ -258,6 +314,13 @@ induction φ; intro Δ; simpl.
 - case Provable_dec. tauto. right; simpl; lia.
 Qed.
 
+(** ** Simplifying environments
+
+This section contains the function [simp_env], which simplifies an environment (context) Δ.
+If none of the left rules are applicable anymore to Δ, then the function calls [applicable_contextual_simp_form] to find a simplification for one of the formulas in Δ, given
+the fact that it appears in context Δ. 
+We also define [simp_form], which tries to simplify a formula in the empty context.
+*)
 
 Definition applicable_contextual_simp_form Δ:
   {φ & {φ' | φ ∈ Δ /\ φ' = contextual_simp_form (rm φ Δ) φ /\ weight φ' < weight φ}} +
@@ -317,14 +380,10 @@ Definition simp_form φ:= contextual_simp_form [] φ.
 
 Definition pointed_env_order_refl pe1 pe2 := env_order_refl (pe1.2 :: pe1.2 :: pe1.1) (pe2.2 :: pe2.2 :: pe2.1).
 
-(* TODO: move *)
+(** ** Simplification and the weight ordering
 
-Lemma empty_entails_not_bot : (∅ ⊢ ⊥) -> False.
-Proof.
-intro Hf. dependent destruction Hf; simpl in *;
-match goal with x : _ ⊎ {[+?φ+]} = _ |- _ =>
-exfalso; eapply (gmultiset_elem_of_empty φ); setoid_rewrite <- x; ms end. 
-Qed.
+In [simp_env_order], we show that the simplification [simp_env] always decreases the weight of a context. We introduce a tactic [simp_env_tac] for this, which is also used later.
+*)
 
 Ltac simp_env_tac :=
 let Hf := fresh "Hf" in
@@ -381,6 +440,15 @@ Qed.
 Global Hint Resolve simp_env_pointed_env_order_L : order.
 Global Hint Resolve simp_env_env_order_L : order.
 
+(** ** Simplification is provably equivalent
+
+The goal in this section is to prove that the simplification of a formula (in context) is equivalent
+to the original.
+We prove in [contextual_simp_form_spec] that the function [contextual_simp_form] creates equivalent
+formulas (in context).
+This lets us then prove in [simp_env_equiv_env] that [simp_env] also creates equivalent contexts.
+
+*)
 Section Equivalence.
 
 Definition equiv_form φ ψ : Type := (φ ≼ ψ) * (ψ ≼ φ).
@@ -651,6 +719,13 @@ Global Infix "≡e" := equiv_env (at level 120).
 
 Section Variables.
 
+(** ** Simplification does not introduce new variables
+
+We show that simplifying a context or formula does not introduce any new variables.
+This is important for the application to Pitts' algorithm, where one of the correctness properties
+is an upper bound on the variables that may be used in the constructed formula.
+*)
+
 Local Ltac occ p := simpl; tauto ||
 match goal with
 | Hnin : ∀ φ0 : form, φ0 ∈ ?Γ → ¬ occurs_in p φ0  |- _ =>
@@ -701,6 +776,8 @@ Qed.
 
 End Variables.
 
+
+(** The simp_env function is idempotent. *)
 Lemma simp_env_idempotent Δ: simp_env (simp_env Δ) = simp_env Δ.
 Proof.
 revert Δ. apply (well_founded_induction_type wf_env_order). intros Δ Hind.
