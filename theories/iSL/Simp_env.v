@@ -132,7 +132,8 @@ Local Notation "Δ '•' φ" := (cons φ Δ) : list_scope.
 *)
 
 Fixpoint contextual_simp_form Δ φ := match φ with
-| φ1 ∧ φ2 => choose_conj (contextual_simp_form Δ φ1) (contextual_simp_form (φ1 :: Δ) φ2)
+| φ1 ∧ φ2 => let φ2' := (contextual_simp_form (φ1 :: Δ) φ2) in
+    choose_conj (contextual_simp_form (φ2' :: Δ) φ1) φ2'
 | φ1 ∨ φ2 => choose_disj (contextual_simp_form Δ φ1) (contextual_simp_form Δ φ2)
 | φ1 → φ2 => choose_impl (contextual_simp_form Δ φ1) (contextual_simp_form (φ1 :: Δ) φ2)
 | _ => if (Δ ⊢? φ) then ⊤ else φ (* TODO: simplify under box *)
@@ -285,14 +286,16 @@ Proof.
 revert Δ.
 induction φ; intro Δ; simpl.
 1,2: (case Provable_dec; simpl; [tauto| right; lia]).
-- destruct (IHφ1 Δ) as [Heq1 | Hle1]; destruct (IHφ2 (φ1 :: Δ)) as [Heq2 | Hle2];
-   repeat rewrite ?Heq1, ?Heq2.
-  + rewrite choose_conj_topL. tauto.
-  + unfold choose_conj. case_eq (obviously_smaller ⊤ (contextual_simp_form (φ1 :: Δ) φ2)).
+- pose (contextual_simp_form (Δ • φ1) φ2) as φ2'.
+  destruct (IHφ1 (φ2' :: Δ)) as [Heq1 | Hle1]; destruct (IHφ2 (φ1 :: Δ)) as [Heq2 | Hle2];
+   repeat rewrite ?Heq1, ?Heq2; subst φ2'.
+  + rewrite choose_conj_topL. rewrite Heq2 in Heq1. tauto.
+  + unfold choose_conj. rewrite Heq1. case_eq (obviously_smaller ⊤ (contextual_simp_form (φ1 :: Δ) φ2)).
       * intro Hf. contradict Hf. apply obviously_smaller_top_not_Eq.
       * intro. tauto.
-      * intro Hgt. right. lia.
-  + rewrite choose_conj_topL. right. lia.
+      * intro. right. destruct (IHφ2 (φ1 :: Δ)); lia.
+  + rewrite choose_conj_topL. pose (weight_pos φ1); pose (weight_pos φ2).
+    right. simpl. destruct (IHφ1 (⊤ :: Δ)) as [e|]. rewrite e. simpl. lia. lia.
   + right. unfold choose_conj. destruct obviously_smaller; simpl; lia.
 - destruct (IHφ1 Δ) as [Heq1 | Hle1]; destruct (IHφ2 Δ) as [Heq2 | Hle2];
    repeat rewrite ?Heq1, ?Heq2; unfold choose_disj.
@@ -544,31 +547,31 @@ revert Δ. induction φ; intros Δ Hin; simpl; apply elem_of_list_to_set_disj in
        -- peapply' Hφ.
        -- equiv_tac.
   + split; intros φ Hp; peapply' Hp; equiv_tac.
-- assert(Hin1 : φ1 ∈ (φ1 :: rm (φ1 ∧ φ2) Δ)) by (left; trivial).
+- pose (φ2' := contextual_simp_form (rm (φ1 ∧ φ2) Δ • φ1) φ2).
   assert(Hin2 : φ2 ∈ (φ2 :: φ1 :: rm (φ1 ∧ φ2) Δ)) by (left; trivial).
+  assert(Hin1 : φ1 ∈ (φ1 :: φ2' :: rm (φ1 ∧ φ2) Δ)) by (left; trivial).
   split; intros φ Hp.
-  + exhibit Hin 0. apply AndL. apply additive_cut with (choose_conj (contextual_simp_form (rm (φ1 ∧ φ2) Δ) φ1)
-            (contextual_simp_form (φ1 :: rm (φ1 ∧ φ2) Δ) φ2)).
-    * apply choose_conj_sound_L.
-      -- apply weakening.
-          peapply' (IHφ1 _ Hin1).1. simpl rm.
-          destruct form_eq_dec; [|tauto ]. peapply' generalised_axiom.
-      -- peapply' (IHφ2 _ Hin2).1. unfold rm at 1. destruct form_eq_dec; [|tauto ]. l_tac'.
-          apply generalised_axiom.
-    * exch 0. apply weakening. exch 0.  apply weakening. peapply' Hp.
+  + exhibit Hin 0. apply AndL.
+    assert(HH := (IHφ2 _ Hin2).1). simpl rm in HH; destruct form_eq_dec; [|tauto ].
+    peapply' HH. clear HH. do 2 l_tac'. exch 0.
+    assert(HH := (IHφ1 _ Hin1).1). simpl rm in HH; destruct form_eq_dec; [|tauto ].
+    peapply' HH. clear HH. do 2 l_tac'.
+    peapply additive_cut. apply choose_conj_sound_L; [|apply weakening]; apply generalised_axiom.
+    exch 0. apply weakening. exch 0. apply weakening. subst φ2'. peapply' Hp.
   + l_tac'.
-      apply additive_cut with ((contextual_simp_form (rm (φ1 ∧ φ2) Δ) φ1) ∧ (contextual_simp_form (φ1 :: rm (φ1 ∧ φ2) Δ) φ2)).
+      apply additive_cut with ((contextual_simp_form (φ2' :: rm (φ1 ∧ φ2) Δ) φ1) ∧ (contextual_simp_form (φ1 :: rm (φ1 ∧ φ2) Δ) φ2)).
     * apply generalised_weakeningL. peapply choose_conj_equiv_R.
       -- apply generalised_axiom.
       -- apply generalised_axiom.
       -- ms.
-    * simpl. exch 0. apply weakening, AndL, ImpR_rev. peapply (IHφ1 _ Hin1); 
-       [| simpl rm; destruct form_eq_dec; [|tauto ]; ms].
-       l_tac'.
-       apply ImpR. assert (Hp2:=(IHφ2 _ Hin2).2).
-       simpl rm in Hp2. destruct form_eq_dec in Hp2; [|tauto ].
-       peapply' Hp2. do 2 l_tac'.
-       apply AndL_rev. peapply' Hp.
+    * exch 0. apply weakening, AndL. exch 0.
+      assert(Hin2' : φ2' ∈ (φ2' :: contextual_simp_form (rm (φ1 ∧ φ2) Δ • φ2') φ1 :: rm (φ1 ∧ φ2) Δ)) by (left; trivial).
+      assert (HH := (IHφ1 _ Hin1).2).
+      simpl rm in HH; case form_eq_dec in HH; [|tauto ].
+      peapply' HH. clear HH. do 2 l_tac'. exch 0.
+      assert (HH := (IHφ2 _ Hin2).2).
+      simpl rm in HH; case form_eq_dec in HH; [|tauto ].
+      peapply' HH. clear HH. do 2 l_tac'. apply AndL_rev. peapply' Hp.
 - assert(Hin1 : φ1 ∈ (φ1 :: rm (φ1 ∨ φ2) Δ)) by (left; trivial).
   assert(Hin2 : φ2 ∈ (φ2 :: rm (φ1 ∨ φ2) Δ)) by (left; trivial).
   split; intros φ Hp.
@@ -746,7 +749,8 @@ Lemma  occurs_in_contextual_simp_form x Δ φ:
   occurs_in x (contextual_simp_form Δ φ) -> occurs_in x φ.
 Proof.
 revert Δ. induction φ; intro Δ; simpl; try case Provable_dec; intros; simpl in *; try tauto.
-- apply occurs_in_choose_conj in H. specialize (IHφ1 Δ); specialize (IHφ2 (φ1 :: Δ)). tauto.
+- apply occurs_in_choose_conj in H. pose (φ2' := contextual_simp_form (Δ • φ1) φ2).
+  specialize (IHφ1 (φ2' :: Δ)); specialize (IHφ2 (φ1 :: Δ)). tauto.
 - apply occurs_in_choose_disj in H.  specialize (IHφ1 Δ); specialize (IHφ2 Δ). tauto.
 - apply occurs_in_choose_impl in H. specialize (IHφ1 Δ); specialize (IHφ2 (φ1 :: Δ)). tauto.
 Qed.
