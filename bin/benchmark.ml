@@ -11,14 +11,6 @@ type bench_info = {
   after : int timed_result;
 }
 
-let rec form_size = function
-  | Var _ -> 1
-  | Bot -> 1
-  | Or (f1, f2) -> 1 + form_size f1 + form_size f2
-  | And (f1, f2) -> 1 + form_size f1 + form_size f2
-  | Implies (f1, f2) -> 1 + form_size f1 + form_size f2
-  | Box f -> 1 + form_size f
-
 let percentage_reduction before after = 100. -. (after /. before *. 100.)
 
 let time f x =
@@ -34,6 +26,8 @@ let print_value_results { name; before; after } =
        (float_of_int after.value))
     before.time after.time
 
+let weight_int n = weight n |> int_of_nat
+
 let bench_one fs =
   let f = eval fs in
   let resA = time (isl_A [ 'p' ]) f in
@@ -43,13 +37,13 @@ let bench_one fs =
   [
     {
       name = "A " ^ fs;
-      before = { value = form_size resA.value; time = resA.time };
-      after = { value = form_size simpA.value; time = simpA.time };
+      before = { value = weight_int resA.value; time = resA.time };
+      after = { value = weight_int simpA.value; time = simpA.time };
     };
     {
       name = "E " ^ fs;
-      before = { value = form_size resE.value; time = resE.time };
-      after = { value = form_size simpE.value; time = simpE.time };
+      before = { value = weight_int resE.value; time = resE.time };
+      after = { value = weight_int simpE.value; time = simpE.time };
     };
   ]
 
@@ -75,6 +69,9 @@ let bench l =
   print_bench_value_info benches;
   print_newline ()
 
+let rec phi n =
+  if n = 0 then "p" else "(" ^ phi (n - 1) ^ ") -> " ^ "p" ^ string_of_int n
+
 let test_cases =
   [
     "(p ∧ q) -> ~p";
@@ -90,7 +87,6 @@ let test_cases =
     "(q -> (p -> r)) -> ~t";
     "(q → (q ∧ (k -> p)) -> k)";
     "(q -> (p ∨  r)) -> ~(t ∨ p)";
-    "((q -> (p ∨  r)) ∧ (t -> p)) -> t";
     "((~t -> (q  ∧ p)) ∧ (t -> p)) -> t";
     "(~p ∧ q) -> (p ∨ r -> t) -> o";
     "((s ∨ r) ∨ (⊥ ∨ r)) ∧ ((⊥ ∨ p) ∨ (t → s))";
@@ -101,6 +97,11 @@ let test_cases =
     "□(p ∨  □ q ∧ t) ∧(t → p)";
     "□(□(t -> t))";
     "(q →  (¬p ∨ ¬¬p)) ∧ ((¬p ∨ ¬¬ p) →  q)";
+    "r <-> ((p → q) | ((p -> q) -> q))";
+    "(x <-> (p ∨ ¬p)) ∧ (y <-> (q ∨ ¬q)) ∧ ¬(p ∧ q)";
+    "((q → (p ∨ r)) → ¬(t ∨ p))";
+    phi 6;
+    phi 7;
   ]
 
 let () = bench test_cases
