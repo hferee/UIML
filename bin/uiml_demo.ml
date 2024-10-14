@@ -26,8 +26,8 @@ let _ =
 (* TODO: iE and iA are just an alias for isl_E and isl_A,
 there should really at least be a function that checks that
 iE and iA are given box-free formulas as input.*)
-       method iA s =  catch_e (fun () -> s |> eval |> fail_on_modality |> isl_A v |> string_of_formula)
-       method iE s =  catch_e (fun () -> s |> eval |> fail_on_modality |> isl_E v |> string_of_formula)
+       method iA s =  catch_e (fun () -> s |> eval |> fail_on_modality |> isl_simplified_A v |> string_of_formula)
+       method iE s =  catch_e (fun () -> s |> eval |> fail_on_modality |> isl_simplified_E v |> string_of_formula)
        method islA s = catch_e (fun () -> s |> eval |> isl_simplified_A v |> string_of_formula)
        method islE s = catch_e (fun () -> s |> eval |> isl_simplified_E v |> string_of_formula)
        method k s = catch_e (fun () -> s |> eval |> gl_UI v |> string_of_formula ~classical: true)
