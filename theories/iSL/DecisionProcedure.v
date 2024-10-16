@@ -56,16 +56,7 @@ assert(Hind' := λ Γ' φ', Hind(Γ', φ')). simpl in Hind'. clear Hind. rename 
 case (decide (⊥ ∈ Γ)); intro Hbot.
 { left. eexists; trivial. apply elem_of_list_to_set_disj in Hbot. exhibit Hbot 0. apply ExFalso. }
 
-(* AndR *)
-assert(HAndR : {φ1 & {φ2 & φ = (And φ1 φ2)}} + {∀ φ1 φ2, φ ≠ (And φ1 φ2)}) by (destruct φ; eauto).
-destruct HAndR as [(φ1 & φ2 & Heq) | HAndR].
-{ subst.
-  destruct (Hind Γ φ1) as [(Hp1&_) | H1]. order_tac.
-  - destruct (Hind Γ φ2) as [(Hp2&_) | H2]. order_tac.
-    + left. eexists; trivial. apply AndR; assumption.
-    + right. intro Hp. apply AndR_rev in Hp. tauto.
-  - right. intro Hp. apply AndR_rev in Hp. tauto.
-}
+
 
 (* Atom *)
 assert(Hvar : {p & φ = Var p & Var p ∈ Γ} + {∀ p, φ = Var p -> Var p ∈ Γ -> False}). {
@@ -134,6 +125,17 @@ destruct HOrL as [(ψ1 & ψ2 & Hin)|HOrL].
           pose (difference_singleton (list_to_set_disj Γ) (Or ψ1 ψ2)). peapply Hf'.
          }
         apply OrL_rev in Hf''. apply Hf. peapply Hf''.1.
+}
+
+(* AndR *)
+assert(HAndR : {φ1 & {φ2 & φ = (And φ1 φ2)}} + {∀ φ1 φ2, φ ≠ (And φ1 φ2)}) by (destruct φ; eauto).
+destruct HAndR as [(φ1 & φ2 & Heq) | HAndR].
+{ subst.
+  destruct (Hind Γ φ1) as [(Hp1&_) | H1]. order_tac.
+  - destruct (Hind Γ φ2) as [(Hp2&_) | H2]. order_tac.
+    + left. eexists; trivial. apply AndR; assumption.
+    + right. intro Hp. apply AndR_rev in Hp. tauto.
+  - right. intro Hp. apply AndR_rev in Hp. tauto.
 }
 
 (* ImpLVar *)
@@ -389,14 +391,7 @@ assert(Hvar : {p & φ = Var p & Var p ∈ Γ} + {∀ p, φ = Var p -> Var p ∈ 
   - right; auto with *. }
 destruct Hvar as [[p Heq Hp]|Hvar].
 { subst. left. eexists; trivial. apply elem_of_list_to_set_disj in Hp. exhibit Hp 0. apply Atom. }
-destruct HAndR as [(φ1 & φ2 & Heq) | HAndR].
-{ subst.
-  destruct (Hind Γ φ1) as [Hp1| H1]. order_tac.
-  - destruct (Hind Γ φ2) as [Hp2| H2]. order_tac.
-    + left. destruct Hp1, Hp2. eexists; trivial. apply AndR; assumption.
-    + right. intro Hp. apply AndR_rev in Hp. tauto.
-  - right. intro Hp. apply AndR_rev in Hp. tauto.
-}
+
 assert(HAndL : {ψ1 & {ψ2 & (And ψ1 ψ2) ∈ Γ}} + {∀ ψ1 ψ2, (And ψ1 ψ2) ∈ Γ -> False}). {
   pose (fA := (fun θ => match θ with |And _ _ => true | _ => false end)).
   destruct (exists_dec fA Γ) as [(θ & Hin & Hθ) | Hf].
@@ -504,6 +499,14 @@ assert(HOrL : {ψ1 & {ψ2 & (Or ψ1 ψ2) ∈ Γ}} + {∀ ψ1 ψ2, (Or ψ1 ψ2) �
   - left. subst fA. destruct θ. 4: { eexists. eexists. apply elem_of_list_In. eauto. }
     all:  auto with *.
   - right. intros ψ1 ψ2 Hψ. rewrite elem_of_list_In in Hψ. apply Hf in Hψ. subst fA. simpl in Hψ. tauto.
+}
+destruct HAndR as [(φ1 & φ2 & Heq) | HAndR].
+{ subst.
+  destruct (Hind Γ φ1) as [Hp1| H1]. order_tac.
+  - destruct (Hind Γ φ2) as [Hp2| H2]. order_tac.
+    + left. destruct Hp1, Hp2. eexists; trivial. apply AndR; assumption.
+    + right. intro Hp. apply AndR_rev in Hp. tauto.
+  - right. intro Hp. apply AndR_rev in Hp. tauto.
 }
 destruct HOrL as [(ψ1 & ψ2 & Hin)|HOrL].
 { apply elem_of_list_to_set_disj in Hin.
