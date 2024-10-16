@@ -6,9 +6,8 @@
 \def\BaseUrl{https://hferee.github.io/UIML}
 \def\BaseUrlCode{https://github.com/hferee/UIML}
 \newcommand{\coqdoc}[1]{\href{\BaseUrl/#1}{\raisebox{-.9mm}{\includegraphics[height=1em]{coql.png}}}}
-%\newcommand{\coqdoc}[1]{\href{\BaseUrl/#1}{[code]}}
-\def\CommitOrig{ebb461dd334ce10ceeb00ebaf6094778e2f03c4e} % Commit before the simplifications, when the benchmarks where performed
-\def\CommitOpt{39b38d9d8c86672bea49bef5c342a24526914de9} % Last commit before deadline, should be updated
+\def\CommitOrig{ebb461dd334ce10ceeb00ebaf6094778e2f03c4e} % Commit before the simplifications
+\def\CommitOpt{39b38d9d8c86672bea49bef5c342a24526914de9} % Last commit before deadline
 
 \usepackage[capitalise]{cleveref}
 \newcommand{\Ra}{\Rightarrow}
@@ -26,24 +25,19 @@
 
 \input{encoding}
 
-% Numéro et année des JFLAs visées par l'article, obligatoire.
 \jfla{36}{2025}
 
 \title{Formulas Rewritten And Normalized Computationally, And Intuitionistically Simplified}
-% Un titre plus court, optionnel.
 \titlerunning{FRANCAIS}
 
-% Auteurs, liste non abrégée.
 \author[1]{Hugo Férée}
 \author[1]{Sam v. Gool}
 \author[1]{Yago Iglesias Vázquez}
-% Une liste d'auteurs abrégée à utiliser à l'intérieur de l'article.
 \authorrunning{Férée, v. Gool, Iglesias Vázquez}
 
 % Affiliations des auteurs
 \affil[1]{IRIF, Université Paris Cité, Paris, 75013, France}
 
-% Une commande définie par l'utilisateur
 \newcommand{\cmd}[1]{\texttt{\textbackslash {#1}}}
 \newcommand{\irule}[1]{(\text{#1})}
 \newcommand{\simpenv}[1]{\mbox{\texttt{simp\_env}}(#1)}
@@ -74,7 +68,7 @@
     [2]{\hspace*{-1em}| #1 \textbf{when} #2 =>}
     [0]{\vspace{-\baselineskip}}
     
-\algrenewcommand\algorithmiccomment[1]{{\hfill {\small #1}}} % Change the comment symbol from a triangle to nothing. Another symbol can be added just before the #1
+\algrenewcommand\algorithmiccomment[1]{{\hfill {\small #1}}} 
 
 \newcommand{\cons}{\,\bullet\,}
 \newcommand{\inside}[1]{\Delta_1 \cons #1 \cons \Delta_2}
@@ -144,7 +138,6 @@ Throughout the paper, we make use of the sequent calculus $\Gfourip$ for intuiti
 
 The calculus $\Gfourip$ satisfies the property that each sequent in the antecedent of a rule is strictly smaller than the conclusion of the rule. Also, to any given sequent, only finitely many instances of the rules can be applied. It follows from this that the calculus is terminating.
 
-% the sequent calculus.
 \begin{figure}[htp]
 \centering
 {\small
@@ -379,7 +372,7 @@ We then prove the following two properties of the function $\texttt{simp\_env}$.
 \begin{proof}
     One verifies that each of the rules defining $\texttt{simp\_env}$ decreases the weight. For (1), this is a property of the sequent calculus. For (2), this is clear. For (3), it follows from the fact that the $\texttt{choose}$ functions decrease the weight.
 \end{proof}
-% The following holds `by construction' of the function $\texttt{simp\_env}$, although its formal proof involves an induction on the weight of $\Delta$.
+
 \begin{proposition}\label{prop:simpenvcorrect}
     For any context $\Delta$, the context $\simpenv{\Delta}$ is equivalent to $\Delta$. \coqdoc{ISL.Simp_env.html\#simp_env_equiv_env}
 \end{proposition}
