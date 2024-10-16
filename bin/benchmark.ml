@@ -72,6 +72,9 @@ let bench l =
 let rec phi n =
   if n = 0 then "p" else "(" ^ phi (n - 1) ^ ") -> " ^ "p" ^ string_of_int n
 
+let rec large_conj n =
+  if n = 0 then "p0" else "(" ^ large_conj (n - 1) ^ ") & " ^ "p" ^ string_of_int n
+
 let test_cases =
   [
     "(p ∧ q) -> ~p";
@@ -102,6 +105,7 @@ let test_cases =
     "((q → (p ∨ r)) → ¬(t ∨ p))";
     phi 6;
     phi 7;
+    large_conj 64  ^ "-> (⊥ -> ⊥)"
   ]
 
 let () = bench test_cases
