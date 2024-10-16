@@ -28,7 +28,7 @@ induction l as [|x l].
     * right. simpl. intros z [Hz|Hz]; subst; try rewrite Heq; auto with *.
 Defined.
 
-(* This function computes a proof tree of a sequent, if there is one, or produces a proof that there is none.
+(** The function [Proof_tree_dec] computes a proof tree of a sequent, if there is one, or produces a proof that there is none.
    The proof is performed by induction on the  well-ordering or pointed environments and tries to apply
    all the sequent rules to reduce the weight of the environment.
  *)
@@ -367,8 +367,8 @@ intro Hp. inversion Hp; subst; try eqt; eauto 2.
 Defined.
 
 
-(* This function decides whether a sequent is provable.
-   The proof is the same as `Proof_tree_dec`.
+(** The function [Provable_dec] decides whether a sequent is provable.
+   The proof is essentially the same as the definition of [Proof_tree_dec].
  *)
 Proposition Provable_dec Γ φ :
   (exists _ : list_to_set_disj Γ ⊢ φ, True) + (forall H : list_to_set_disj  Γ ⊢ φ, False).

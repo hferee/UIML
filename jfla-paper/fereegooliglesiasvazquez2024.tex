@@ -7,6 +7,7 @@
 \def\BaseUrlCode{https://github.com/hferee/UIML}
 \newcommand{\coqdoc}[1]{\href{\BaseUrl/#1}{\raisebox{-.9mm}{\includegraphics[height=1em]{coql.png}}}}
 \def\CommitOrig{ebb461dd334ce10ceeb00ebaf6094778e2f03c4e} % Commit before the simplifications
+\def\CommitOrigShort{ebb461d}
 % \def\CommitOpt{39b38d9d8c86672bea49bef5c342a24526914de9} 
 \def\CommitOpt{44d4c8ed2ad8a725c4a5863d470b191063f29db8} % Last commit before deadline
 \def\CommitOptShort{44d4c8e}
@@ -104,23 +105,22 @@ The immediate origin of the question, for us, lies in a verified {\Coq} implemen
 
 A main issue that we already identified in~\cite{FerGoo2023} was that, even on relatively small inputs, the formulas that were output by our program were very large; we will quantify this in Table~\ref{tab:quant-improvements} below. In all specific cases of interest, one could show manually that the output would admit substantial simplifications, but developing an algorithm for applying such simplifications was both a conceptual and technical challenge. Our main contribution here is to give such a simplification algorithm for intuitionistic formulas, accompanied by a verified implementation in {\Coq}. Further, by interleaving Pitts' original recursive procedure with our simplification procedure, we obtain a program with much improved efficiency. This moreover allows us to simplify Pitts' procedure itself both on paper and in the verified implementation, building also on recent insights from work in~\cite{FGGS2024}. 
 
-Our approach, which we explain in more detail in the rest of this paper, relies on the sequent calculus $\Gfourip$, which was also used by Pitts in~\cite{Pit1992} and implemented in~\cite{FerGoo2023}. The first step is to use this calculus to obtain a decision procedure for the logic, for which we provide a verified implementation, that we further explain in \cref{sec:decision}. 
-We subsequently use the decision procedure to algorithmically simplify both the left and right hand side of a sequent.
+Our approach, which we explain in more detail in the rest of this paper, relies on the sequent calculus $\Gfourip$, which was also used by Pitts in~\cite{Pit1992} and implemented in~\cite{FerGoo2023}. The first step is to use this calculus to obtain a decision procedure for the logic, for which we provide a verified implementation, as we  explain in \cref{sec:decision}. 
+We subsequently use the decision procedure to algorithmically simplify both sides of a sequent.
 Both the decision and simplification procedures are guided by the invertible rules of the sequent calculus. To be able to use the decision procedure inside the simplification procedure, we use admissibility of cut and weakening. For this, we give a verified proof of cut admissibility for the sequent calculus $\Gfourip$, relying on the formally verified proof of~\cite{Shillito23}, by integrating the ideas developed there into our existing {\Coq} development.
 We give more details in \cref{sec:simplification}.
 
 
 In order to make our simplification algorithm usable for calculating propositional quantifiers, we first give a formal proof in {\Coq} that these simplification functions are correct, in the sense that they always compute equivalent formulas and contexts of lower weight. Given a correct simplification function, we interleave it with Pitts' calculation at each recursive call, and then show, with a relatively low amount of effort, that the newly calculated propositional quantifiers are still correct. This methodology means that one may still improve the simplification function later, without touching the rest of the correctness proof for the propositional quantifiers.
 
-% \sam{TODO It opens up a number of new questions: Complexity, Optimality of the simplification (and is it worth it, there may be a trade-off where simpler formulas can be very difficult to obtain and the one an algorithm obtains is already readable? Although maybe this is unlikely because if a formula is already readable it should be easy to simplify it further.) }
-
+This paper should be read as a report on work in progress, which we believe opens up a number of interesting new questions: What is the theoretical complexity of the simplification problem for a given weight function? To what extent is the simplification function that we develop here optimal? And is it even practically worthwhile to find an optimal such function, if it makes the algorithm more complex to verify?
 
 The {\Coq} development is available online at \url{https://github.com/hferee/UIML/}. A web demo of the calculator is available at \url{https://hferee.github.io/UIML/}, which also links to online documentation of the {\Coq} code. Throughout this paper, we provide links to relevant {\Coq} declarations under a clickable symbol \coqdoc{toc.html}. The reference commit for the code discussed in this paper is \href{https://github.com/hferee/UIML/tree/\CommitOpt}{\texttt{\CommitOptShort}}.
 
 \section{Sequents, proofs, and propositional quantifiers}\label{sec:prelims}
 A \emph{context} is a finite list of formulas, and is typically denoted with a capital Greek letter $\Gamma$ or $\Delta$. We denote the concatenation of contexts $\Gamma$ and $\Delta$ by $\Gamma, \Delta$, or occasionally $\Gamma \bullet \Delta$, and we abuse notation to write expressions like $\Gamma, \phi$ and $\Gamma \bullet \phi$ for the concatenation of $\Gamma$ with the one-element context containing only $\phi$. A \emph{sequent} is a pair of a context and a formula, denoted $\Gamma \Rightarrow \phi$. We now recall a notion of \emph{weight} on formulas and sequents~\cite{Pit1992}.
 \begin{definition}\label{dfn:weight}
-    The \emph{weight} of a formula is inductively defined as:
+    The \emph{weight of a formula} is inductively defined as:
 
 $$\left\{
 \begin{array}{rl}
@@ -132,13 +132,13 @@ $$\left\{
 \end{array}
 \right.$$
 
-The weight of a context $\Gamma$ is then defined as $\weight(\Gamma) \isdef \sum_{\phi \in \Gamma} 5^{\weight(\phi)}$. For a sequent $\Gamma \Rightarrow \phi$, its weight is defined as $\weight(\Gamma \cons \phi \cons \phi)$. The doubling of the right hand side formula $\phi$ is a detail that is only needed for treating rules in intuitionistic modal logic.
+The \emph{weight of a context} $\Gamma$ is then defined as $\weight(\Gamma) \isdef \sum_{\phi \in \Gamma} 5^{\weight(\phi)}$. For a sequent $\Gamma \Rightarrow \phi$, its weight is defined as $\weight(\Gamma \cons \phi \cons \phi)$. The doubling of the right hand side formula $\phi$ is a detail that is only needed for treating rules in intuitionistic modal logic.
 \end{definition}
 The interest of this notion of weight is that it yields a well-founded ordering on formulas and on sequents, where $\Gamma \Rightarrow \phi$ is considered smaller than $\Gamma' \Rightarrow \phi'$ if it has lower weight.
 
 Throughout the paper, we make use of the sequent calculus $\Gfourip$ for intuitionistic propositional logic~\cite{Vor1952,Hud1988,Dyc1992}. We recall the rules of the calculus in \cref{fig:iseq-pc}. The calculus was extended to intuitionistic strong Löb logic in \cite{Shillito23}, giving a sequent calculus $\Gfourisl$ for this modal logic. Certain portions of our formalization work, notably on cut admissibility and decidability, are also done for that calculus, but in this paper we focus on our work for $\Gfourip$, the non-modal part.
 
-The calculus $\Gfourip$ satisfies the property that each sequent in the antecedent of a rule is strictly smaller than the conclusion of the rule. Also, to any given sequent, only finitely many instances of the rules can be applied. It follows from this that the calculus is terminating.
+The calculus $\Gfourip$ has the property that each sequent in the antecedent of a rule is strictly smaller than the conclusion of the rule. Also, to any given sequent, only finitely many instances of the rules can be applied. It follows from this that the calculus is terminating.
 
 \begin{figure}[htp]
 \centering
@@ -206,7 +206,7 @@ $\begin{prooftree}
 \end{figure}
 A \emph{proof} in $\Gfourip$ of a sequent $\Gamma \Rightarrow \phi$ is a finite rooted tree whose nodes are labeled by sequents, so that every node together with its (upward) children is an instance of one of the rules in \cref{fig:iseq-pc}, and the root is labeled $\Gamma \Rightarrow \phi$. We write $\Gamma \vdash \phi$ if there exists a proof of the sequent $\Gamma \Rightarrow \phi$ in $\Gfourip$. An important observation about the weight function given in \cref{dfn:weight} is that the weight of sequents decreases strictly as one moves upward in $\Gfourip$.
 
-For the purposes of the decision procedure that we will discuss below, it is useful to classify the rules of $\Gfourip$ according to their number of premises, and their invertibility. Here, recall that a rule is \emph{invertible} if, whenever its conclusion is provable, all of its premises must be provable. We also call a rule \emph{linear} if it has only one premise. With this classification, we observe:
+For the purpose of the decision procedure that we will discuss below, it is useful to classify the rules of $\Gfourip$ according to their number of premises, and their invertibility. Here, recall that a rule is \emph{invertible} if, whenever its conclusion is provable, all of its premises must be provable. We also call a rule \emph{linear} if it has only one premise. With this classification, we observe:
 \begin{itemize}
     \item 0 premises: ${\bot\mathrm{L}}$ and {IdP}.
     \item 1 premise and invertible: ${\wedge\mathrm L}, {\rightarrow\!\mathrm{R}}, {p\!\rightarrow\!\mathrm L}, {\wedge\!\rightarrow\!\mathrm L},$ and ${\vee\!\rightarrow\!\mathrm L}$.
@@ -214,23 +214,19 @@ For the purposes of the decision procedure that we will discuss below, it is use
     \item 2 premises, not invertible: {${\vee \mathrm R}_1, {\vee \mathrm R}_2$} and {$\rightarrow\rightarrow$L}.
 \end{itemize}
 
-Pitts' theorem~\cite{Pit1992} says that, for any formula $\phi$ and propositional variable $p$, the formulas $\exists p. \phi$ and $\forall p. \phi$ can be expressed by (quantifier-free) propositional formulas. We now recall a formal definition of the meaning of these propositional quantifications.
+Pitts' theorem~\cite{Pit1992} says that, for any formula $\phi$ and propositional variable $p$, the formulas $\exists p. \phi$ and $\forall p. \phi$ can be expressed by quantifier-free propositional formulas. We now recall a formal definition of the meaning of these propositional quantifications.
 \begin{definition}\label{dfn:prop-quantifiers}
-	Let $\phi$ be a formula and $p$ a propositional variable. The formula $\exists p. \phi$ is defined, up to equivalence, as the $p$-free formula that verifies that $\phi \vdash \exists p. \phi$ and such that for any formula $\psi$, if  $\phi \vdash \psi$ then $\exists p.\phi \vdash \psi$, i.e. $\exists p. \phi$ is the strongest $p$-free formula that entails $\phi$.
+	Let $\phi$ be a formula and $p$ a propositional variable. The formula $\exists p. \phi$ is defined, up to equivalence, as the $p$-free formula such that $\phi \vdash \exists p. \phi$, and for any formula $\psi$, if  $\phi \vdash \psi$ then $\exists p.\phi \vdash \psi$, i.e. $\exists p. \phi$ is the strongest $p$-free formula that entails $\phi$.
 
-	Dually, $\forall p. \phi$ is defined up to equivalence as the $p$-free formula verifying $\forall p. \phi \vdash \phi$ and such that for any formula $\theta$, if $\theta \vdash \phi$ then
-	$\theta \vdash \exists p.\phi$, i.e. $\forall p. \phi$ is the weakest $p$-free formula entailed by $\phi$.
+	Dually, $\forall p. \phi$ is defined up to equivalence as the $p$-free formula such that $\forall p. \phi \vdash \phi$, and for any formula $\theta$, if $\theta \vdash \phi$ then $\theta \vdash \exists p.\phi$, i.e. $\forall p. \phi$ is the weakest $p$-free formula entailed by $\phi$.
 \end{definition}
 
 \section{Decision procedure}\label{sec:decision}
 Given a list of formulas $\Gamma$ and a formula $\phi$, we give a procedure that
-decides if there exists a proof of $\Gamma \Rightarrow \phi$. 
-In the actual implementation, we first give a function that 
-produces a proof tree in the sequent calculus $\Gfourip$ if it exists, from which we then 
-immediately derive the decision procedure.
-
+decides if there exists a proof of $\Gamma \Rightarrow \phi$ (\coqdoc{ISL.DecisionProcedure.html\#Provable_dec}).
 To explain the intuition for this decision procedure, one may start from the idea of a naive proof search, which would explore all possible proof trees: Given an input sequent, for each applicable instance of a rule, one would recursively search for a proof for each of its premises.
 However, such a naive proof search is very inefficient.
+
 Our implementation, for which we give the pseudocode in \cref{fig:decision}, improves on this by applying the rules in a specific order, so as to avoid unnecessary branching as much as possible: (1) we first try to apply axioms to end the proof search; (2) if this is not possible, then we try to apply linear invertible rules, so as to obtain a single equivalent subsequent, and iterate; (3) if none of these apply, then we try to apply a duplicating invertible proof, leading to two successive proof searches; (4) finally, if no other rule is applicable, try each possible instance of a non-invertible rule and continue the search, in a depth-first-search manner. This leads to the following function, expressed in pseudocode as a pattern match in \cref{fig:decision}. For the reader's convenience, we annotate each case with the name of the corresponding $\Gfourip$-rule. When defining this function in {\Coq}, one needs to simultaneously prove termination, which we obtain from the fact that applying $\Gfourip$-rules upwards decreases the weight of a sequent. 
 \begin{figure}[htp]
 \begin{algorithmic}[lines]
@@ -318,12 +314,14 @@ Our simplification procedure for formulas is a recursion on the shape of the for
 \begin{equation}\label{eq:csimp-example}
     p \wedge ((q \to r) \wedge (p \to q))\ .
 \end{equation}
-After two recursive calls, we will try to simplify $p \to q$. At this point, we should remember that we are simplifying the formula $p \to q$ in a context that contains $p$. Thus, our recursive procedure will have to keep track of the \emph{context} in which we are simplifying as an additional parameter. This leads us to define a \emph{contextual simplification} function, called \texttt{contextual\_simp\_form} in our code (\coqdoc{ISL.Simp_env.html\#contextual_simp_form}), and \texttt{csimp} for short here. We give the scheme of the definition in~\cref{def:c-simp} below. The simplification on formulas, \texttt{simp\_form}, is then defined as \texttt{csimp} in an empty context.
+After two recursive calls, we will try to simplify $p \to q$. At this point, we should remember that we are simplifying the formula $p \to q$ in a context that contains $p$. Thus, our recursive procedure will have to keep track of the \emph{context} in which we are simplifying as an additional parameter. This leads us to define a \emph{contextual simplification} function, called \texttt{contextual\_simp\_form} in our code (\coqdoc{ISL.Simp_env.html\#contextual_simp_form}), and \texttt{csimp} for short here. We give the scheme of the definition in~\cref{def:c-simp} below. The simplification on formulas, \texttt{simp\_form}, will then be defined as \texttt{csimp} in an empty context.
 
 \begin{figure}[htp]
 \begin{alltt}
-c_simp Δ (φ1 \ensuremath{\wedge} φ2) = let φ2' := (c_simp (φ1 :: Δ) φ2) in
-                      choose_conj (c_simp (φ2' :: Δ) φ1) φ2'
+csimp : formula list -> formula -> bool
+
+csimp Δ (φ1 \ensuremath{\wedge} φ2) = let φ2' := (csimp (φ1 :: Δ) φ2) in
+                      choose_conj (csimp (φ2' :: Δ) φ1) φ2'
 csimp Δ (φ1 \ensuremath{\vee} φ2) = choose_disj (csimp Δ φ1) (csimp Δ φ2)
 csimp Δ (φ1 \ensuremath{\rightarrow} φ2) = choose_impl (csimp Δ φ1) (csimp (φ1 :: Δ) φ2)
 csimp Δ φ = ⊤ if (Δ ⊢? φ), φ otherwise
@@ -337,7 +335,7 @@ It is in the definition of this function $\texttt{csimp}$ that we make repeated 
 The idea of the functions named $\texttt{choose\_*}$ is as follows: A conjunction $\phi \wedge \psi$ can be simplified to $\phi$ if it happens to be the case that $\phi \vdash \psi$, and vice versa; similarly for disjunction. For $\texttt{choose\_impl}$ we use a number of substitution instances of intuitionistic tautologies about implications: For an implication $\phi \to \psi$ where $\phi \vdash \bot$, since $\bot \to \psi$ is a tautology, we may simplify $\phi \to \psi$ to $\top$. Similarly, if $\psi \vdash \bot$, then $\phi \to \psi$ may be replaced by $\neg \phi$. Also, if $\vdash \psi$, then $\phi \to \psi$ is a tautology, so it simplifies to $\top$, and if $\vdash \phi$, then $\phi \to \psi$ simplifies to $\psi$.
 
 \begin{example}
-As an instructive example, let us run through a call of $\texttt{csimp} \; [] \; p \wedge (p \to q)$. The conjunction case defines $\phi\texttt{2'}$ with a recursive call to $\csimp$, with $\Delta = [p]$ and $\phi = p \to q$. In this recursive call, we are in the implication case, and we call $\csimp \; \Delta \; p$ and $\csimp \; \Delta \; q$, which both fall in the last case: The first returns $\top$, since $\Delta \vdash p$, and the second returns $q$, since $\Delta \not\vdash q$. According to the rules of $\texttt{choose\_impl}$, $\top \to q$ simplifies to $q$, which is propagated back to the original recursive call, and becomes the value of $\phi\texttt{2'}$. We then call $\csimp  \; [q] \; p$, but this immediately returns $p$. Finally, in this simple case, $\texttt{choose\_conj p q}$ just returns $p \wedge q$. For a slightly more complex example, the reader may verify that the simplification of the formula in \cref{eq:csimp-example} will lead to $p \wedge r \wedge q$, as expected.
+As an instructive example, let us run through a call $\texttt{csimp} \; [] \; p \wedge (p \to q)$. The conjunction case defines $\phi\texttt{2'}$ with a recursive call to $\csimp$, with $\Delta = [p]$ and $\phi = p \to q$. In this recursive call, we are in the implication case, and we call $\csimp \; \Delta \; p$ and $\csimp \; \Delta \; q$, which both fall in the last case: The first returns $\top$, since $\Delta \vdash p$, and the second returns $q$, since $\Delta \not\vdash q$. According to the rules of $\texttt{choose\_impl}$, $\top \to q$ simplifies to $q$, which is propagated back to the original recursive call, and becomes the value of $\phi\texttt{2'}$. We then call $\csimp  \; [q] \; p$, but this immediately returns $p$. Finally, in this simple case, $\texttt{choose\_conj p q}$ just returns $p \wedge q$. For a slightly more complex example, the reader may verify that the simplification of the formula in \cref{eq:csimp-example} will lead to $p \wedge r \wedge q$, as expected.
 \end{example}
 
 We establish in {\Coq} the following correctness properties of the function $\csimp$. 
@@ -400,48 +398,35 @@ In short, we redefine the functions as:
 where $\mathcal{A}_p$ and $\mathcal{E}_p$ are defined in the same way as in Pitts' original algorithm, but use the results of the new functions $\mathsf{E}_p$ and $\mathsf{A}_p$ in their recursive calls.
 
 \begin{example}
-	To give an example of how these simplifications improve the original algorithm, consider the formula %let's see how the naive Pitts' construction would compute the following interpolant:
-%
+	To give an example of how these simplifications improve the original algorithm, consider the formula
 $$
 	\phi_n := {(a_0 \wedge p) \wedge \cdots \wedge(a_n \wedge p)}\ .
 $$
-The formula $\exists p. \phi_n$ is, up to equivalence, $\bigwedge_{i=0}^n a_i$, and this is indeed what is computed by our simplified algorithm. However, the naive implementation computes a much larger formula. \sam{TODO integrate explanation below}
+The formula $\exists p. \phi_n$ is, up to equivalence, $\bigwedge_{i=0}^n a_i$, and this is indeed what is computed by our simplified algorithm. However, the naive implementation computes a much larger formula.
 
-It starts by building the conjunction of all the formulas obtained by applying a recursive call
-to the context of the premise of an instance of rule ${\wedge \mathrm L}$ whose conclusion is of the form $\phi_n \vdash \cdot$:
-$$\bigwedge_{0\le i\le n} \Ep{(a_0 \wedge p), \dots, a_i, p , (a_{i+1} \wedge p), \dots \wedge (a_n \wedge p)}$$
+In the non-optimized implementation, the function $\mathsf{E}_p$ will first find all possible instances of the rule ${\wedge \mathrm L}$ that have a conclusion of the form $\phi_n \vdash \cdot$. There are $n+1$ such possible applications, corresponding to the $n+1$ subformulas of the form $(a_i \wedge p)$ in $\phi_n$. This means that $\mathsf{E}_p$ will be defined as
+$$\bigwedge_{0\le i\le n} \Ep{[a_0 \wedge p, \dots, a_{i-1} \wedge p, a_i, p , a_{i+1} \wedge p, \dots, a_n \wedge p]}$$
 
-Now, each of these recursive call do in turn $n$ recursive calls themselves, and so on; leading to a total of about $(n+1)!$ calls,
-where the final call in all recursive branches are identical: $\Ep{a_0, p, a_1, p, \dots, a_n, p}$.
-This both leads to an unncessarily large computation time, as well as an about as large output formula.
+Now, for each of the calls to $\mathsf{E}_p$ in this conjunction, there are still $n$ possible applications of ${\wedge \mathrm L}$. Continuing in this way, there will be approximately $(n+1)!$ recursive calls, all of which result in identical final leaves in every branch, namely, $\Ep{a_0, p, a_1, p, \dots, a_n, p}$. Without simplifications, this leads to a lot of repeated computation, and a very large output formula.
 \end{example}
-The main gain obtained by the definitions given in (\ref{Apsimp}) and (\ref{Epsimp}) is that the function \texttt{simp\_env} applies any possible left invertible linear rules to the context. This means that $\mathcal{E}_p$ and $\mathcal{A}_p$ are only ever applied to a simplified context $\Gamma'$ that does not contain any formulas of the form $p \to \phi$, $\phi \wedge \psi$, $(\phi \vee \psi) \to \chi$, or $(\phi \wedge \psi) \to \chi$. This means that four of the rules from the sequent calculus $\Gfourip$ can never apply to $\Gamma'$, reducing the number of different kinds of recursive calls from $8$ to $4$ for $\mathsf{E}$ and from $13$ to $9$ for $\mathsf{A}$. Since any applicable rule to $\Gamma'$ incurs a recursive call, this reduction considerably decreases the overall number of redundant recursive calls. We demonstrate this empirically in~\cref{sec:benchmarks}.
+The main gain obtained by the definitions given in (\ref{Apsimp}) and (\ref{Epsimp}) is that the function \texttt{simp\_env} applies any possible left invertible linear rules to the context. This means that $\mathcal{E}_p$ and $\mathcal{A}_p$ are only ever applied to a simplified context $\Gamma'$ that does not contain any formulas of the form $p \to \phi$, $\phi \wedge \psi$, $(\phi \vee \psi) \to \chi$, or $(\phi \wedge \psi) \to \chi$. As a consequence, four of the rules from the sequent calculus $\Gfourip$ can never apply to $\Gamma'$, reducing the number of different kinds of recursive calls from $8$ to $4$ for $\mathsf{E}$ and from $13$ to $9$ for $\mathsf{A}$. Since any applicable rule to $\Gamma'$ incurs a recursive call, this reduction considerably decreases the overall number of redundant recursive calls. We demonstrate this empirically in~\cref{sec:benchmarks}.
 
-While one could use these observations to give a shorter correctness proof `from scratch' with fewer cases, we were able to re-use the correctness proofs that we had already formalized previously, with only slight modifications. Whenever the old version of the proof used an induction hypothesis about $\mathcal{A}_p(\Gamma; \phi)$ or $\mathcal{E}_p(\Gamma)$, in the new proof we are able to use the same induction hypothesis for $\mathcal{A}_p(\simpenv{\Gamma}; \phi)$ or $\mathcal{E}_p(\simpenv{\Gamma})$. To prove that this is indeed possible, one needs to observe that (i) $\simpenv{\Gamma}$ has lower weight than $\Gamma$, so the induction hypothesis used for $\Gamma$ \emph{a fortiori}  applies to $\simpenv{\Gamma}$; and (ii) the context $\simpenv{\Gamma}$ is equivalent to the context $\Gamma$, and may therefore be replaced by it in any hypothesis.
+While one could use these observations to give a shorter correctness proof for the simplified propositional quantifiers, `from scratch', and with fewer cases, we instead re-use the correctness proofs that we had already formalized previously, with only slight modifications. Whenever the old version of the proof used an induction hypothesis about $\mathcal{A}_p(\Gamma; \phi)$ or $\mathcal{E}_p(\Gamma)$, in the new proof we are able to use the same induction hypothesis for $\mathcal{A}_p(\simpenv{\Gamma}; \phi)$ or $\mathcal{E}_p(\simpenv{\Gamma})$. To see why this is possible, observe that (i) $\simpenv{\Gamma}$ has lower weight than $\Gamma$, so the induction hypothesis used for $\Gamma$ \emph{a fortiori}  applies to $\simpenv{\Gamma}$; and (ii) the context $\simpenv{\Gamma}$ is equivalent to the context $\Gamma$, and may therefore be replaced by it in any hypothesis.
 
-A technical modification in the formalization of the proof that we had to make in order for this to go through was to change the induction principle. Our original implementation used an induction on the last rule in a hypothetical proof of a sequent of the form $\Gamma \vdash \cdot$ (when proving correctness for $\Ep{\Gamma}$) or of a sequent of the form $\Gamma \cons \cdot \vdash \phi$ (when proving correctness for $\Ap{\Gamma; \phi}$). In our new proof, we use an induction on the weight of the sequent.
-
-
+A technical modification in the formalization of the proof that we had to make in order for this to go through was a change in the induction principle. Our original implementation used an induction on the last rule in a hypothetical proof of a sequent of the form $\Gamma \vdash \cdot$ (when proving correctness for $\Ep{\Gamma}$) or of a sequent of the form $\Gamma \cons \cdot \vdash \phi$ (when proving correctness for $\Ap{\Gamma; \phi}$). In our new proof, we use an induction on the weight of the sequent.
 
 
 
 
-\section{Examples, benchmarks and challenges}\label{sec:benchmarks}
+
+
+\section{Benchmarks}\label{sec:benchmarks}
 To better quantify the impact of our simplifications, we developed a set of benchmarks that analyze both the computation time and the reduction 
 in the size of the output formulas (measured in weight) generated by Pitts' construction. These benchmarks allowed us to clearly evaluate the 
 effectiveness of each improvement.
 
 The example formulas used for our benchmark were of two kinds: First, we have two sequences of formulas $\phi_{\text{imp}}$ and $\phi_{\text{conj}}$ of increasing complexity, which we knew were treated inefficiently by our initial implementation; Second, our initial implementation drew the interest of researchers in intuitionistic logic, notably M. Jibladze (personal communication) and Z. Kocsis~\cite{Koc2023}, who provided us with a number of specific formulas of interest to them, for which the output of our initial implementation was highly complex, but for which one could prove `by hand' that the quantified formulas could be represented in a simple way. We include some of these examples as the formulas $\psi_1, \psi_2, \psi_3$ (communicated to us by M.~Jibladze) and $\psi_4$~\cite[3.13]{Koc2023} below.
 
-
-\begin{itemize} \label{def:test-formulas}
-	\item $\phi_{\text{imp}}(0) = p, \quad \phi_{\text{imp}}(n+1) = \phi_{\text{imp}}(n) \rightarrow p_{n+1}$
-	\item $\phi_{\text{conj}}(0) = p_0 \wedge p, \quad \phi_{\text{conj}}(n+1) = \phi_{\text{conj}}(n) \wedge (p_{n+1} \wedge p)$
-	\item $\psi_1: r \leftrightarrow ((p \rightarrow q) \vee ((p \rightarrow q) \rightarrow q))$
-	\item $\psi_2: (x \leftrightarrow (p \vee \lnot p)) \wedge (y \leftrightarrow (q \vee \lnot q)) \wedge \lnot (p \wedge q)$
-	\item $\psi_3: ((q\rightarrow (p \vee r))\rightarrow \lnot (t \vee p))$
-	\item $\psi_4: (\neg p \to q) \wedge (\neg \neg p \to q)$
-\end{itemize}
 
 \begin{figure}[htp]
 	\centering
@@ -472,14 +457,24 @@ The example formulas used for our benchmark were of two kinds: First, we have tw
 \end{figure}
 
 
+\begin{itemize} \label{def:test-formulas}
+	\item $\phi_{\text{imp}}(0) = p, \quad \phi_{\text{imp}}(n+1) = \phi_{\text{imp}}(n) \rightarrow p_{n+1}$
+	\item $\phi_{\text{conj}}(0) = p_0 \wedge p, \quad \phi_{\text{conj}}(n+1) = \phi_{\text{conj}}(n) \wedge (p_{n+1} \wedge p)$
+	\item $\psi_1: r \leftrightarrow ((p \rightarrow q) \vee ((p \rightarrow q) \rightarrow q))$
+	\item $\psi_2: (x \leftrightarrow (p \vee \lnot p)) \wedge (y \leftrightarrow (q \vee \lnot q)) \wedge \lnot (p \wedge q)$
+	\item $\psi_3: ((q\rightarrow (p \vee r))\rightarrow \lnot (t \vee p))$
+	\item $\psi_4: (\neg p \to q) \wedge (\neg \neg p \to q)$
+\end{itemize}
 
-\cref{tab:quant-improvements} contains the results of running our program on these inputs. In the optimized version \footnote{\url{\BaseUrlCode/tree/\CommitOpt}} , all computations completed in under 1 second, except for the last one, which timed out.
-This marks a significant improvement over the original \footnote{\url{\BaseUrlCode/tree/\CommitOrig}}
-execution times. The improvement in weight is also encouraging, being able to simplify the weight by various order of magnitude in some cases. This is thanks to the double nature of the simplifications: improving the order in which the rules are applied in Pitts' construction (similar to the decision procedure of \cref{sec:decision}) and simplifying the output during the construction itself, as described in the previous section.
 
 
+\cref{tab:quant-improvements} contains the results of running our program on these inputs. In the optimized version (commit \href{\BaseUrlCode/tree/\CommitOpt}{\texttt{\CommitOptShort}}), all computations completed in under 1 second, except for the last one, which timed out.
+This marks a significant improvement over the original execution times 
+(commit \href{\BaseUrlCode/tree/\CommitOrig}{\texttt{\CommitOrigShort}}). 
+The improvement in weight is also encouraging, being able to simplify the weight by various order of magnitude in some cases. This is thanks to the double nature of the simplifications: improving the order in which the rules are applied in Pitts' construction (similar to the decision procedure of \cref{sec:decision}) and simplifying the output during the construction itself, as described in the previous section.
 
-\newpage 
+
+ 
 \bibliographystyle{alpha}
 \bibliography{fgiv}
 
