@@ -1,0 +1,110 @@
+Require Import ISL.Sequents ISL.SequentProps ISL.Order ISL.Optimizations.
+
+(* Definitions and properties about equivalent formulas and environments *)
+Section Equivalence.
+
+Definition equiv_form (φ ψ : form) : Type := (φ ≼ ψ) * (ψ ≼ φ).
+
+Definition equiv_env Δ Δ': Set :=
+ (∀ φ, list_to_set_disj Δ ⊢ φ ->  list_to_set_disj Δ' ⊢ φ) *
+ (∀ φ, list_to_set_disj Δ' ⊢ φ ->  list_to_set_disj Δ ⊢ φ).
+
+
+Lemma symmetric_equiv_env Δ Γ: equiv_env Δ Γ -> equiv_env Γ Δ .
+Proof. intros [H1 H2]. split; trivial. Qed.
+
+Lemma equiv_env_refl Δ : equiv_env Δ Δ.
+Proof. split; trivial. Qed.
+
+Lemma equiv_env_trans Δ Δ' Δ'' : equiv_env Δ Δ' -> equiv_env Δ' Δ'' -> equiv_env Δ Δ''.
+Proof.
+intros [H11 H12] [H21 H22]. split; intros; auto.
+Qed.
+
+Lemma equiv_env_L1 Γ Δ Δ' φ: (equiv_env Δ Δ') ->
+  Γ ⊎ list_to_set_disj Δ ⊢ φ ->  Γ ⊎ list_to_set_disj Δ' ⊢ φ.
+Proof.
+intros [H1 _] Hp.
+revert φ Hp.
+induction Γ as [|x Γ] using gmultiset_rec; intros φ Hp.
+- peapply H1. peapply Hp.
+- peapply (ImpR_rev (Γ ⊎ list_to_set_disj Δ') x).
+  apply IHΓ, ImpR. peapply Hp.
+Qed.
+
+Lemma equiv_env_equiv_form φ φ': equiv_env [φ] [φ'] -> equiv_form φ φ'.
+Proof.
+intros [He1 He2]; split; unfold Lindenbaum_Tarski_preorder.
+- peapply (He2 φ'). simpl. peapply (generalised_axiom ∅).
+- peapply (He1 φ). simpl. peapply (generalised_axiom ∅).
+Qed.
+
+End Equivalence.
+
+Global Infix "≡f" := equiv_form (at level 120).
+
+Global Infix "≡e" := equiv_env (at level 120).
+
+
+(* The module type of weight-decreasing simplification functions over
+  environments and formulas is the minimum to define uniform interpolants *)
+
+Module Type SimpT.
+  (* The simplification functions *)
+  Parameter simp_env : list form -> list form.
+  Parameter simp_form : form -> form.
+    (* Orders are preserved *)
+  Parameter simp_env_order: forall Δ, env_order_refl (simp_env Δ) Δ.
+  Parameter simp_form_weight: forall φ, weight(simp_form φ) <= weight φ.
+  Global Hint Resolve simp_env_order : order. 
+  Global Hint Resolve simp_env_order : order.
+  Global Hint Resolve simp_form_weight : order.
+End SimpT.
+
+Module Type SimpProps (Import S : SimpT).
+  Parameter simp_env_pointed_env_order_L:
+    forall pe Δ φ, (pe ≺· (simp_env Δ, φ)) -> pe ≺· (Δ, φ).
+  Parameter simp_env_env_order_L: forall Δ Δ0, (Δ0 ≺ simp_env Δ) -> Δ0 ≺ Δ.
+  Parameter simp_env_nil: simp_env [] = [].
+  Global Hint Resolve simp_env_pointed_env_order_L : order.
+  Global Hint Resolve simp_env_env_order_L : order.
+End SimpProps.
+
+Module MakeSimpProps (Import S : SimpT) : SimpProps S.
+  Definition simp_env_pointed_env_order_L pe Δ φ: (pe ≺· (simp_env Δ, φ)) -> pe ≺· (Δ, φ).
+  Proof. intro Hl. eapply env_order_lt_le_trans; eauto. simpl. auto with order. Qed.
+
+  Definition simp_env_env_order_L Δ Δ0: (Δ0 ≺ simp_env Δ) -> Δ0 ≺ Δ.
+  Proof.
+  intro Hl. eapply env_order_lt_le_trans; eauto. auto with order.
+  Qed.
+
+  Definition simp_env_nil: simp_env [] = [].
+  Proof.
+  assert (Ho := (simp_env_order [])). unfold env_order_refl in Ho.
+  destruct (simp_env []) as [|a l]. trivial.
+  contradict Ho.
+  unfold env_weight, list_sum. simpl.
+  enough (0 < 5 ^ weight a) by lia.
+  pose(weight_pos a).
+  pose (Nat.pow_gt_1 5 (weight a)). lia.
+  Qed.
+End MakeSimpProps.
+
+(* Soundness properties *)
+Module Type SoundSimpT (Export S : SimpT).
+  (* Simplifications are sound *)
+  Parameter equiv_env_simp_env: forall Δ, equiv_env (simp_env Δ) Δ.
+  Parameter equiv_form_simp_form: forall φ, equiv_form (simp_form φ) φ.
+
+  (* The variable are preserved *)
+  Parameter equiv_env_vars: forall Δ x,
+  (∃ θ : form, ((θ ∈ simp_env Δ) /\ occurs_in x θ)) ->
+  ∃ θ : form, ((θ ∈ Δ) /\ occurs_in x θ).
+
+  Parameter occurs_in_simp_form:
+    forall x φ, occurs_in x (simp_form φ) → occurs_in x φ.
+
+  (* To be removed in the future *)
+  Parameter simp_env_idempotent: forall Δ, simp_env (simp_env Δ) = simp_env Δ.
+End SoundSimpT.

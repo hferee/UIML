@@ -136,6 +136,8 @@ intros.  unfold env_order, ltof. repeat rewrite env_weight_add.
 apply Nat.add_lt_le_mono; auto with *. now apply Nat.pow_le_mono_r.
 Qed.
 
+Global Hint Resolve env_order_compat' : order.
+
 Lemma env_order_add_compat Δ Δ' φ : (Δ ≺ Δ') -> (Δ • φ) ≺ (Δ' • φ).
 Proof.
 unfold env_order, ltof. do 2 rewrite env_weight_add. lia.
@@ -263,9 +265,12 @@ Qed.
 Lemma env_order_cancel_right Δ Δ' φ:  (Δ ≺ Δ') -> Δ ≺ (Δ' • φ).
 Proof. etransitivity; [|apply env_order_0].	 assumption. Qed.
 
-Lemma env_order_eq_add Δ Δ' φ: (Δ ≼ Δ') -> (Δ • φ) ≼ (Δ' • φ).
+Lemma env_order_refl_add Δ Δ' φ: (Δ ≼ Δ') -> (Δ • φ) ≼ (Δ' • φ).
 Proof. unfold env_order_refl. do 2 rewrite env_weight_add. lia. Qed.
 
+Lemma env_order_refl_add' Δ Δ' φ φ': weight φ ≤ weight φ' -> (Δ ≼ Δ') -> (Δ • φ) ≼ (Δ' • φ').
+Proof. unfold env_order_refl. do 2 rewrite env_weight_add.
+intros. apply Nat.add_le_mono. lia. apply Nat.pow_le_mono_r; lia. Qed.
 
 Global Hint Resolve env_order_0 : order.
 Global Hint Resolve env_order_1 : order.
@@ -274,7 +279,8 @@ Global Hint Resolve env_order_3 : order.
 Global Hint Resolve env_order_4 : order.
 Global Hint Resolve env_order_add_compat : order.
 Global Hint Resolve env_order_cancel_right : order.
-Global Hint Resolve env_order_eq_add : order.
+Global Hint Resolve env_order_refl_add : order.
+Global Hint Resolve env_order_refl_add' : order.
 Global Hint Extern 1 (?a < ?b) => subst; simpl; lia : order.
 
 Ltac get_diff_form g := match g with
@@ -351,7 +357,7 @@ unfold pointed_env_order; subst; simpl; repeat rewrite open_boxes_add; try match
 | H : ?ψ ∈ ?Γ |- ?Γ' ≺ (_ :: _ :: ?Γ) => let ψ' := (get_diff_form Γ') in
 apply (env_order_equiv_right_compat (equiv_disj_union_compat_r(equiv_disj_union_compat_r(difference_singleton Γ ψ' H)))) ||
 (eapply env_order_le_lt_trans; [| apply env_order_add_compat; 
-eapply env_order_lt_le_trans; [| (apply env_order_eq_add; apply (remove_In_env_order_refl _ ψ'); try apply elem_of_list_In; trivial) ] ] )
+eapply env_order_lt_le_trans; [| (apply env_order_refl_add; apply (remove_In_env_order_refl _ ψ'); try apply elem_of_list_In; trivial) ] ] )
 |H : ?a = _ |- context[?a] => rewrite H; try prepare_order
 end.
 
@@ -419,3 +425,6 @@ Lemma weight_or_bot a b: weight(⊥) < weight (a ∨b).
 Proof. destruct a; simpl; lia. Qed.
 
 Hint Resolve weight_or_bot : order.
+
+Definition pointed_env_order_refl pe1 pe2 :=
+  env_order_refl (pe1.2 :: pe1.2 :: pe1.1) (pe2.2 :: pe2.2 :: pe2.1).

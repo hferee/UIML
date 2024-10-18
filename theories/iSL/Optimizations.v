@@ -59,6 +59,7 @@ match obviously_smaller φ ψ with
 Lemma occurs_in_choose_conj v φ ψ : occurs_in v (choose_conj φ ψ) -> occurs_in v φ \/ occurs_in v ψ.
 Proof. unfold choose_conj; destruct obviously_smaller; simpl; intros; tauto. Qed.
 
+
 Definition make_conj φ ψ := 
 match ψ with
   | ψ1 ∧ ψ2 =>
@@ -288,6 +289,12 @@ apply AndR.
 - exch 0. now apply weakening.
 Qed.
 
+Lemma choose_conj_topL φ : (choose_conj φ ⊤ = φ).
+Proof.
+unfold choose_conj.
+rewrite (obviously_smaller_compatible_LT _ _).2. trivial.
+apply ImpR, ExFalso.
+Qed.
 
 Lemma choose_conj_sound_L Δ φ ψ:
   (Δ ⊢ φ) -> (Δ ⊢ ψ) -> Δ ⊢ choose_conj φ ψ.
@@ -847,12 +854,85 @@ assert(Hcut : forall ψ, ((φ ∈ Δ) + (Γ•ψ ⊢ θ)) -> (Γ•foldl make_co
 intro Hin. apply Hcut. now left.
 Qed.
 
-
-Lemma OrR_idemp Γ ψ : Γ ⊢ ψ ∨ ψ -> Γ ⊢ ψ.
-Proof. intro Hp. dependent induction Hp; auto with proof. Qed.
-
-
-Lemma strongness φ : ∅ •  φ ⊢ □ φ.
+Lemma conjunction_L' Γ Δ ϕ: (Γ ⊎ {[⋀ Δ]} ⊢ ϕ) -> Γ ⊎ list_to_set_disj Δ ⊢ ϕ.
 Proof.
-apply BoxR. box_tac. apply weakening, open_box_L, generalised_axiom.
+revert ϕ. unfold conjunction.
+assert( Hstrong: ∀ θ ϕ : form, Γ ⊎ {[foldl make_conj θ (nodup form_eq_dec Δ)]} ⊢ ϕ
+  → (Γ ⊎ list_to_set_disj Δ) ⊎ {[θ]} ⊢ ϕ).
+{
+  induction Δ as [|δ Δ]; intros θ ϕ; simpl.
+  - intro Hp. peapply Hp.
+  - case in_dec; intros Hin Hp.
+    + peapply (weakening δ). apply IHΔ, Hp. ms.
+    + simpl in Hp. apply IHΔ in Hp.
+        peapply (AndL_rev (Γ ⊎ list_to_set_disj Δ) θ δ). apply make_conj_complete_L, Hp.
+}
+  intros; apply additive_cut with (φ := ⊤); eauto with proof.
 Qed.
+
+Lemma conjunction_R Δ: list_to_set_disj Δ ⊢ ⋀ Δ.
+Proof.
+apply conjunction_R1. intros φ Hφ. apply elem_of_list_to_set_disj in Hφ.
+exhibit Hφ 0. apply generalised_axiom. 
+Qed.
+
+Lemma conjunction_L'' Γ Δ ϕ: Γ ⊎ list_to_set_disj Δ ⊢ ϕ -> (Γ ⊎ {[⋀ Δ]} ⊢ ϕ).
+Proof.
+revert ϕ. unfold conjunction.
+assert( Hstrong: ∀ θ ϕ : form,(Γ ⊎ list_to_set_disj Δ) ⊎ {[θ]} ⊢ ϕ -> Γ ⊎ {[foldl make_conj θ (nodup form_eq_dec Δ)]} ⊢ ϕ).
+{
+  induction Δ as [|δ Δ]; intros θ ϕ; simpl.
+  - intro Hp. peapply Hp.
+  - case in_dec; intros Hin Hp.
+    + apply IHΔ.
+         assert(Hin' : δ ∈ (Γ ⊎ list_to_set_disj Δ)).
+         { apply gmultiset_elem_of_disj_union; right; apply elem_of_list_to_set_disj, elem_of_list_In, Hin. }
+         exhibit Hin' 1. exch 0. apply contraction. exch 1. exch 0.
+         rw (symmetry (difference_singleton _ _ Hin')) 2. peapply Hp.
+    + simpl. apply IHΔ. apply make_conj_sound_L, AndL. peapply Hp.
+}
+intros. apply Hstrong, weakening. assumption.
+Qed.
+
+(* begin details *)
+(**
+  - [choose_impl_weight]: The weight of the chosen implication is less than or equal to the weight of the implication.
+  - [choose_impl_top_weight]: The weight of the chosen implication with ⊤ is less than or equal to the weight of the formula.
+  - [obviously_smaller_top_not_Eq]: ⊤ is not obviously smaller than any formula.
+  - [contextual_simp_form_weight]: The simplified form of a formula in a given context is either ⊤, or has a weight less than or equal to the original formula.
+*)
+(* end details *)
+
+
+Lemma choose_impl_weight φ ψ: weight (choose_impl φ ψ) ≤ weight (φ → ψ).
+Proof.
+pose (weight_pos φ). pose (weight_pos ψ).
+unfold choose_impl; repeat case decide; intros; simpl; lia.
+Qed.
+
+Lemma choose_impl_top_weight ψ: weight (choose_impl ⊤ ψ) ≤ weight ψ.
+Proof.
+pose (weight_pos ψ).
+unfold choose_impl; repeat case decide; intros; try lia.
+- destruct (weight_tautology ψ).
+  + apply obviously_smaller_compatible_LT in e.
+    apply additive_cut with ⊤; auto with proof.
+  + subst; simpl in *; tauto || lia.
+  + subst; simpl in *; tauto || lia.
+- destruct (weight_tautology ψ).
+  + apply obviously_smaller_compatible_LT in e.
+    apply additive_cut with ⊤; auto with proof.
+  + subst; simpl in *; tauto || lia.
+  + subst; simpl in *; tauto || lia.
+- contradict n. apply obviously_smaller_compatible_LT. auto with proof.
+- contradict n0. apply obviously_smaller_compatible_LT. auto with proof.
+- contradict n2. apply obviously_smaller_compatible_LT. auto with proof.
+Qed.
+
+Lemma obviously_smaller_top_not_Eq φ: obviously_smaller ⊤ φ ≠ Eq.
+Proof.
+unfold obviously_smaller.
+case Provable_dec. discriminate. intro. case Provable_dec. discriminate.
+intro Hf. contradict Hf. auto with proof.
+Qed.
+

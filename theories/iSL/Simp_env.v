@@ -1,7 +1,7 @@
 (** * Simplifications for formulas and contexts 
 
-This file defines the main simplifications for formulas and contexts, maintaining intuitionistic
-equivalence.
+This file defines the main simplifications for formulas and contexts,
+maintaining intuitionistic equivalence.
 
 *)
 
@@ -11,12 +11,17 @@ Require Import ISL.Sequents ISL.SequentProps.
 Require Import ISL.Order ISL.DecisionProcedure.
 Require Import ISL.Cut.
 Require Import ISL.Optimizations. (* NB This import must come last. *)
+Require Import ISL.Simplifications.
+
+
+Module S <: SimpT.
 
 (** ** Applicability of rules
 
-  This section provides definitions for checking the applicability of various logical rules 
-  within a given context (list of formulas). The definitions use decidable existence checks 
-  to determine if specific patterns of formulas are present in the context.
+  This section provides definitions for checking the applicability of various
+  logical rules within a given context (list of formulas).
+  The definitions use decidable existence checks to determine if specific
+  patterns of formulas are present in the context.
 *)
 Definition applicable_AndL (Γ : list form): {ψ1 & {ψ2 | (And ψ1 ψ2) ∈ Γ}} + (∀ ψ1 ψ2, (And ψ1 ψ2) ∈ Γ -> False).
 Proof.
@@ -31,8 +36,10 @@ Definition applicable_ImpLVar (Γ : list form):
   {q & {ψ | Var q ∈ Γ /\ (Implies (Var q) ψ) ∈ Γ}} +
   (∀ q ψ, Var q ∈ Γ -> (Implies (Var q) ψ) ∈ Γ -> False).
 Proof.
-  pose (fIp :=λ p θ, match θ with | Implies (Var q) _ => if decide (p = q) then true else false | _ => false end).
-  pose (fp:= (fun θ => match θ with |Var p => if (exists_dec (fIp p) Γ) then true else false | _ => false end)).
+  pose (fIp :=λ p θ, match θ with | Implies (Var q) _ =>
+    if decide (p = q) then true else false | _ => false end).
+  pose (fp:= (fun θ => match θ with |Var p =>
+    if (exists_dec (fIp p) Γ) then true else false | _ => false end)).
   destruct (exists_dec fp Γ) as [(θ & Hin & Hθ) | Hf].
   - left. subst fp. destruct θ. 2-6: auto with *.
     case exists_dec as [(ψ &Hinψ & Hψ)|] in Hθ; [|auto with *]. 
@@ -40,7 +47,8 @@ Proof.
     destruct ψ1. 2-6: auto with *. case decide in Hψ; [|auto with *].
     subst. apply elem_of_list_In in Hinψ, Hin.
     do 2 eexists. split; eauto.
-  - right. intros q ψ Hp Hψ. rewrite elem_of_list_In in Hp, Hψ. apply Hf in Hp. subst fp fIp.
+  - right. intros q ψ Hp Hψ. rewrite elem_of_list_In in Hp, Hψ.
+    apply Hf in Hp. subst fp fIp.
     simpl in Hp. case exists_dec as [|Hf'] in Hp. auto with *.
     apply (Hf' _ Hψ). rewrite decide_True; trivial. auto with *.
 Defined.
@@ -49,11 +57,14 @@ Definition applicable_ImpLAnd (Γ : list form):
     {φ1 & {φ2 & {φ3 | (Implies (And φ1 φ2) φ3) ∈ Γ}}} +
     (∀ φ1 φ2 φ3, (Implies (And φ1 φ2) φ3) ∈ Γ -> False).
 Proof.
-    pose (fII := (fun θ => match θ with |Implies (And _ _) _ => true | _ => false end)).
+    pose (fII := (fun θ => match θ with |Implies (And _ _) _ => true
+                                        | _ => false end)).
    destruct (exists_dec fII Γ) as [(θ & Hin & Hθ) | Hf].
     - left. subst fII. destruct θ. 1-4, 6: auto with *.
-      destruct θ1. 1-2,4-6: auto with *. do 3 eexists; apply elem_of_list_In; eauto.
-    - right. intros ψ1 ψ2 ψ3 Hψ. rewrite elem_of_list_In in Hψ. apply Hf in Hψ. subst fII. simpl in Hψ. tauto.
+      destruct θ1. 1-2,4-6: auto with *.
+      do 3 eexists; apply elem_of_list_In; eauto.
+    - right. intros ψ1 ψ2 ψ3 Hψ. rewrite elem_of_list_In in Hψ.
+      apply Hf in Hψ. subst fII. simpl in Hψ. tauto.
 Defined.
 
 Definition applicable_ImpLOr (Γ : list form):
@@ -64,7 +75,8 @@ Proof.
    destruct (exists_dec fII Γ) as [(θ & Hin & Hθ) | Hf].
     - left. subst fII. destruct θ. 1-4, 6: auto with *.
       destruct θ1. 1-3, 5-6: auto with *. do 3 eexists; apply elem_of_list_In; eauto.
-    - right. intros ψ1 ψ2 ψ3 Hψ. rewrite elem_of_list_In in Hψ. apply Hf in Hψ. subst fII. simpl in Hψ. tauto.
+    - right. intros ψ1 ψ2 ψ3 Hψ. rewrite elem_of_list_In in Hψ.
+      apply Hf in Hψ. subst fII. simpl in Hψ. tauto.
 Defined.
 
 
@@ -82,28 +94,33 @@ destruct (exists_dec (λ φ, if Provable_dec (rm φ Γ) φ then true else false)
 Defined.
 
 (** ** Ternary if notation
-  This section defines a set of functions and notations for handling ternary conditional logic. The functions [sumor_bind0], [sumor_bind1], [sumor_bind2], and 
-  [sumor_bind3] provide a way to handle different levels of nested dependent sums and 
+  This section defines a set of functions and notations for handling ternary
+  conditional logic. The functions [sumor_bind0], [sumor_bind1], [sumor_bind2], and
+  [sumor_bind3] provide a way to handle different levels of nested dependent sums and
   propositions. Each function takes a sum type and applies a function to the left component 
-  if it exists, or returns a default value otherwise.
-  The notations `cond '?' A '⋮₀' B`, `cond '?' A '⋮₁' B`, `cond '?' A '⋮₂' B`, and `cond '?' A '⋮₃' B` are provided to simplify the usage of these functions.
+  if it exists, or returns a default value otherwise. The notations
+  `cond '?' A '⋮₀' B`, `cond '?' A '⋮₁' B`, `cond '?' A '⋮₂' B`, and `cond '?' A '⋮₃' B`
+  are provided to simplify the usage of these functions.
   This notation is used in the definition of [simp_env].
 *)
-Definition sumor_bind0 {A} {B : Prop} {C}: A + B -> (A -> C) -> C -> C :=
+Definition sumor_bind0 {A} {B : Prop} {C}:
+  A + B -> (A -> C) -> C -> C :=
 λ qH f c,
 match qH with
 | inl a => f a
 | inr _ => c
 end.
 
-Definition sumor_bind1 {A A'} {B : Prop} {C}: {q : A | A' q} + B -> (forall x (_ : A' x), C) -> C -> C :=
+Definition sumor_bind1 {A A'} {B : Prop} {C}:
+  {q : A | A' q} + B -> (forall x (_ : A' x), C) -> C -> C :=
 λ qH f c,
 match qH with
 | inl (exist _ q Hq) => f q Hq
 | inr _ => c
 end.
 
-Definition sumor_bind2 {A A' A''} {B : Prop} {C}: {q : A & {r : A' | A'' q r}} + B -> (forall x y (_ : A'' x y), C) -> C -> C :=
+Definition sumor_bind2 {A A' A''} {B : Prop} {C}:
+  {q : A & {r : A' | A'' q r}} + B -> (forall x y (_ : A'' x y), C) -> C -> C :=
 λ qH f c,
 match qH with
 | inl (existT q (exist _ r Hq)) => f q r Hq
@@ -111,7 +128,8 @@ match qH with
 end.
 
 Definition sumor_bind3 {A A' A'' A'''} {B : Prop} {C}:
-  {q : A & {r : A' & { s : A'' | A''' q r s}}} + B -> (forall x y z (_ : A''' x y z), C) -> C -> C :=
+  {q : A & {r : A' & { s : A'' | A''' q r s}}} + B -> 
+  (forall x y z (_ : A''' x y z), C) -> C -> C :=
 λ qH f c,
 match qH with
 | inl (existT q (existT r (exist _ s Hq))) => f q r s Hq
@@ -127,8 +145,10 @@ Local Notation "Δ '•' φ" := (cons φ Δ) : list_scope.
 
 (** ** Definition of contextual simplification *)
 
-(** The [contextual_simp_form] function performs contextual simplification on a given formula [φ] within a context [Δ]. 
-  It recursively simplifies conjunctions, disjunctions, and implications by considering the context in which each subformula appears.
+(** The [contextual_simp_form] function performs contextual simplification on a
+  given formula [φ] within a context [Δ].
+  It recursively simplifies conjunctions, disjunctions, and implications by
+  considering the context in which each subformula appears.
 *)
 
 Fixpoint contextual_simp_form Δ φ := match φ with
@@ -146,181 +166,59 @@ end.
   their simplified forms.
 *)
 
-(* begin details *)
-(**
-  - [choose_conj_topL]: The conjunction of a formula with ⊤ is the formula itself.
-  - [empty_entails_not_bot]: The empty context does not entail ⊥.
-  - [var_not_tautology]: A variable cannot be a tautology.
-  - [bot_not_tautology]: ⊥ is not a tautology.
-  - [box_var_not_tautology]: A boxed variable cannot be a tautology.
-  - [box_bot_not_tautology]: A boxed ⊥ cannot be a tautology.
-  - [weight_tautology]: A tautology is either equal to ⊤ or has a weight of at least 3.
-  - [choose_impl_weight]: The weight of the chosen implication is less than or equal to the weight of the implication.
-  - [choose_impl_top_weight]: The weight of the chosen implication with ⊤ is less than or equal to the weight of the formula.
-  - [obviously_smaller_top_not_Eq]: ⊤ is not obviously smaller than any formula.
-  - [contextual_simp_form_weight]: The simplified form of a formula in a given context is either ⊤, or has a weight less than or equal to the original formula.
-*)
-(* end details *)
-
-Lemma choose_conj_topL φ : (choose_conj φ ⊤ = φ).
-Proof.
-unfold make_conj, choose_conj.
-rewrite (obviously_smaller_compatible_LT _ _).2. trivial. auto with proof.
-Qed.
-
-
-Lemma empty_entails_not_bot : (∅ ⊢ ⊥) -> False.
-Proof.
-intro Hf. dependent destruction Hf; simpl in *;
-match goal with x : _ ⊎ {[+?φ+]} = _ |- _ =>
-exfalso; eapply (gmultiset_elem_of_empty φ); setoid_rewrite <- x; ms end. 
-Qed.
-
-Lemma var_not_tautology v: (⊤ ≼ Var v) -> False.
-Proof.
-unfold Lindenbaum_Tarski_preorder. intro Hp.
-remember ∅ as Γ.
-dependent induction Hp;
-try match goal with | Heq : (_ • ?f%stdpp) = _ |- _ => symmetry in Heq;
-  pose(Heq' := env_equiv_eq _ _ Heq); apply env_add_inv' in Heq';
-  apply (gmultiset_not_elem_of_empty f); rewrite Heq'; apply in_difference; [discriminate|ms]
-  end.
-Qed.
-
-Lemma bot_not_tautology: (⊤ ≼ ⊥) -> False.
-Proof.
-unfold Lindenbaum_Tarski_preorder. intro Hp.
-remember ∅ as Γ.
-dependent induction Hp;
-try match goal with | Heq : (_ • ?f%stdpp) = _ |- _ => symmetry in Heq;
-  pose(Heq' := env_equiv_eq _ _ Heq); apply env_add_inv' in Heq';
-  apply (gmultiset_not_elem_of_empty f); rewrite Heq'; apply in_difference; [discriminate|ms]
-  end.
-Qed.
-
-Lemma box_var_not_tautology v: (⊤ ≼ □ (Var v)) -> False.
-Proof.
-unfold Lindenbaum_Tarski_preorder. intro Hp.
-remember ∅ as Γ.
-dependent induction Hp;
-try match goal with | Heq : (_ • ?f%stdpp) = _ |- _ => symmetry in Heq;
-  pose(Heq' := env_equiv_eq _ _ Heq); apply env_add_inv' in Heq';
-  apply (gmultiset_not_elem_of_empty f); rewrite Heq'; apply in_difference; [discriminate|ms]
-  end.
-assert(Hp' : ∅ • □ v ⊢ v).
-{ apply additive_cut with ⊤. apply top_provable. exch 0. peapply Hp. }
-clear IHHp Hp.
-dependent induction Hp';
-try match goal with | Heq : (_ • ?f%stdpp) = _ |- _ => symmetry in Heq;
-  pose(Heq' := env_equiv_eq _ _ Heq); apply env_add_inv' in Heq';
-  apply (gmultiset_not_elem_of_empty f); rewrite Heq'; apply in_difference; [discriminate|ms]
-  end.
-Qed.
-
-Lemma box_bot_not_tautology: (⊤ ≼ □⊥) -> False.
-Proof.
-unfold Lindenbaum_Tarski_preorder. intro Hp.
-remember ∅ as Γ.
-dependent induction Hp;
-try match goal with | Heq : (_ • ?f%stdpp) = _ |- _ => symmetry in Heq;
-  pose(Heq' := env_equiv_eq _ _ Heq); apply env_add_inv' in Heq';
-  apply (gmultiset_not_elem_of_empty f); rewrite Heq'; apply in_difference; [discriminate|ms]
-  end.
-assert(Hp' : ∅ • □ ⊥ ⊢ ⊥).
-{ apply additive_cut with ⊤. apply top_provable. exch 0. peapply Hp. }
-clear IHHp Hp.
-dependent induction Hp';
-try match goal with | Heq : (_ • ?f%stdpp) = _ |- _ => symmetry in Heq;
-  pose(Heq' := env_equiv_eq _ _ Heq); apply env_add_inv' in Heq';
-  apply (gmultiset_not_elem_of_empty f); rewrite Heq'; apply in_difference; [discriminate|ms]
-  end.
-Qed.
-
-Lemma weight_tautology φ: (⊤ ≼ φ) -> {φ = ⊤} + {3 ≤ weight φ}.
-Proof.
-intro Hp.
-destruct φ.
-- contradict Hp. apply  var_not_tautology.
-- contradict Hp. apply bot_not_tautology.
-- right. simpl. pose(weight_pos φ1). pose(weight_pos φ2). lia.
-- right. simpl. pose(weight_pos φ1). pose(weight_pos φ2). lia.
-- right. simpl. pose(weight_pos φ1). pose(weight_pos φ2). lia.
-- destruct φ.
-  + contradict Hp. apply  box_var_not_tautology.
-  + contradict Hp. apply box_bot_not_tautology.
-  + right. simpl. pose(weight_pos φ1). pose(weight_pos φ2). lia.
-  + right. simpl. pose(weight_pos φ1). pose(weight_pos φ2). lia.
-  + right. simpl. pose(weight_pos φ1). pose(weight_pos φ2). lia.
-  + right. simpl. pose(weight_pos φ). lia.
-Qed.
-
-Lemma choose_impl_weight φ ψ: weight (choose_impl φ ψ) ≤ weight (φ → ψ).
-Proof.
-pose (weight_pos φ). pose (weight_pos ψ).
-unfold choose_impl; repeat case decide; intros; simpl; lia.
-Qed.
-
-Lemma choose_impl_top_weight ψ: weight (choose_impl ⊤ ψ) ≤ weight ψ.
-Proof.
-pose (weight_pos ψ).
-unfold choose_impl; repeat case decide; intros; try lia.
-- apply obviously_smaller_compatible_LT, weight_tautology in e. destruct e; subst; simpl in *; tauto || lia.
-- apply obviously_smaller_compatible_LT, weight_tautology in e. destruct e; subst; simpl in *.
-discriminate. lia.
-- apply obviously_smaller_compatible_LT, weight_tautology in e. destruct e; subst; simpl in *; lia.
-- contradict n. apply obviously_smaller_compatible_LT. auto with proof.
-- contradict n0. apply obviously_smaller_compatible_LT. auto with proof.
-- contradict n2. apply obviously_smaller_compatible_LT. auto with proof.
-Qed.
-
-Lemma obviously_smaller_top_not_Eq φ: obviously_smaller ⊤ φ ≠ Eq.
-Proof.
-unfold obviously_smaller.
-case Provable_dec. discriminate. intro. case Provable_dec. discriminate.
-intro Hf. contradict Hf. auto with proof.
-Qed.
-
  Lemma contextual_simp_form_weight Δ φ:
-  {contextual_simp_form Δ φ = ⊤} + {weight (contextual_simp_form Δ φ) ≤ weight φ}.
+  (contextual_simp_form Δ φ = ⊤ /\ (φ = Bot \/ φ = (□ Bot) \/ exists (v : variable), φ = v \/ φ = □ v)) \/
+  (weight (contextual_simp_form Δ φ) ≤ weight φ).
 Proof.
 revert Δ.
 induction φ; intro Δ; simpl.
-1,2: (case Provable_dec; simpl; [tauto| right; lia]).
+1, 2: (case Provable_dec; simpl; [left; intuition; eauto| right; lia]).
+1-3:right; try pose (weight_pos φ1); try pose (weight_pos φ2).
 - pose (contextual_simp_form (Δ • φ1) φ2) as φ2'.
-  destruct (IHφ1 (φ2' :: Δ)) as [Heq1 | Hle1]; destruct (IHφ2 (φ1 :: Δ)) as [Heq2 | Hle2];
+  destruct (IHφ1 (φ2' :: Δ)) as [[Heq1 _]| Hle1];
+  destruct (IHφ2 (φ1 :: Δ)) as [[Heq2 _]| Hle2];
    repeat rewrite ?Heq1, ?Heq2; subst φ2'.
-  + rewrite choose_conj_topL. rewrite Heq2 in Heq1. tauto.
-  + unfold choose_conj. rewrite Heq1. case_eq (obviously_smaller ⊤ (contextual_simp_form (φ1 :: Δ) φ2)).
+  + rewrite choose_conj_topL. rewrite Heq2 in Heq1. rewrite Heq1. simpl. lia.
+  + unfold choose_conj. rewrite Heq1.
+    case_eq (obviously_smaller ⊤ (contextual_simp_form (φ1 :: Δ) φ2)).
       * intro Hf. contradict Hf. apply obviously_smaller_top_not_Eq.
-      * intro. tauto.
-      * intro. right. destruct (IHφ2 (φ1 :: Δ)); lia.
+      * intro. simpl; lia.
+      * intro. destruct (IHφ2 (φ1 :: Δ)); lia.
   + rewrite choose_conj_topL. pose (weight_pos φ1); pose (weight_pos φ2).
-    right. simpl. destruct (IHφ1 (⊤ :: Δ)) as [e|]. rewrite e. simpl. lia. lia.
-  + right. unfold choose_conj. destruct obviously_smaller; simpl; lia.
-- destruct (IHφ1 Δ) as [Heq1 | Hle1]; destruct (IHφ2 Δ) as [Heq2 | Hle2];
+    simpl. destruct (IHφ1 (⊤ :: Δ)) as [[e _]|]. rewrite e. simpl. lia. lia.
+  + unfold choose_conj. destruct obviously_smaller; simpl; lia.
+- destruct (IHφ1 Δ) as [[Heq1 _] | Hle1]; destruct (IHφ2 Δ) as [[Heq2 _] | Hle2];
    repeat rewrite ?Heq1, ?Heq2; unfold choose_disj.
-  + left. rewrite (obviously_smaller_compatible_LT _ _).2. trivial. auto with proof.
+  + rewrite (obviously_smaller_compatible_LT _ _).2. simpl; lia. apply generalised_axiom.
   + case_eq (obviously_smaller ⊤ (contextual_simp_form Δ φ2)).
       * intro Hf. contradict Hf. apply obviously_smaller_top_not_Eq.
       * intro. right. lia.
-      * tauto.
-  + rewrite (obviously_smaller_compatible_LT _ _).2. tauto. auto with proof.
-  + right. destruct obviously_smaller; simpl; lia.
+      * intro. simpl; lia.
+  + rewrite (obviously_smaller_compatible_LT _ _).2. simpl; lia.
+    auto with proof.
+  + destruct obviously_smaller; simpl; lia.
 - pose (weight_pos φ1). pose (weight_pos φ2).
-  destruct (IHφ1 Δ) as [Heq1 | Hle1]; destruct (IHφ2 (φ1 :: Δ)) as [Heq2 | Hle2];
+  destruct (IHφ1 Δ) as [[Heq1 _] | Hle1];
+  destruct (IHφ2 (φ1 :: Δ)) as [[Heq2 _] | Hle2];
    repeat rewrite ?Heq1, ?Heq2.
-  + right. etransitivity. apply choose_impl_top_weight. simpl. lia.
-  + right. etransitivity. apply choose_impl_top_weight. simpl. lia.
-  + left. unfold choose_impl.  rewrite (obviously_smaller_compatible_LT _ ⊤).2; simpl. trivial.
+  + etransitivity. apply choose_impl_top_weight. simpl. lia.
+  + etransitivity. apply choose_impl_top_weight. simpl. lia.
+  + unfold choose_impl.
+    rewrite (obviously_smaller_compatible_LT _ ⊤).2; simpl. lia.
       auto with proof.
-  + right. etransitivity. apply choose_impl_weight. simpl. lia.
-- case Provable_dec. tauto. right; simpl; lia.
+  + etransitivity. apply choose_impl_weight. simpl. lia.
+- destruct φ.
+  1, 2: (case Provable_dec; simpl; [left; intuition; eauto| right; lia]).
+  1-4:right; try pose (weight_pos φ1); try pose (weight_pos φ2);
+  case Provable_dec; simpl; try lia.
+  pose (weight_pos φ). lia.
 Qed.
 
 (** ** Simplifying environments
 
 This section contains the function [simp_env], which simplifies an environment (context) Δ.
-If none of the left rules are applicable anymore to Δ, then the function calls [applicable_contextual_simp_form] to find a simplification for one of the formulas in Δ, given
+If none of the left rules are applicable anymore to Δ, then the function calls 
+[applicable_contextual_simp_form] to find a simplification for one of the formulas in Δ, given
 the fact that it appears in context Δ. 
 We also define [simp_form], which tries to simplify a formula in the empty context.
 *)
@@ -330,7 +228,8 @@ Definition applicable_contextual_simp_form Δ:
   (forall φ, φ ∈ Δ -> weight(contextual_simp_form (rm φ Δ) φ) ≥ weight φ).
 Proof.
 (* try not to do the simplification twice. *)
-assert(Hs: forall φ, {φ' | φ' = contextual_simp_form (rm φ Δ) φ /\ weight φ' < weight φ} + (weight(contextual_simp_form (rm φ Δ) φ) ≥ weight φ)).
+assert(Hs: forall φ, {φ' | φ' = contextual_simp_form (rm φ Δ) φ /\ weight φ' < weight φ} +
+                     (weight(contextual_simp_form (rm φ Δ) φ) ≥ weight φ)).
 { intros φ. remember (contextual_simp_form (rm φ Δ) φ) as φ'.
 case (decide (weight φ' < weight φ)).
 - intro Hlt. left. exists φ'. tauto.
@@ -362,7 +261,7 @@ Program Fixpoint simp_env (Δ : list form) {wf env_order Δ} : list form :=
 Next Obligation. apply Wf.measure_wf, wf_env_order. Qed.
 
 
-Lemma simp_env_eq (Δ : list form): simp_env Δ =
+Global Lemma simp_env_eq (Δ : list form): simp_env Δ =
     (* invertible left rules *)
     if Δ ⊢? ⊥ then [⊥] else
     applicable_AndL Δ ? λ δ₁ δ₂  _, simp_env ((rm (δ₁ ∧ δ₂) Δ•δ₁)•δ₂) ⋮₂
@@ -380,12 +279,31 @@ Qed.
 
 Definition simp_form φ:= contextual_simp_form [] φ.
 
+(* Simplification of formulas always decreases the weight.
+  This is due to the fact that the only formulas with lower weight than ⊤
+  are ⊥, v, □⊥, □v, which are not tautologies *)
+Lemma simp_form_weight φ: weight(simp_form φ) <= weight φ.
+Proof.
+unfold simp_form.
+destruct (contextual_simp_form_weight [] φ) as [(_ & [Hbot|[Hbox|[v [Ht | Hb]]]] )|Hw];
+subst; simpl.
+- case Provable_dec; [|simpl; lia]. intros (Hf&_).
+  exfalso; apply bot_not_tautology. auto with proof.
+- case Provable_dec; [|simpl; lia]. intros (Hf&_).
+  exfalso; apply box_bot_not_tautology. auto with proof.
+- unfold contextual_simp_form. fold contextual_simp_form. simpl. case Provable_dec; [|simpl; lia]. intros (Hf&_).
+  exfalso; apply (var_not_tautology v). auto with proof.
+- unfold contextual_simp_form. fold contextual_simp_form. simpl. case Provable_dec; [|simpl; lia]. intros (Hf&_).
+  exfalso; apply (box_var_not_tautology v). auto with proof.
+- exact Hw.
+Qed.
 
-Definition pointed_env_order_refl pe1 pe2 := env_order_refl (pe1.2 :: pe1.2 :: pe1.1) (pe2.2 :: pe2.2 :: pe2.1).
 
 (** ** Simplification and the weight ordering
 
-In [simp_env_order], we show that the simplification [simp_env] always decreases the weight of a context. We introduce a tactic [simp_env_tac] for this, which is also used later.
+In [simp_env_order], we show that the simplification [simp_env] always
+decreases the weight of a context. We introduce a tactic [simp_env_tac]
+for this, which is also used later.
 *)
 
 Ltac simp_env_tac :=
@@ -408,7 +326,7 @@ revert Δ. apply (well_founded_induction_type wf_env_order). intros Δ Hind.
 rewrite simp_env_eq.
 case (Δ ⊢? ⊥).
 { intros [Hf _]. destruct Δ as [|φ Δ].
-  + now apply empty_entails_not_bot in Hf.
+  + now apply bot_not_tautology in Hf.
   + unfold env_order_refl. do 2 rewrite env_weight_add. simpl. pose (weight_pos φ).
       replace 5 with (0 + 5^1) at 1 by trivial. apply Nat.add_le_mono.  lia.
       apply Nat.pow_le_mono_r; lia.
@@ -419,8 +337,6 @@ all: try (apply env_order_env_order_refl; eapply env_order_le_lt_trans; [apply H
 apply env_order_self.
 Qed.
 
-Global Hint Resolve simp_env_order : order.
-
 Lemma simp_env_nil: simp_env [] = [].
 Proof.
 assert(Ho := simp_env_order []). destruct (simp_env []) as [|φ Δ].
@@ -429,91 +345,22 @@ contradict Ho. unfold env_order_refl. rewrite env_weight_add.
 apply Nat.lt_nge.
 unfold env_weight. simpl. pose(Order.pow5_gt_0 (weight φ)). lia.
 Qed.
+End S.
+Import S.
 
-Lemma simp_env_pointed_env_order_L pe Δ φ: (pe ≺· (simp_env Δ, φ)) -> pe ≺· (Δ, φ).
-Proof.
-intro Hl. eapply env_order_lt_le_trans; eauto. simpl. auto with order.
-Qed.
-
-Lemma simp_env_env_order_L Δ Δ0: (Δ0 ≺ simp_env Δ) -> Δ0 ≺ Δ.
-Proof.
-intro Hl. eapply env_order_lt_le_trans; eauto. auto with order.
-Qed.
-
-Global Hint Resolve simp_env_pointed_env_order_L : order.
-Global Hint Resolve simp_env_env_order_L : order.
 
 (** ** Simplification is provably equivalent
 
-The goal in this section is to prove that the simplification of a formula (in context) is equivalent
-to the original.
-We prove in [contextual_simp_form_spec] that the function [contextual_simp_form] creates equivalent
-formulas (in context).
-This lets us then prove in [simp_env_equiv_env] that [simp_env] also creates equivalent contexts.
+The goal in this section is to prove that the simplification of a formula
+(in context) is equivalent to the original.
+We prove in [contextual_simp_form_spec] that the function [contextual_simp_form]
+creates equivalent formulas (in context).
+This lets us then prove in [equiv_env_simp_env] that [simp_env] also creates
+equivalent contexts.
 
 *)
 Section Equivalence.
 
-Definition equiv_form φ ψ : Type := (φ ≼ ψ) * (ψ ≼ φ).
-
-Definition equiv_env Δ Δ': Set :=
- (∀ φ, list_to_set_disj Δ ⊢ φ ->  list_to_set_disj Δ' ⊢ φ) *
- (∀ φ, list_to_set_disj Δ' ⊢ φ ->  list_to_set_disj Δ ⊢ φ).
-
-
-Lemma symmetric_equiv_env Δ Γ: equiv_env Δ Γ -> equiv_env Γ Δ .
-Proof. intros [H1 H2]. split; trivial. Qed.
-
-(* TODO: move *)
-Lemma conjunction_L' Γ Δ ϕ: (Γ ⊎ {[⋀ Δ]} ⊢ ϕ) -> Γ ⊎ list_to_set_disj Δ ⊢ ϕ.
-Proof.
-revert ϕ. unfold conjunction.
-assert( Hstrong: ∀ θ ϕ : form, Γ ⊎ {[foldl make_conj θ (nodup form_eq_dec Δ)]} ⊢ ϕ
-  → (Γ ⊎ list_to_set_disj Δ) ⊎ {[θ]} ⊢ ϕ).
-{
-  induction Δ as [|δ Δ]; intros θ ϕ; simpl.
-  - intro Hp. peapply Hp.
-  - case in_dec; intros Hin Hp.
-    + peapply (weakening δ). apply IHΔ, Hp. ms.
-    + simpl in Hp. apply IHΔ in Hp.
-        peapply (AndL_rev (Γ ⊎ list_to_set_disj Δ) θ δ). apply make_conj_complete_L, Hp.
-}
-  intros; apply additive_cut with (φ := ⊤); eauto with proof.
-Qed.
-
-Lemma conjunction_R Δ: list_to_set_disj Δ ⊢ ⋀ Δ.
-Proof.
-apply conjunction_R1. intros φ Hφ. apply elem_of_list_to_set_disj in Hφ.
-exhibit Hφ 0. apply generalised_axiom. 
-Qed.
-
-Lemma conjunction_L'' Γ Δ ϕ: Γ ⊎ list_to_set_disj Δ ⊢ ϕ -> (Γ ⊎ {[⋀ Δ]} ⊢ ϕ).
-Proof.
-revert ϕ. unfold conjunction.
-assert( Hstrong: ∀ θ ϕ : form,(Γ ⊎ list_to_set_disj Δ) ⊎ {[θ]} ⊢ ϕ -> Γ ⊎ {[foldl make_conj θ (nodup form_eq_dec Δ)]} ⊢ ϕ).
-{
-  induction Δ as [|δ Δ]; intros θ ϕ; simpl.
-  - intro Hp. peapply Hp.
-  - case in_dec; intros Hin Hp.
-    + apply IHΔ.
-         assert(Hin' : δ ∈ (Γ ⊎ list_to_set_disj Δ)).
-         { apply gmultiset_elem_of_disj_union; right; apply elem_of_list_to_set_disj, elem_of_list_In, Hin. }
-         exhibit Hin' 1. exch 0. apply contraction. exch 1. exch 0.
-         rw (symmetry (difference_singleton _ _ Hin')) 2. peapply Hp.
-    + simpl. apply IHΔ. apply make_conj_sound_L, AndL. peapply Hp.
-}
-intros. apply Hstrong, weakening. assumption.
-Qed.
-
-
-Local Ltac equiv_tac :=
-  repeat rewrite <- list_to_set_disj_rm;
-  repeat rewrite <- list_to_set_disj_env_add;
-  repeat (rewrite <- difference_singleton; trivial);
-  try rewrite <- list_to_set_disj_rm;
-  try (rewrite union_difference_L by trivial);
-  try (rewrite union_difference_R by trivial);
-  try ms.
 
 Local Ltac peapply' th := (erewrite proper_Provable;  [| |reflexivity]);  [eapply th|equiv_tac].
 
@@ -632,22 +479,11 @@ revert Δ. induction φ; intros Δ Hin; simpl; apply elem_of_list_to_set_disj in
        peapply' Hφ.
   + split; intros φ0 Hp; peapply' Hp; equiv_tac.
 Qed.
- 
-Lemma equiv_env_refl Δ : equiv_env Δ Δ.
-Proof. split; trivial. Qed.
-
-Lemma equiv_env_trans Δ Δ' Δ'' : equiv_env Δ Δ' -> equiv_env Δ' Δ'' -> equiv_env Δ Δ''.
-Proof.
-intros [H11 H12] [H21 H22]. split; intros; auto.
-Qed.
 
 (* TODO: move *)
 Hint Resolve elem_of_list_to_set_disj : proof.
 
-
-
-
-Lemma simp_env_equiv_env Δ: equiv_env (simp_env Δ) Δ.
+Lemma equiv_env_simp_env Δ: equiv_env (simp_env Δ) Δ.
 Proof.
 revert Δ. apply (well_founded_induction_type wf_env_order). intros Δ Hind.
 rewrite simp_env_eq.
@@ -701,24 +537,14 @@ repeat simp_env_tac; (try (eapply equiv_env_trans; [apply Hind; intuition; order
 - apply equiv_env_refl.
 Qed.
 
-Lemma equiv_env_L1 Γ Δ Δ' φ: (equiv_env Δ Δ') ->
-  Γ ⊎ list_to_set_disj Δ ⊢ φ ->  Γ ⊎ list_to_set_disj Δ' ⊢ φ.
+Lemma equiv_form_simp_form φ: equiv_form (simp_form φ) φ.
 Proof.
-intros [H1 _] Hp.
-revert φ Hp.
-induction Γ as [|x Γ] using gmultiset_rec; intros φ Hp.
-- peapply H1. peapply Hp.
-- peapply (ImpR_rev (Γ ⊎ list_to_set_disj Δ') x).
-  apply IHΓ, ImpR. peapply Hp.
+assert (Hφ := contextual_simp_form_spec [φ] φ).
+simpl in Hφ. destruct form_eq_dec in Hφ; [|tauto].
+apply equiv_env_equiv_form. apply Hφ. auto with *.
 Qed.
 
 End Equivalence.
-
-(* Global Hint Resolve simp_env_L1 : proof. *)
-
-Infix "≡f" := equiv_form (at level 120).
-
-Global Infix "≡e" := equiv_env (at level 120).
 
 Section Variables.
 
@@ -778,6 +604,9 @@ all:(decompose record Hc; try decompose record Hc0;
   match goal with | Hin : ?a ∈ _ |- _ => exists a; split; trivial; simpl in *; tauto end)).
 Qed.
 
+Lemma occurs_in_simp_form x φ: occurs_in x (simp_form φ) → occurs_in x φ.
+Proof. apply occurs_in_contextual_simp_form. Qed.
+
 End Variables.
 
 
@@ -798,3 +627,13 @@ repeat simp_env_tac; try (try (apply Provable_dec_of_Prop in Hc); contradict Hc;
 - eapply Nat.le_ngt. eapply Hf1. eauto. subst; trivial.
 - eapply Hf4. eauto. now apply Provable_dec_of_Prop.
 Qed.
+
+
+Module SoundS : SoundSimpT S.
+  Definition equiv_env_simp_env := equiv_env_simp_env.
+  Definition equiv_form_simp_form:= equiv_form_simp_form.
+  Definition equiv_env_vars := equiv_env_vars.
+  Definition occurs_in_simp_form := occurs_in_simp_form.
+  Definition simp_env_idempotent := simp_env_idempotent.
+  Definition simp_env_nil := simp_env_nil.
+End SoundS.

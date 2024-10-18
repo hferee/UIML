@@ -5,9 +5,12 @@ Require Import ExtrOcamlBasic ExtrOcamlString.
 
 Require Import K.Interpolation.UIK_braga.
 Require Import KS_export.
-Require Import ISL.PropQuantifiers ISL.DecisionProcedure ISL.Simp_env.
+Require Import ISL.PropQuantifiers ISL.DecisionProcedure.
+Require ISL.Simp_env.
 
-
+(* Simplified propositional quantifiers *)
+Module Import S := Simp_env.S.
+Module Import SPQr := PropQuant S.
 
 Fixpoint MPropF_of_form (f : Formulas.form) : MPropF  :=
 match f with

@@ -66,6 +66,15 @@ Global Hint Constructors Provable : proof.
 Global Instance proper_Provable : Proper ((≡@{env}) ==> (=) ==> (=)) Provable.
 Proof. intros Γ Γ' Heq φ φ' Heq'. ms. Qed.
 
+Global Ltac equiv_tac :=
+  repeat rewrite <- list_to_set_disj_rm;
+  repeat rewrite <- list_to_set_disj_env_add;
+  repeat (rewrite <- difference_singleton; trivial);
+  try rewrite <- list_to_set_disj_rm;
+  try (rewrite union_difference_L by trivial);
+  try (rewrite union_difference_R by trivial);
+  try ms.
+
 (** We introduce a tactic "peapply" which allows for application of a G4ip rule
    even in case the environment needs to be reordered *)
 Ltac peapply th :=

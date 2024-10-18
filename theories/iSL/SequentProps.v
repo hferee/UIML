@@ -871,3 +871,95 @@ induction Δ as [|ψ Δ IH] using gmultiset_rec.
                     apply Permutation_refl', gmultiset_elements_singleton.
             ++ simpl. ms.
 Qed.
+
+Lemma OrR_idemp Γ ψ : Γ ⊢ ψ ∨ ψ -> Γ ⊢ ψ.
+Proof. intro Hp. dependent induction Hp; auto with proof. Qed.
+
+
+Lemma strongness φ : ∅ •  φ ⊢ □ φ.
+Proof.
+apply BoxR. box_tac. apply weakening, open_box_L, generalised_axiom.
+Qed.
+
+(**
+  - [var_not_tautology]: A variable cannot be a tautology.
+  - [bot_not_tautology]: ⊥ is not a tautology.
+  - [box_var_not_tautology]: A boxed variable cannot be a tautology.
+  - [box_bot_not_tautology]: A boxed ⊥ cannot be a tautology.
+*)
+
+Lemma bot_not_tautology : (∅ ⊢ ⊥) -> False.
+Proof.
+intro Hf. dependent destruction Hf; simpl in *;
+match goal with x : _ ⊎ {[+?φ+]} = _ |- _ =>
+exfalso; eapply (gmultiset_elem_of_empty φ); setoid_rewrite <- x; ms end. 
+Qed.
+
+Lemma var_not_tautology v: (∅ ⊢ Var v) -> False.
+Proof.
+intro Hp.
+remember ∅ as Γ.
+dependent induction Hp;
+match goal with | Heq : (_ • ?f%stdpp) = _ |- _ => symmetry in Heq;
+  pose(Heq' := env_equiv_eq _ _ Heq);
+  apply (gmultiset_not_elem_of_empty f); rewrite Heq'; ms
+  end.
+Qed.
+
+Lemma box_var_not_tautology v: (∅ ⊢ □ (Var v)) -> False.
+Proof.
+intro Hp.
+remember ∅ as Γ.
+dependent induction Hp;
+try match goal with | Heq : (_ • ?f%stdpp) = _ |- _ => symmetry in Heq;
+  pose(Heq' := env_equiv_eq _ _ Heq);
+  apply (gmultiset_not_elem_of_empty f); rewrite Heq'; ms
+  end.
+rewrite open_boxes_empty in Hp.
+clear IHHp.
+dependent induction Hp;
+try match goal with | Heq : (_ • ?f%stdpp) = _ |- _ => symmetry in Heq;
+  pose(Heq' := env_equiv_eq _ _ Heq); apply env_add_inv' in Heq';
+  apply (gmultiset_not_elem_of_empty f); rewrite Heq'; apply in_difference;
+  [discriminate|ms]
+  end.
+Qed.
+
+Lemma box_bot_not_tautology: (∅ ⊢ □⊥) -> False.
+Proof.
+ intro Hp.
+
+dependent induction Hp;
+try match goal with | Heq : (_ • ?f%stdpp) = _ |- _ => symmetry in Heq;
+  pose(Heq' := env_equiv_eq _ _ Heq);
+  apply (gmultiset_not_elem_of_empty f); rewrite Heq'; ms
+  end.
+rewrite open_boxes_empty in Hp.
+clear IHHp.
+dependent induction Hp;
+try match goal with | Heq : (_ • ?f%stdpp) = _ |- _ => symmetry in Heq;
+  pose(Heq' := env_equiv_eq _ _ Heq); apply env_add_inv' in Heq';
+  apply (gmultiset_not_elem_of_empty f); rewrite Heq'; apply in_difference;
+  [discriminate|ms]
+  end.
+Qed.
+
+(* A tautology is either equal to ⊤ or has a weight of at least 3. *)
+Lemma weight_tautology φ: (∅ ⊢ φ) -> {φ = ⊤} + {3 ≤ weight φ}.
+Proof.
+intro Hp.
+destruct φ.
+- contradict Hp. apply  var_not_tautology.
+- contradict Hp. apply bot_not_tautology.
+- right. simpl. pose(weight_pos φ1). pose(weight_pos φ2). lia.
+- right. simpl. pose(weight_pos φ1). pose(weight_pos φ2). lia.
+- right. simpl. pose(weight_pos φ1). pose(weight_pos φ2). lia.
+- destruct φ.
+  + contradict Hp. apply  box_var_not_tautology.
+  + contradict Hp. apply box_bot_not_tautology.
+  + right. simpl. pose(weight_pos φ1). pose(weight_pos φ2). lia.
+  + right. simpl. pose(weight_pos φ1). pose(weight_pos φ2). lia.
+  + right. simpl. pose(weight_pos φ1). pose(weight_pos φ2). lia.
+  + right. simpl. pose(weight_pos φ). lia.
+Qed.
+
