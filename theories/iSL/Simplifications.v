@@ -1,9 +1,28 @@
-Require Import ISL.Sequents ISL.SequentProps ISL.Order ISL.Optimizations.
+Require Import ISL.Sequents ISL.SequentProps ISL.Order ISL.Optimizations ISL.Cut.
 
 (* Definitions and properties about equivalent formulas and environments *)
 Section Equivalence.
 
 Definition equiv_form (φ ψ : form) : Type := (φ ≼ ψ) * (ψ ≼ φ).
+
+Lemma symmetric_equiv_form {φ ψ} : equiv_form φ ψ -> equiv_form ψ φ.
+Proof. intros [H H']. now split. Qed.
+
+Lemma equiv_form_R {φ ψ} : (equiv_form φ ψ) ->
+  forall Γ, Provable Γ φ -> Provable Γ ψ.
+Proof.
+intros Heq g Hp. apply additive_cut with φ. (* cut is only required here in this file*)
+- auto with proof.
+- apply generalised_weakeningL. peapply Heq.
+Qed.
+
+Lemma equiv_form_L {φ ψ} : (equiv_form φ ψ) ->
+  forall Γ θ, Γ • φ ⊢ θ -> Γ • ψ ⊢ θ.
+Proof.
+intros Heq Γ θ Hp. apply additive_cut with φ. (* cut is only required here in this file*)
+- apply generalised_weakeningL. peapply Heq.
+- auto with proof.
+Qed.
 
 Definition equiv_env Δ Δ': Set :=
  (∀ φ, list_to_set_disj Δ ⊢ φ ->  list_to_set_disj Δ' ⊢ φ) *
@@ -37,6 +56,17 @@ Proof.
 intros [He1 He2]; split; unfold Lindenbaum_Tarski_preorder.
 - peapply (He2 φ'). simpl. peapply (generalised_axiom ∅).
 - peapply (He1 φ). simpl. peapply (generalised_axiom ∅).
+Qed.
+
+Lemma equiv_form_equiv_env φ φ': equiv_form φ φ' -> equiv_env [φ] [φ'].
+Proof.
+intros [He1 He2]; split; unfold Lindenbaum_Tarski_preorder.
+- intros f Hp. simpl. apply additive_cut with φ.
+  + apply He2.
+  + apply generalised_weakeningL. peapply Hp.
+- intros f Hp. simpl. apply additive_cut with φ'.
+  + apply He1.
+  + apply generalised_weakeningL. peapply Hp.
 Qed.
 
 End Equivalence.

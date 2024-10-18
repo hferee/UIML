@@ -159,8 +159,8 @@ Definition E Δ:= EA true (Δ, ⊥).
 Definition A := EA false.
 
 (* TODO: simplify the output too now rather than in extraction *)
-Definition Ef (ψ : form) := E ([ψ]).
-Definition Af (ψ : form) := A ([], ψ).
+Definition Ef (ψ : form) := simp_form (E ([simp_form ψ])).
+Definition Af (ψ : form) := simp_form (A ([], simp_form ψ)).
 
 (** Congruence lemmas: if we apply any of e_rule, a_rule_env, or a_rule_form
   to two equal environments, then they give the same results. *)
@@ -1000,27 +1000,44 @@ Theorem iSL_uniform_interpolation p V: p ∉ V ->
   * (vars_incl (Af p φ) V)
   * ({[Af p φ]} ⊢ φ)
   * (∀ θ, vars_incl θ V -> {[θ]} ⊢ φ -> {[θ]} ⊢ Af p φ).
-Proof. 
+Proof.
+unfold Ef, Af.
 intros Hp φ Hvarsφ; repeat split.
-  + intros x Hx. apply (@EA_vars p _ ⊥ x) in Hx.
-      destruct Hx as [Hneq [θ [Hθ Hocc]]]. apply elem_of_list_singleton in Hθ. subst.
-      apply Hvarsφ in Hocc. destruct Hocc; subst; tauto.
-  + replace {[φ]} with (list_to_set_disj [φ] : env). apply (@entail_correct _ _ ⊥). ms.
-  + intros ψ Hψ Hyp. rewrite elem_of_list_In in Hp. unfold Ef.
-      * peapply (@pq_correct p ∅ [φ] ψ).
-         -- intros θ Hin. inversion Hin.
-         -- peapply Hyp.
-         -- intro HF. apply Hψ in HF. tauto.
-  + intros x Hx. apply (@EA_vars p ∅ φ x) in Hx.
-      destruct Hx as [Hneq [Hin | [θ [Hθ Hocc]]]].
-      * apply Hvarsφ in Hin. destruct Hin; subst; tauto.
-      * inversion Hθ.
-  + peapply (@entail_correct p []).
+  + intros x Hx.
+    apply occurs_in_simp_form, (@EA_vars p _ ⊥ x) in Hx.
+    destruct Hx as [Hneq [θ [Hθ Hocc]]]. apply elem_of_list_singleton in Hθ. subst.
+    apply occurs_in_simp_form, Hvarsφ in Hocc. destruct Hocc; subst; tauto.
+  + replace {[φ]} with (list_to_set_disj [φ] : env) by ms.
+    apply (equiv_form_R (symmetric_equiv_form (equiv_form_simp_form _))).
+    peapply (equiv_form_L (equiv_form_simp_form φ) ∅).
+    peapply (@entail_correct p [simp_form φ] ⊥).
   + intros ψ Hψ Hyp. rewrite elem_of_list_In in Hp.
-      apply (TopL_rev _ ⊥). peapply (@pq_correct p {[ψ]} [] φ).
-      * intros φ0 Hφ0. apply gmultiset_elem_of_singleton in Hφ0. subst. auto with *.
-      * peapply Hyp.
-      * now rewrite E_of_empty.
+    peapply (equiv_form_L (symmetric_equiv_form(equiv_form_simp_form (E p [simp_form φ]))) ∅).
+    peapply (@pq_correct p ∅ [simp_form φ] ψ).
+    * intros θ Hin. inversion Hin.
+    * peapply (equiv_form_L (symmetric_equiv_form(equiv_form_simp_form φ)) ∅).
+      peapply Hyp.
+    * intro HF. apply Hψ in HF. tauto.
+  + intros x Hx.
+    apply occurs_in_simp_form, EA_vars in Hx.
+    destruct Hx as [Hneq [Hx | [θ [Hθ Hocc]]]].
+    * apply occurs_in_simp_form, Hvarsφ in Hx. simpl in Hx.
+      firstorder. subst. tauto.
+    * inversion Hθ.
+  + peapply (equiv_form_L (symmetric_equiv_form(equiv_form_simp_form (A p ([], simp_form φ)))) ∅).
+    apply (equiv_form_R (equiv_form_simp_form _)).
+    peapply (@entail_correct p []).
+  + intros ψ Hψ Hyp. rewrite elem_of_list_In in Hp.
+    apply (equiv_form_R (symmetric_equiv_form (equiv_form_simp_form _))).
+    peapply (equiv_form_L ((equiv_form_simp_form ψ)) ∅).
+      apply (TopL_rev _ ⊥). peapply (@pq_correct p {[simp_form ψ]} []).
+      * intros φ0 Hφ0. apply gmultiset_elem_of_singleton in Hφ0. subst.
+        intro Ho; apply occurs_in_simp_form in Ho. auto with *.
+      * simpl.
+        apply (equiv_form_R (symmetric_equiv_form (equiv_form_simp_form _))).
+        peapply (equiv_form_L (symmetric_equiv_form(equiv_form_simp_form ψ)) ∅).
+        peapply Hyp.
+      * rewrite E_of_empty. ms.
 Qed.
 
 End PropQuantProp.

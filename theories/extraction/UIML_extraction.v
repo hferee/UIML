@@ -41,8 +41,8 @@ Definition isl_A v f := Af v f.
   Notable exception: (a ∨b) → c *)
 Definition isl_simp f := simp_form f.
 
-Definition isl_simplified_E p ψ := isl_simp (E p [ψ]).
-Definition isl_simplified_A p ψ := isl_simp (Af p (ψ)).
+Definition isl_simplified_E p ψ := E p [ψ].
+Definition isl_simplified_A p ψ := Af p (ψ).
 
 Set Extraction Output Directory "extraction".
 
