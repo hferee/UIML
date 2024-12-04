@@ -15,6 +15,19 @@
 
     }
   </script>
+
+<script type="text/javascript">
+  document.addEventListener('DOMContentLoaded', function() {
+    var inputFormula = document.getElementById('input_formula');
+    var functionSelect = document.getElementById('function_select');
+    
+    functionSelect.addEventListener('change', function() {
+      if ((this.value === 'k' || this.value === 'gl') && inputFormula.value == 'r <-> ((p -> q) | ((p -> q) -> q))') {
+        inputFormula.value = '[]p';
+      }
+    });
+  });
+</script>
 </head>
 
 <body onload="document.getElementById('content').focus()">
@@ -38,6 +51,8 @@
     <div id="main">
       <script type="text/javascript" src="uiml_demo.bc.js"></script>
       <p>Enter a formula below and choose a logic and interpolant to compute.</p>
+
+
       <input style="font-size:1em; font-family:'Courier New', Courier, monospace; padding: .2em;" type="text" id="input_formula" size="40" value="r <-> ((p -> q) | ((p -> q) -> q))" />
       <select style="font-size:1em;  padding: .2em;" id="function_select">
         <option value="iE">IL: E(p)</option>
@@ -139,5 +154,6 @@
   </div>
   </div>
 </body>
+
 
 </html>
