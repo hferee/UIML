@@ -7,8 +7,6 @@ This file defines propositional formulas, the proof that there are countably man
 From stdpp Require Import countable strings.
 
 
-Local Open Scope string_scope.
-
 (** ** Definitions and notations. *)
 Definition variable := string.
 
@@ -47,7 +45,6 @@ Global Coercion Var : variable >-> form.
 Global Instance form_top : base.Top form := ⊤.
 
 (** Formulas have decidable equality. *)
-Global Instance string_dec : EqDecision string := string_dec.
 Global Instance form_eq_dec : EqDecision form.
 Proof. solve_decision . Defined.
 
