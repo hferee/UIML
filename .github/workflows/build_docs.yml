@@ -2,7 +2,13 @@ name: Build doc
 
 on:
   push:
+    # Do not run the ci if the only modified
+    # files are the latex document
+    paths-ignore:
+      - "jfla-paper/**"
   pull_request:
+    paths-ignore:
+      - "jfla-paper/**"
 
 jobs:
   build:
