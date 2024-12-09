@@ -1,0 +1,173 @@
+JFLA 2025 Paper #18 Reviews and Comments
+===========================================================================
+Paper #18 Formulas Rewritten And Normalized Computationally, And
+Intuitionistically Simplified
+
+
+Review #18A
+===========================================================================
+
+Avis général
+------------
+2. Positif
+
+Degré d'expertise du relecteur ou de la relectrice
+--------------------------------------------------
+2. Moyen
+
+Résumé de l'article et contributions
+------------------------------------
+This paper extends previous work by the authors on the formalization
+of propositional quantifiers with a simplification procedure.  Section
+2 formalizes a sequent calculus (G4iP), section 3 provides a procedure
+to find proofs for a sequent (\Gamma => \phi).  Section 4 explains the
+simplification procedure (this is the original
+contribution). Simplification is used to improve previous work
+(section 4.3) and the benefits of simplification are benchmarked in
+section 5.
+
+Simplification here means the transformation into a semantically
+equivalent formula with a smaller weight (definition 1); these
+properties are formalized and proved in Coq. The use of simplification
+to improve previous work caused non-trivial changes to the original
+proofs (see end of section 4). The benchmark is made of formulas
+brought to the attention of authors by colleagues and the figures are
+convincing.
+
+Résumé de l'évaluation
+----------------------
+I am not an informed reader, at first sight it might seem that the
+contribution is incremental and a bit heuristic but it is supported by a solid
+formalization, the benchmark benefited from original inputs from
+several people, and the writing is pleasant, which makes it worth
+publishing and presenting at JFLA 2025 imo. I just wished that
+previous work was better identified as such.
+
+Évaluation détaillée et commentaires aux auteurs
+------------------------------------------------
+Detailed comments:
+- title: "And" -> "and"
+
+- p.2: "Definition 1" -> indicate the file (Formulas.v?) where to look
+  for the identifier "weight"
+
+- p.3, l.88: "intuitionistic modal logic": do you have a reference for
+  the interested reader? otherwise, this looks mysterious
+
+- p.4: "Definition 2" -> where is it in the code?
+  + l.121: \exists p.\phi might be \forall p.\phi,
+    an indication of where to find it in the code would have helped me to check
+
+- p.5,l.145: straightforward is just one word (no hyphen)
+
+- sections 2 and 3: on a first reading I thought that the contents
+  were original but there are similarities with previous work.
+  Could you clarify that section 2 is "background"?
+  Could you comment on the differences between the function Fig. 2 and
+  the definition of provability by an inductive in the CPP 2023?
+  Beside the Prop vs. bool aspect, is the main difference the fact that the
+  rules for proof search are made explicit? 
+
+- p.5,l.166: I didn't get why you name these functions "choose_*", it
+  sounds like their main purpose is to perform some choice but the
+  explanations focus on simplification, I am worrying I am missing
+  something
+
+
+
+Review #18B
+===========================================================================
+
+Avis général
+------------
+2. Positif
+
+Degré d'expertise du relecteur ou de la relectrice
+--------------------------------------------------
+2. Moyen
+
+Résumé de l'article et contributions
+------------------------------------
+Cet article rend compte d'un travail en cours, et propose une formalisation en Coq de l'algorithme de Pitt [Pitt92] pour éliminer les quantificateurs dans le fragment de la logique qui ne contient que des variables propositionnelles (pas de prédicats). Comme cette élimination produit des formules de taille intuitivement exponentielle en le nombre de quantificateurs à éliminer, se pose la question de simplifier (i.e. réduire la taille) des formules obtenues. Dans ce travaill, l'équivalence de deux formules $\phi$ et $\phi'$ est définie par le fait que $\phi \rightarrow \phi' \wedge \phi' \rightarrow \phi$ est dérivable.
+
+La section 1 est une introduction au problème, la section 2 présente les définitions nécessaires, notamment le poids d'une formule, ainsi que celui d'un environnement, et c'est ce qui donnera la mesure à faire diminuer lors de la simplification des formules. Le fragment de la logique étudiée est le calcul des séquents G4iP, où les règles d'inférences sont classées en différents types, selon qu'elles sont inversibles ou non, et suivant leur nombre de prémisses (0, 1 ou 2). Enfin cette section introduit les quantificateurs, non pas de façon syntaxique, mais les formules universellement ou existentiellement quantifiées sont des classes d'équivalence de formules qui vérifient certaines propriétés.
+
+Cette classification des règles est utilisée dans la section 3 pour concevoir une procédure de décision pour G4iP qui est raisonnablement efficace, et et dont la preuve formelle de correction reste praticable.
+
+La section 4 propose une procédure de simplication des formules dans un contexte, qui utilise la procédure de décision (si $\Delta |- \phi$, $\phi$ est simplifiée en la formule triviale $\top$). Il est nécessaire d'avoir un contexte, puisque celui-ci va collecter les parties gauches des implications pour simplifier les parties droites. Ensuite les contextes eux-mêmes peuvent être simplifiés grâce entre autre à la simplification des formules qui les constituent. Enfin la simplification des environnements est entrelacée avec les appels récursifs de la procédure de Pitt usuelle. L'approche est validée empiriquement dans la sevtion 5 qui propose des jeux de tests sur lesquels il est visible que la procédure ainsi améloriée produit des résulats de taille significativement plus petite que la procédure originale, et même permet de donner plus de résultats dans un temps imparti (moins de time-out).
+
+Résumé de l'évaluation
+----------------------
+Le sujet abordé est pertinent pour les JFLA, et les résultats intéressants. Néanmoins, l'article est parfois difficile à suivre. Tout d'abord le parti pris de ne jamais parler de sémantique et de modèles pour définir les quantificateurs est déroutant, et la définition 2 (formules quantifiées) me semble fausse, en tous cas contradictoire entre le grec et l'anglais. Ensuite l'équivalence de deux formules est définie de façon « syntaxique » par l'équi-dérivabilité, mais il n'est pas clair que ce soit dans le contexte vide, ou dans tout contexte. Enfin les théorèmes sont évoqués, annoncés prouvés en Coq, mais pas énoncés dans le papier. En conclusion, je pense que l'article peut être accepté, mais que le choix fait pour la définition des quantificateurs devrait être justifié, et les autres points mentionnés pris en compte dans la version finale.
+
+Évaluation détaillée et commentaires aux auteurs
+------------------------------------------------
+Definition 2, l. 119 : entails --> is entailed by ?
+
+Definition 2, l. 121 : $\exists$ --> $\forall$?
+
+Definition 2, l. 121 : is entailed by --> that entails  ?
+
+Figure 2 : $(p \rightarrow L)$ : conserver $p$ dans le contexte
+
+Proposition 4 : Le cas ${\tt csimp} ~\Delta ~\phi = \top$ n'est-il pas subsumé par le second?
+
+l. 204 : est-ce que 2. n'est pas un cas particulier de 3 avec ${\tt csimp} ~ (\Delta \setminus \{\phi \}) ~ \phi = \top$?
+
+concernant ces deux dernières remarques, serait-ce lié au fait que $\top$ n'est pas dans la syntaxe des formules? Si c'est le cas, alors, pourriez vous le définir?
+
+
+
+Review #18C
+===========================================================================
+
+Avis général
+------------
+1. Très positif
+
+Degré d'expertise du relecteur ou de la relectrice
+--------------------------------------------------
+2. Moyen
+
+Résumé de l'article et contributions
+------------------------------------
+Cet article présente une procédure de simplification pour les formules de la logique intuitioniste propositionelle pour une notion naturelle de complexité d'une formule (taille + currification maximale). Le but de cet algorithme est en grande partie de permettre d'optimiser l'algorithme d'interpolation de Pitts pour IPC afin de le rendre tractable.
+Les auteurs ont implémenté la procédure en Rocq, vérifié qu'elle produisait des résultats corrects (i.e. que la formule obtenue était plus simple que la formule de départ et logiquement équivalente) et adapté une implémentation vérifiée pré-existante de l'algorithme d'interpolation.
+
+Résumé de l'évaluation
+----------------------
+Points forts:
+* Article très clair
+* Introduction très claire qui identifie la contribution et donne le contexte
+* Exemples minimalistes mais judicieux pour expliquer les notions
+* Définitions/théorèmes clés inclus
+* Travail formalisé de bout en bout en Rocq
+* Benchmark à la fin
+* Commentaires qualitatifs/critiques sur le comportement de l'implémentation et les choix d'implémentation
+
+Points faibles (?):
+* Un exemple d'output sous-optimal de la procédure aurait été intéressant
+
+Évaluation détaillée et commentaires aux auteurs
+------------------------------------------------
+# Avis global
+
+Cet article était vraiment très agréable à lire. Les contributions sont clairement identifiées et le texte donne une bonne idée de ce qui a été codé. Je n'ai pas eu le temps d'aller voir le développement Coq lui-même, mais les définitions clés et explications du texte donnent une idée assez préciser de ce qui a été fait en supplément de la formalisation de l'algorithme de Pitts qui a été améliorée ici.
+Ce n'est pas la première fois que je lis quelque chose sur l'interpolation uniforme pour IPC et G4iP, mais j'ai également l'impression que l'article est abordable pour des non-experts.
+Les définitions-clés et résultats-clés sont tous là, avec des exemples simples mais efficaces pour illuster les notions les plus importantes. La définition détaillée des formules d'interpolation a été élisée, mais cela paraît tout à fait raisonnable et pertinent.
+
+Peut-être que le travail présenté a le défaut d'être un peu incrémental/WIP; l'introduction du papier est complètement transparente là-dessus. Il y a peut-être moyen d'améliorer ça dans les directions pertinente suggérée dans cette même introduction, mais la contribution en elle-même paraît déjà pertinente, bien qu'il manque peut-être de perspective vàv de l'optimalité de la procédure de simplification.
+
+Je pense que le travail fait est intéressant et le thème est pertinent pour les JFLA, même si pas forcément centré sur de la recherche purement en langage de prog. L'article ne présente pas d'applications en dehors de la recherche en logique intuitioniste, ce qui n'est pas un point négatif à mon avis: pour l'interpolation de Pitts, je n'en connais pas, mais d'autres algorithmes d'interpolation ont des applications en vérif.
+
+# Typos, etc
+
+Très peu de choses à signaler:
+
+* l 30-33: je ne sais pas si il y a moyen de lire un peu de travers ces deux phrases si jamais on skip la Définition 2 (qui est très bien). En lecture naive, j'aurai pu avoir l'impression que le texte dit que ∃ p. φ(p) est défini par la Déf 2, mais en fait c'est une caractérisation par propriété universelle qui est donnée, donc je pense que dire que "characterized" serait plus clair que "defined".
+* Definition 2: plein de petites typos. Un swap entre ∃ et ∀ à la ligne 121. Préciser que ψ et θ doivent être p-free. ∀p φ est la formule p-free la plus faible **qui implique** φ. ∃ p φ est la formule p-free la plus forte **conséquence** de φ (ou alors j'ai mal compris un truc).
+* l110: pour uniformiser, peut-être mettre "0 premises (and therefore invertible):"
+* l113: ∨R₁ et ∨R₂ n'ont qu'une prémisse
+* l145: straight-forward → straightforward
+* l293: "by various order of magnitude in some cases" order devrait être au pluriel? (peut-être que la formulation au global de la phrase pourrait être meilleure?)
+* à la place du running title en haut à gauche il y a écrit "FRANCAIS"?
