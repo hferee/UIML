@@ -119,8 +119,9 @@ The {\Coq} development is available online at \url{https://github.com/hferee/UIM
 
 \section{Sequents, proofs, and propositional quantifiers}\label{sec:prelims}
 A \emph{formula} is a term built from variables and $\bot$ using $\to$, $\vee$ and $\wedge$. The symbol $\top$ is defined as $\bot \to \bot$ and, for any formula $\phi$, $\neg \phi$ is defined as $\phi \to \bot$. A \emph{context} is a finite list of formulas, and is typically denoted with a capital Greek letter $\Gamma$ or $\Delta$. We denote the concatenation of contexts $\Gamma$ and $\Delta$ by $\Gamma, \Delta$, or occasionally $\Gamma \bullet \Delta$, and we abuse notation to write expressions like $\Gamma, \phi$ and $\Gamma \bullet \phi$ for the concatenation of $\Gamma$ with the one-element context containing only $\phi$. A \emph{sequent} is a pair of a context and a formula, denoted $\Gamma \Rightarrow \phi$. We now recall a notion of \emph{weight} on formulas and sequents~\cite{Pit1992}. 
+%
 \begin{definition}\label{dfn:weight}
-    The \emph{weight of a formula} is inductively defined as:
+    \sam{TODO: add link} The \emph{weight of a formula} is inductively defined as:
 
 $$\left\{
 \begin{array}{rl}
@@ -215,6 +216,7 @@ For the purpose of the decision procedure that we will discuss below, it is usef
 \end{itemize}
 
 Pitts' theorem~\cite{Pit1992} says that, for any formula $\phi$ and propositional variable $p$, the formulas $\exists p. \phi$ and $\forall p. \phi$ can be expressed by quantifier-free propositional formulas. We now recall a formal definition of the meaning of these propositional quantifications.
+\sam{TODO: rewrite as `a right uniform interpolant is a formula such that...' and same for left. Then say that Pitts' construction shows that these things exist.}
 \begin{definition}\label{dfn:prop-quantifiers}
 	Let $\phi$ be a formula and $p$ a propositional variable. The formula $\exists p. \phi$ is defined, up to equivalence, as the $p$-free formula such that $\phi \vdash \exists p. \phi$, and for any formula $\psi$, if  $\phi \vdash \psi$ then $\exists p.\phi \vdash \psi$, i.e. $\exists p. \phi$ is the strongest $p$-free formula that is entailed by $\phi$.
 
