@@ -216,9 +216,9 @@ For the purpose of the decision procedure that we will discuss below, it is usef
 
 Pitts' theorem~\cite{Pit1992} says that, for any formula $\phi$ and propositional variable $p$, the formulas $\exists p. \phi$ and $\forall p. \phi$ can be expressed by quantifier-free propositional formulas. We now recall a formal definition of the meaning of these propositional quantifications.
 \begin{definition}\label{dfn:prop-quantifiers}
-	Let $\phi$ be a formula and $p$ a propositional variable. The formula $\exists p. \phi$ is defined, up to equivalence, as the $p$-free formula such that $\phi \vdash \exists p. \phi$, and for any formula $\psi$, if  $\phi \vdash \psi$ then $\exists p.\phi \vdash \psi$, i.e. $\exists p. \phi$ is the strongest $p$-free formula that entails $\phi$.
+	Let $\phi$ be a formula and $p$ a propositional variable. The formula $\exists p. \phi$ is defined, up to equivalence, as the $p$-free formula such that $\phi \vdash \exists p. \phi$, and for any formula $\psi$, if  $\phi \vdash \psi$ then $\exists p.\phi \vdash \psi$, i.e. $\exists p. \phi$ is the strongest $p$-free formula that is entailed by $\phi$.
 
-	Dually, $\forall p. \phi$ is defined up to equivalence as the $p$-free formula such that $\forall p. \phi \vdash \phi$, and for any formula $\theta$, if $\theta \vdash \phi$ then $\theta \vdash \exists p.\phi$, i.e. $\forall p. \phi$ is the weakest $p$-free formula entailed by $\phi$.
+	Dually, $\forall p. \phi$ is defined up to equivalence as the $p$-free formula such that $\forall p. \phi \vdash \phi$, and for any formula $\theta$, if $\theta \vdash \phi$ then $\theta \vdash \forall p.\phi$, i.e. $\forall p. \phi$ is the weakest $p$-free formula that entails $\phi$.
 \end{definition}
 
 \section{Decision procedure}\label{sec:decision}
@@ -226,6 +226,8 @@ Given a list of formulas $\Gamma$ and a formula $\phi$, we give a procedure that
 decides if there exists a proof of $\Gamma \Rightarrow \phi$ (\coqdoc{ISL.DecisionProcedure.html\#Provable_dec}).
 To explain the intuition for this decision procedure, one may start from the idea of a naive proof search, which would explore all possible proof trees: Given an input sequent, for each applicable instance of a rule, one would recursively search for a proof for each of its premises.
 However, such a naive proof search is very inefficient.
+
+\sam{Comment Reviewer 1: We need to clarify that we previously defined the inductive predicate, the newly implemented result here is that this predicate is decidable, and moreover the procedure for deciding it is relatively efficient.}
 
 Our implementation, for which we give the pseudocode in \cref{fig:decision}, improves on this by applying the rules in a specific order, so as to avoid unnecessary branching as much as possible: (1) we first try to apply axioms to end the proof search; (2) if this is not possible, then we try to apply linear invertible rules, so as to obtain a single equivalent subsequent, and iterate; (3) if none of these apply, then we try to apply a duplicating invertible proof, leading to two successive proof searches; (4) finally, if no other rule is applicable, try each possible instance of a non-invertible rule and continue the search, in a depth-first-search manner. This leads to the following function, expressed in pseudocode as a pattern match in \cref{fig:decision}. For the reader's convenience, we annotate each case with the name of the corresponding $\Gfourip$-rule. When defining this function in {\Coq}, one needs to simultaneously prove termination, which we obtain from the fact that applying $\Gfourip$-rules upwards decreases the weight of a sequent. 
 \begin{figure}[htp]
