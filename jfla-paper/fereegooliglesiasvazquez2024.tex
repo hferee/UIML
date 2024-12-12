@@ -121,7 +121,7 @@ The {\Coq} development is available online at \url{https://github.com/hferee/UIM
 A \emph{formula} is a term built from variables and $\bot$ using $\to$, $\vee$ and $\wedge$. The symbol $\top$ is defined as $\bot \to \bot$ and, for any formula $\phi$, $\neg \phi$ is defined as $\phi \to \bot$. A \emph{context} is a finite list of formulas, and is typically denoted with a capital Greek letter $\Gamma$ or $\Delta$. We denote the concatenation of contexts $\Gamma$ and $\Delta$ by $\Gamma, \Delta$, or occasionally $\Gamma \bullet \Delta$, and we abuse notation to write expressions like $\Gamma, \phi$ and $\Gamma \bullet \phi$ for the concatenation of $\Gamma$ with the one-element context containing only $\phi$. A \emph{sequent} is a pair of a context and a formula, denoted $\Gamma \Rightarrow \phi$. We now recall a notion of \emph{weight} on formulas and sequents~\cite{Pit1992}. 
 %
 \begin{definition}\label{dfn:weight}
-    \sam{TODO: add link} The \emph{weight of a formula} is inductively defined as:
+The \emph{weight of a formula} (\coqdoc{ISL.Formulas.html\#weight}) is inductively defined as:
 
 $$\left\{
 \begin{array}{rl}
@@ -133,7 +133,7 @@ $$\left\{
 \end{array}
 \right.$$
 
-The \emph{weight of a context} $\Gamma$ is then defined as $\weight(\Gamma) \isdef \sum_{\phi \in \Gamma} 5^{\weight(\phi)}$. For a sequent $\Gamma \Rightarrow \phi$, its weight is defined as $\weight(\Gamma \cons \phi \cons \phi)$. The doubling of the right hand side formula $\phi$ is a detail that is only needed for treating rules in intuitionistic modal logic.
+The \emph{weight of a context} $\Gamma$ (\coqdoc{ISL.Order.html\#env_weight}) is then defined as $\weight(\Gamma) \isdef \sum_{\phi \in \Gamma} 5^{\weight(\phi)}$. For a sequent $\Gamma \Rightarrow \phi$, its weight is defined as $\weight(\Gamma \cons \phi \cons \phi)$. The doubling of the right hand side formula $\phi$ is a detail that is only needed for treating rules in intuitionistic modal logic.
 \end{definition}
 The interest of this notion of weight is that it yields a well-founded ordering on formulas and on sequents, where $\Gamma \Rightarrow \phi$ is considered smaller than $\Gamma' \Rightarrow \phi'$ if it has lower weight.
 
