@@ -1,8 +1,7 @@
 We thank the reviewers for their careful reading of the paper and for their many detailed comments, all of which we implemented. We just answer a few specific points below:
 
-- As reviewers 2 and 3 both pointed out, we apologize that Definition 2 was indeed wrongly stated; it is now correct.
+- As reviewers 2 and 3 both pointed out, we apologize that Definition 2 was indeed wrongly stated; it is now correct. It does not directly correspond to a Coq definition, because in our formalization we directly prove that the constructed formulas have the properties specified in this definition; see for example https://hferee.github.io/UIML/ISL.PropQuantifiers.html#PropQuantProp.iSL_uniform_interpolation .
 - R2: "Ensuite l'équivalence de deux formules est définie de façon « syntaxique » par l'équi-dérivabilité, mais il n'est pas clair que ce soit dans le contexte vide, ou dans tout contexte."
 If the formula φ <-> φ' is provable in the empty context, then it is in fact provable in any context, because weakening is admissible in the calculus. In general, when we say `provable', this means provable in the empty (and therefore in any) context. We made the definition explicit under Fig. 1.
 - R2: Indeed, ⊤ is not a basic symbol, it is defined as ⊥ → ⊥. We added this information to the beginning of section 2. It would be interesting to investigate if some things simplify if ⊤ is added as a basic symbol to the calculus, but we leave this to future work.
-
 - R3: The running header "FRANCAIS" contains the first letters of the words of the paper's title.
