@@ -1,4 +1,4 @@
-\documentclass[english,review]{jflart}
+\documentclass[english,final]{jflart}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{amssymb,bm}
@@ -30,7 +30,7 @@
 
 \jfla{36}{2025}
 
-\title{Formulas Rewritten And Normalized Computationally, And Intuitionistically Simplified}
+\title{Formulas Rewritten and Normalized Computationally, and Intuitionistically Simplified}
 \titlerunning{FRANCAIS}
 
 \author[1]{Hugo Férée}
@@ -120,7 +120,7 @@ The {\Coq} development is available online at \url{https://github.com/hferee/UIM
 \section{Sequents, proofs, and propositional quantifiers}\label{sec:prelims}
 A \emph{formula} is a term built from variables and $\bot$ using $\to$, $\vee$ and $\wedge$. The symbol $\top$ is defined as $\bot \to \bot$ and, for any formula $\phi$, $\neg \phi$ is defined as $\phi \to \bot$. A \emph{context} is a finite list of formulas, and is typically denoted with a capital Greek letter $\Gamma$ or $\Delta$. We denote the concatenation of contexts $\Gamma$ and $\Delta$ by $\Gamma, \Delta$, or occasionally $\Gamma \bullet \Delta$, and we abuse notation to write expressions like $\Gamma, \phi$ and $\Gamma \bullet \phi$ for the concatenation of $\Gamma$ with the one-element context containing only $\phi$. A \emph{sequent} is a pair of a context and a formula, denoted $\Gamma \Rightarrow \phi$. We now recall a notion of \emph{weight} on formulas and sequents~\cite{Pit1992}. 
 %
-\begin{definition}\label{dfn:weight}
+\begin{definition}[\coqdoc{ISL.Formulas.html\#weight}]\label{dfn:weight}
 The \emph{weight of a formula} (\coqdoc{ISL.Formulas.html\#weight}) is inductively defined as:
 
 $$\left\{
@@ -216,20 +216,23 @@ For the purpose of the decision procedure that we will discuss below, it is usef
 \end{itemize}
 
 Pitts' theorem~\cite{Pit1992} says that, for any formula $\phi$ and propositional variable $p$, the formulas $\exists p. \phi$ and $\forall p. \phi$ can be expressed by quantifier-free propositional formulas. We now recall a formal definition of the meaning of these propositional quantifications.
-\sam{TODO: rewrite as `a right uniform interpolant is a formula such that...' and same for left. Then say that Pitts' construction shows that these things exist.}
-\begin{definition}\label{dfn:prop-quantifiers}
-	Let $\phi$ be a formula and $p$ a propositional variable. The formula $\exists p. \phi$ is defined, up to equivalence, as the $p$-free formula such that $\phi \vdash \exists p. \phi$, and for any formula $\psi$, if  $\phi \vdash \psi$ then $\exists p.\phi \vdash \psi$, i.e. $\exists p. \phi$ is the strongest $p$-free formula that is entailed by $\phi$.
+%\sam{TODO: rewrite as `a right uniform interpolant is a formula such that...' and same for left. Then say that Pitts' construction shows that these things exist.}
+\begin{definition}[Uniform interpolants]\label{dfn:prop-quantifiers}
+	Let $\phi$ be a formula and $p$ a propositional variable. A formula $\exists p. \phi$ is a \textbf{right-uniform interpolant} for $\phi$ over the variable $p$ if it is a $p$-free formula such that $\phi \vdash \exists p. \phi$, and for any formula $\psi$, if  $\phi \vdash \psi$ then $\exists p.\phi \vdash \psi$, i.e. $\exists p. \phi$ is the strongest $p$-free formula that is entailed by $\phi$.
 
-	Dually, $\forall p. \phi$ is defined up to equivalence as the $p$-free formula such that $\forall p. \phi \vdash \phi$, and for any formula $\theta$, if $\theta \vdash \phi$ then $\theta \vdash \forall p.\phi$, i.e. $\forall p. \phi$ is the weakest $p$-free formula that entails $\phi$.
+	Dually, $\forall p. \phi$ is its \textbf{left-uniform interpolant} if it is a $p$-free formula such that $\forall p. \phi \vdash \phi$, and for any formula $\theta$, if $\theta \vdash \phi$ then $\theta \vdash \forall p.\phi$, i.e. $\forall p. \phi$ is the weakest $p$-free formula that entails $\phi$.
+	
+	Such formulas are unique up to equivalence.
 \end{definition}
 
 \section{Decision procedure}\label{sec:decision}
 Given a list of formulas $\Gamma$ and a formula $\phi$, we give a procedure that
 decides if there exists a proof of $\Gamma \Rightarrow \phi$ (\coqdoc{ISL.DecisionProcedure.html\#Provable_dec}).
-To explain the intuition for this decision procedure, one may start from the idea of a naive proof search, which would explore all possible proof trees: Given an input sequent, for each applicable instance of a rule, one would recursively search for a proof for each of its premises.
+Indeed, the inductive definition given by Figure~\ref{fig:iseq-pc} does not guarantee decidability by construction.
+To explain the intuition for this decision procedure, one may start from the idea of a naive proof search, which would explore all possible proof trees : Given an input sequent, for each applicable instance of a rule, one would recursively search for a proof for each of its premises.
 However, such a naive proof search is very inefficient.
 
-\sam{Comment Reviewer 1: We need to clarify that we previously defined the inductive predicate, the newly implemented result here is that this predicate is decidable, and moreover the procedure for deciding it is relatively efficient.}
+%\sam{Comment Reviewer 1: We need to clarify that we previously defined the inductive predicate, the newly implemented result here is that this predicate is decidable, and moreover the procedure for deciding it is relatively efficient.}
 
 Our implementation, for which we give the pseudocode in \cref{fig:decision}, improves on this by applying the rules in a specific order, so as to avoid unnecessary branching as much as possible: (1) we first try to apply axioms to end the proof search; (2) if this is not possible, then we try to apply linear invertible rules, so as to obtain a single equivalent subsequent, and iterate; (3) if none of these apply, then we try to apply a duplicating invertible proof, leading to two successive proof searches; (4) finally, if no other rule is applicable, try each possible instance of a non-invertible rule and continue the search, in a depth-first-search manner. This leads to the following function, expressed in pseudocode as a pattern match in \cref{fig:decision}. For the reader's convenience, we annotate each case with the name of the corresponding $\Gfourip$-rule. When defining this function in {\Coq}, one needs to simultaneously prove termination, which we obtain from the fact that applying $\Gfourip$-rules upwards decreases the weight of a sequent. 
 \begin{figure}[htp]
@@ -308,7 +311,7 @@ $(\delta_1 \rightarrow \delta_3) \cons (\delta_2 \rightarrow \delta_3) \cons \De
 \end{figure}
 
 
-We found that the performance of the function in~\cref{fig:decision} is good enough to allow for repeated calls inside the normalization procedure that we describe below, without significant slow-down. On the other hand, it is likely that the above function does not have optimal theoretical complexity; more involved algorithms decide the same problem in $O(n \log n)$-space~\cite{Hud1993}. However, formally verifying that such an optimized algorithm is correct would be a more difficult task, while this remains straight-forward for our implementation given above.
+We found that the performance of the function in~\cref{fig:decision} is good enough to allow for repeated calls inside the normalization procedure that we describe below, without significant slow-down. On the other hand, it is likely that the above function does not have optimal theoretical complexity; more involved algorithms decide the same problem in $O(n \log n)$-space~\cite{Hud1993}. However, formally verifying that such an optimized algorithm is correct would be a more difficult task, while this remains straightforward for our implementation given above.
 
 \section{Simplification procedure}\label{sec:simplification}
 In this section, we will explain how we use the above decision procedure to simplify formulas and contexts, first in general, and then specifically for the computation of Pitts' propositional quantifiers.
@@ -478,8 +481,10 @@ The example formulas used for our benchmark were of two kinds: First, we have tw
 \cref{tab:quant-improvements} contains the results of running our program on these inputs. In the optimized version (commit \href{\BaseUrlCode/tree/\CommitOpt}{\texttt{\CommitOptShort}}), all computations completed in under 1 second, except for the last one, which timed out.
 This marks a significant improvement over the original execution times 
 (commit \href{\BaseUrlCode/tree/\CommitOrig}{\texttt{\CommitOrigShort}}). 
-The improvement in weight is also encouraging, being able to simplify the weight by various order of magnitude in some cases. This is thanks to the double nature of the simplifications: improving the order in which the rules are applied in Pitts' construction (similar to the decision procedure of \cref{sec:decision}) and simplifying the output during the construction itself, as described in the previous section.
+The improvement in weight is also encouraging, being able to simplify the weight by several orders of magnitude in some cases. This is thanks to the double nature of the simplifications: improving the order in which the rules are applied in Pitts' construction (similar to the decision procedure of \cref{sec:decision}) and simplifying the output during the construction itself, as described in the previous section.
 
+As the example $\exists p, \phi_{\text{imp}} (9)$ shows, there is still room for improvement. This example with high degree of implication nesting makes for 
+a large uniform interpolant (due to rule~$\rightarrow\rightarrow L$) for which the simplification procedure does not run in reasonable time.
 
  
 \bibliographystyle{alpha}
