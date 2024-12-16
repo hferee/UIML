@@ -1,15 +1,15 @@
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{jflart}[2023/10/10 JFLA LaTeX class]
+\ProvidesClass{jflart}[2023/12/06 JFLA LaTeX class]
 
 \LoadClass[10pt,a4paper]{scrartcl}
 
 \RequirePackage[margin=1.4in]{geometry}
 
-\RequirePackage[draft=false]{scrlayer-scrpage}
+\RequirePackage{scrlayer-scrpage}
 
 \RequirePackage{authblk} %% Manage authors list and affiliations
 
-\RequirePackage{ifdraft} %% Draft and finals mode for submissions
+\RequirePackage{ifdraft} %% Final mode for submissions
 
 % Mise en forme des légendes de figures
 \RequirePackage[labelfont=bf, labelsep=period]{caption}
@@ -26,12 +26,15 @@
 % smart references -- must be loaded AFTER
 % hyperref, currently unusable in conjunction with babel-french https://tex.stackexchange.com/a/83818
 
-\RequirePackage[draft=false]{microtype} % pour positionner l'option draft à faux
+\RequirePackage{microtype}
 
-\RequirePackage{color,graphicx}
+\RequirePackage{color}
+\RequirePackage{graphicx} % afficher les images dans la version soumise
 
 \newif\ifjflart@english
 \DeclareOption{english}{\jflart@englishtrue}
+\newif\ifjflart@review
+\DeclareOption{review}{\jflart@reviewtrue}
 
 \ProcessOptions\relax
 
@@ -39,7 +42,8 @@
   \RequirePackage[english]{babel}
 \else
   \RequirePackage[french]{babel}
-  % Overload author separator for authblk, avoiding the dreaded Oxford comma
+  \frenchbsetup{SmallCapsFigTabCaptions=false}
+ % Overload author separator for authblk, avoiding the dreaded Oxford comma
   \renewcommand\Authand{ et }
   \renewcommand\Authands{ et }
 \fi
@@ -64,7 +68,12 @@
 % Mode soumission : numéros de ligne
 \setlength\linenumbersep{30pt}
 \renewcommand\linenumberfont{\normalfont\footnotesize\color{red}}
-\ifdraft{\linenumbers}{\nolinenumbers}
+
+\ifjflart@review
+  \linenumbers
+\else
+  \nolinenumbers
+\fi
 
 % Affiliations
 \renewcommand{\Affilfont}{\small}
@@ -115,8 +124,8 @@
 \newif\ifjflaundefined
 \jflaundefinedtrue
 
-\gdef\jflaEds{34}
-\gdef\jflaYear{2023}
+\gdef\jflaEds{35}
+\gdef\jflaYear{2024}
 
 \def\jfla#1#2{%
   \ifjflaundefined
