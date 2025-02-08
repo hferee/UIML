@@ -10,27 +10,27 @@ let rec int_of_nat = function
 let string_of_formula ?(classical = false) =
   let rec string_of_formula =
   function
-| Var v -> camlstring_of_coqstring v
-| Bot -> "⊥"
-| Implies(Bot, Bot) -> "⊤"
+| Var (_, v) -> camlstring_of_coqstring v
+| Bot _ -> "⊥"
+| Implies(_, Bot _, Bot _) -> "⊤"
 (* diamond *)
-| Implies(Box(Implies(f, Bot)),Bot) when classical -> "⋄ " ^ bracket f
+| Implies(_, Box(Implies(_, f, Bot _)),Bot _) when classical -> "⋄ " ^ bracket f
 (* double negation *)
-| Implies(Implies(f, Bot), Bot) when classical -> string_of_formula f
+| Implies(_, Implies(_, f, Bot _), Bot _) when classical -> string_of_formula f
 | Box f -> "□ " ^ bracket f
-| And (f, g) -> and_bracket f ^ " ∧ " ^ and_bracket g
-| Or (f, g) -> or_bracket f ^ " ∨ " ^ or_bracket g
-| Implies (f, Bot) -> "¬ " ^ bracket f (* pretty print ¬ *)
-| Implies (f, g) -> bracket f ^ " → " ^ bracket g
+| And (_, f, g) -> and_bracket f ^ " ∧ " ^ and_bracket g
+| Or (_, f, g) -> or_bracket f ^ " ∨ " ^ or_bracket g
+| Implies (_, f, Bot _) -> "¬ " ^ bracket f (* pretty print ¬ *)
+| Implies (_, f, g) -> bracket f ^ " → " ^ bracket g
 and bracket e = match e with
-| Implies(Implies(f, Bot), Bot) when classical -> bracket f
-| Implies(Box(Implies(f, Bot)),Bot) when classical -> "⋄ " ^ bracket f
-| Var _ | Bot | Implies(_, Bot) | Box _ -> string_of_formula e
+| Implies(_, Implies(_, f, Bot _), Bot _) when classical -> bracket f
+| Implies(_, Box(Implies(_, f, Bot _)),Bot _) when classical -> "⋄ " ^ bracket f
+| Var _ | Bot _| Implies(_, _, Bot _) | Box _ -> string_of_formula e
 | e -> "(" ^ string_of_formula e ^ ")"
 and or_bracket e = match e with
-| Or (f, g) -> or_bracket f ^ " ∨ " ^ or_bracket g
+| Or (_, f, g) -> or_bracket f ^ " ∨ " ^ or_bracket g
 | _ -> bracket e
 and and_bracket e = match e with
-| And (f, g) -> and_bracket f ^ " ∧ " ^ and_bracket g
+| And (_, f, g) -> and_bracket f ^ " ∧ " ^ and_bracket g
 | _ -> bracket e
   in string_of_formula

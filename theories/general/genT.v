@@ -13,7 +13,7 @@ Require Import gen.
 Polymorphic Definition rlsT W := list W -> W -> Type.
 
 (* how to express the empty set *)
-Inductive emptyT {X : Type} : X -> Type := .
+Inductive emptyT {X : Type} : X -> Prop := .
 
 Lemma emptyT_any': forall (sty : Type) Q (prem : sty), emptyT prem -> Q prem.
 Proof. intros. induction H. Qed.
@@ -24,7 +24,7 @@ Proof. intros. induction H. Qed.
 (* compare 
   https://coq.inria.fr/stdlib/Coq.Relations.Relation_Definitions.html *)
 Polymorphic Definition relationT (A : Type) := A -> A -> Type.
-Inductive empty_relT {A B : Type} : A -> B -> Type := .
+Inductive empty_relT {A B : Type} : A -> B -> Prop := .
 
 Lemma rsub_emptyT {A B} r : @rsub A B empty_relT r.
 Proof. intros u v e. destruct e. Qed.
@@ -477,7 +477,7 @@ Lemma prod_nat_split : forall (P : (nat * nat) -> Type),
 Proof. firstorder. Qed.
 
 
-Inductive empty : Type := .
+Inductive empty : Prop := .
 
 Lemma empty_explosion : forall (A : Type), empty -> A.
 Proof. intros A H. inversion H. Qed.

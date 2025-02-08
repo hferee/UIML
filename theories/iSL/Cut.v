@@ -1,12 +1,13 @@
 (** * Cut Admissibility *)
 Require Import ISL.Formulas ISL.Sequents ISL.Order.
 Require Import ISL.SequentProps .
+Require Import Coq.Program.Equality.
 
-Local Hint Rewrite elements_env_add : order.
+Local Hint Rewrite @elements_env_add : order.
 
 
 (* From "A New Calculus for Intuitionistic Strong Löb Logic" *)
-Theorem additive_cut Γ φ ψ :
+Theorem additive_cut {K : Kind} Γ φ ψ :
   Γ ⊢ φ  -> Γ • φ ⊢ ψ ->
   Γ ⊢ ψ.
 Proof.
@@ -25,7 +26,7 @@ destruct HPφ; simpl in Hw.
 - now apply contraction.
 - apply ExFalso.
 - apply AndL_rev in HPψ. do 2 apply IHw in HPψ; trivial; try lia; apply weakening; assumption.
-- apply AndL. apply IHW; auto with proof. order_tac. 
+- apply AndL. apply IHW; auto with proof. order_tac.
 - apply OrL_rev in HPψ; apply (IHw φ); [lia| |]; tauto.
 - apply OrL_rev in HPψ; apply (IHw ψ0); [lia| |]; tauto.
 - apply OrL; apply IHW; auto with proof.
@@ -82,7 +83,7 @@ destruct HPφ; simpl in Hw.
       -- apply weakening, ImpR,  HPφ.
       -- exch 0.  rewrite <- HH. exact HPψ.
   + case (decide ((Var p → φ0) = (φ → ψ0))).
-      * intro Heq'; inversion Heq'; subst. clear Heq'.
+      * intro Heq'; dependent destruction Heq'.
          replace ((Γ0 • Var p • (p → ψ0)) ∖ {[p → ψ0]}) with (Γ0 • Var p) by ms.
          apply (IHw ψ0).
         -- lia.
@@ -94,7 +95,7 @@ destruct HPφ; simpl in Hw.
             rw (symmetry Heq) 0. apply ImpR, HPφ.
         -- exch 0; exch 1. rw (symmetry (difference_singleton _ _ Hin1)) 2. exact HPψ.
   + case (decide (((φ1 ∧ φ2) → φ3)= (φ → ψ0))).
-      * intro Heq'; inversion Heq'; subst. clear Heq'. rw (symmetry Heq) 0.
+      * intro Heq'; dependent destruction Heq'. rw (symmetry Heq) 0.
          apply (IHw (φ1 → φ2 → ψ0)).
         -- simpl in *. lia.
         -- apply ImpR, ImpR, AndL_rev, HPφ.
@@ -104,7 +105,7 @@ destruct HPφ; simpl in Hw.
         -- apply ImpLAnd_rev. backward. rw (symmetry Heq) 0. apply ImpR, HPφ.
         -- exch 0. rw (symmetry (difference_singleton _ _ Hin0)) 1. exact HPψ.
   + case (decide (((φ1 ∨ φ2) → φ3)= (φ → ψ0))).
-      * intro Heq'; inversion Heq'; subst. clear Heq'. rw (symmetry Heq) 0. apply OrL_rev in HPφ.
+      * intro Heq'; dependent destruction Heq'. rw (symmetry Heq) 0. apply OrL_rev in HPφ.
          apply (IHw (φ1 → ψ0)).
         -- simpl in *. lia.
         -- apply (IHw (φ2 → ψ0)).
@@ -120,7 +121,7 @@ destruct HPφ; simpl in Hw.
         -- apply ImpLOr_rev. backward. rw (symmetry Heq) 0. apply ImpR, HPφ.
         -- exch 0. exch 1. rw (symmetry (difference_singleton _ _ Hin0)) 2. exact HPψ.
   + case (decide (((φ1 → φ2) → φ3) = (φ → ψ0))).
-     * intro Heq'. inversion Heq'; subst. clear Heq'. rw (symmetry Heq) 0. apply (IHw ψ0).
+     * intro Heq'. dependent destruction Heq'. rw (symmetry Heq) 0. apply (IHw ψ0).
       -- lia.
       -- apply (IHw(φ1 → φ2)).
         ++ lia.
@@ -144,7 +145,7 @@ destruct HPφ; simpl in Hw.
                 apply ImpR, HPφ.
         ++ exch 0. rw (symmetry (difference_singleton _ _ Hin0)) 1. exact HPψ2.
   + case (decide ((□ φ1 → φ2) = (φ → ψ0))).
-     * intro Heq'. inversion Heq'; subst. clear Heq'. rw (symmetry Heq) 0.
+     * intro Heq'. dependent destruction Heq'. rw (symmetry Heq) 0.
         assert(Γ = Γ0) by ms. subst Γ0. clear Hin.
         apply (IHw (□ φ1)).
       -- lia.
@@ -198,18 +199,17 @@ destruct HPφ; simpl in Hw.
 - remember (Γ • □ φ) as Γ' eqn:HH.
   assert (Heq: Γ ≡ Γ' ∖ {[ □ φ ]}) by ms.
   assert(Hin : (□ φ) ∈ Γ')by ms.
-  rw Heq 0. destruct HPψ.
+  rw Heq 0. dependent destruction HPψ.
   + forward. auto with proof.
   + forward. auto with proof.
   + apply AndR.
      * apply IHW.
-     -- subst. rewrite env_add_remove. otac H.
+     -- rewrite env_add_remove. otac H.
      -- rw (symmetry Heq) 0. now apply BoxR.
      -- peapply HPψ1.
-     * apply IHW.
+     * peapply (IHW Γ).
        -- otac Heq.
-       -- apply BoxR. box_tac. peapply HPφ. rewrite Heq.
-           rewrite open_boxes_remove; trivial.
+       -- apply BoxR. box_tac. peapply HPφ.
        -- peapply HPψ2.
   + forward. apply AndL. apply IHW.
      * otac Heq.
@@ -224,11 +224,13 @@ destruct HPφ; simpl in Hw.
     * rw (symmetry Heq) 0. apply BoxR, HPφ.
     * peapply HPψ.
   + forward. apply BoxR in HPφ.
-       assert(Hin' : (φ0 ∨ ψ) ∈ ((Γ0 • φ0 ∨ ψ) ∖ {[□ φ]}))
+       assert(Hin' : (φ0 ∨ ψ0) ∈ ((Γ0 • φ0 ∨ ψ0) ∖ {[□ φ]}))
             by (apply in_difference; [discriminate|ms]).
-       assert(HPφ' : (((Γ0 • φ0 ∨ ψ) ∖ {[□ φ]}) ∖ {[φ0 ∨ ψ]} • φ0 ∨ ψ) ⊢ □ φ)
-            by (rw (symmetry (difference_singleton _ (φ0 ∨ψ) Hin')) 0; peapply HPφ).
-       assert (HP := (OrL_rev  _ φ0 ψ (□φ) HPφ')).
+       assert(HPφ' : (((Γ0 • φ0 ∨ ψ0) ∖ {[□ φ]}) ∖ {[φ0 ∨ ψ0]} • φ0 ∨ ψ0) ⊢ □ φ).
+       { rw (symmetry (difference_singleton _ (φ0 ∨ ψ0) Hin')) 0.
+         rw (symmetry Heq) 0.
+         exact HPφ. }
+       assert (HP := (OrL_rev  _ φ0 ψ0 (□φ) HPφ')).
        apply OrL.
       * apply IHW.
         -- otac Heq.
@@ -241,7 +243,7 @@ destruct HPφ; simpl in Hw.
   + rw (symmetry Heq) 0. apply ImpR, IHW.
       -- otac Heq.
       -- apply weakening, BoxR,  HPφ.
-      -- exch 0.  rewrite <- HH. exact HPψ.
+      -- exch 0. exact HPψ.
   + do 2 forward. exch 0. apply ImpLVar, IHW.
       * otac Heq.
       * apply imp_cut with (φ := Var p). exch 0. do 2 backward.
@@ -267,7 +269,7 @@ destruct HPφ; simpl in Hw.
         ++ apply imp_cut with (φ1 → φ2). backward. rw (symmetry Heq) 0.
                 apply BoxR, HPφ.
         ++ exch 0. rw (symmetry (difference_singleton _ _ Hin0)) 1. exact HPψ2.
-  + (* (VIII-b) *) 
+  + (* (VIII-b) *)
       forward. apply ImpBox.
      * (* π0 *)
         apply IHW.
@@ -305,7 +307,7 @@ destruct HPφ; simpl in Hw.
 Qed.
 
 (* Multiplicative cut rule *)
-Theorem cut Γ Γ' φ ψ :
+Theorem cut {K : Kind} Γ Γ' φ ψ :
   Γ ⊢ φ  -> Γ' • φ ⊢ ψ ->
   Γ ⊎ Γ' ⊢ ψ.
 Proof.

@@ -12,6 +12,6 @@ let print_decision = function Coq_inl _ -> "Provable" | _ -> "Not provable"
 
 let () =
   if nb_args = 2 then
-    form |> eval |> coq_Provable_dec [] |> print_decision |> print_string
+    form |> eval |> coq_Provable_dec Modal [] |> print_decision |> print_string
     |> print_newline
   else print_string usage_string
