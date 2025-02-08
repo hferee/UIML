@@ -103,13 +103,13 @@ Ltac exhibit Hin n := match n with
 | 3 => rewrite (proper_Provable _ _ (equiv_disj_union_compat_r(equiv_disj_union_compat_r (equiv_disj_union_compat_r (difference_singleton _ _ Hin)))) _ _ eq_refl)
 end.
 
-(** The tactic "forward" tries to change a goal of the form : 
+(** The tactic "forward" tries to change a goal of the form :
 
-((Γ•φ ∖ {[ψ]}•…) ⊢ … 
+((Γ•φ ∖ {[ψ]}•…) ⊢ …
 
-into 
+into
 
-((Γ ∖ {[ψ]}•…•φ) ⊢ … , 
+((Γ ∖ {[ψ]}•…•φ) ⊢ … ,
 
 by first proving that ψ ∈ Γ. *)
 
@@ -140,11 +140,11 @@ Ltac forward := match goal with
   exch 3; exch 2; exch 1; exch 0
 end.
 
-(** The tactic "backward" changes a goal of the form : 
+(** The tactic "backward" changes a goal of the form :
 
-((Γ ∖ {[ψ]}•…•φ) ⊢ …  
+((Γ ∖ {[ψ]}•…•φ) ⊢ …
 
-into 
+into
 
 ((Γ•φ ∖ {[ψ]}•…) ⊢ …,
 

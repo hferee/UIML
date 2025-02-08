@@ -269,7 +269,7 @@ destruct HPφ; simpl in Hw.
         ++ apply imp_cut with (φ1 → φ2). backward. rw (symmetry Heq) 0.
                 apply BoxR, HPφ.
         ++ exch 0. rw (symmetry (difference_singleton _ _ Hin0)) 1. exact HPψ2.
-  + (* (VIII-b) *) 
+  + (* (VIII-b) *)
       forward. apply ImpBox.
      * (* π0 *)
         apply IHW.

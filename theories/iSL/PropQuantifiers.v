@@ -5,9 +5,9 @@ The main theorem proved in this file was first proved as Theorem 1 in:
 (Pitts 1992). A. M. Pitts. On an interpretation of second order quantification in first order intuitionistic propositional logic. J. Symb. Log., 57(1):33–52.
 It has been further extended to handle iSL
 
-It consists of two parts: 
+It consists of two parts:
 
-1) the inductive construction of the propositional quantifiers; 
+1) the inductive construction of the propositional quantifiers;
 
 2) a proof of its correctness. *)
 
@@ -236,7 +236,7 @@ Proof.
 Qed.
 
 Lemma EA_cong {K : Kind} p Δ ϕ: EA p true (Δ, ϕ) = EA p true (Δ, ⊥).
-Proof. simp EA; simpl. f_equal. apply in_map_ext, e_rule_cong. Qed. 
+Proof. simp EA; simpl. f_equal. apply in_map_ext, e_rule_cong. Qed.
 
 End PropQuant.
 
@@ -291,11 +291,11 @@ Lemma e_rule_vars {K : Kind} Δ (θ : form) (Hin : θ ∈ Δ) (ϕ : form)
   (E0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form)
   (A0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form)
    x
-  (HE0 : ∀ pe Hpe, 
+  (HE0 : ∀ pe Hpe,
       (occurs_in x (E0 pe Hpe) -> x ≠ p ∧ ∃ θ, θ ∈ pe.1 /\ occurs_in x θ) /\
       (occurs_in x (A0 pe Hpe) -> x ≠ p ∧ (occurs_in x pe.2 \/ ∃ θ, θ ∈ pe.1 /\ occurs_in x θ))) :
 occurs_in x (@e_rule p K _ _ E0 A0 θ Hin) -> x ≠ p ∧ ∃ θ, θ ∈ Δ /\ occurs_in x θ.
-Proof. 
+Proof.
 destruct θ; simp e_rule; simpl; try tauto; try solve [repeat case decide; repeat vars_tac].
 destruct θ1; simp e_rule; repeat case decide; repeat vars_tac.
 Qed.
@@ -307,7 +307,7 @@ Lemma a_rule_env_vars {K : Kind} Δ θ Hin ϕ
   (E0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form)
   (A0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form)
    x
-  (HEA0 : ∀ pe Hpe, 
+  (HEA0 : ∀ pe Hpe,
       (occurs_in x (E0 pe Hpe) -> x ≠ p ∧ ∃ θ, θ ∈ pe.1 /\ occurs_in x θ) /\
       (occurs_in x (A0 pe Hpe) -> x ≠ p ∧ (occurs_in x pe.2 \/ ∃ θ, θ ∈ pe.1 /\ occurs_in x θ))):
 occurs_in x (@a_rule_env p K _ _ E0 A0 θ Hin) -> x ≠ p ∧ (occurs_in x ϕ \/ ∃ θ, θ ∈ Δ /\ occurs_in x θ).
@@ -321,11 +321,11 @@ Lemma a_rule_form_vars {K : Kind} Δ ϕ
   (E0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form)
   (A0 : ∀ pe (Hpe : pe ≺· (Δ, ϕ)), form)
    x
-  (HEA0 : ∀ pe Hpe, 
+  (HEA0 : ∀ pe Hpe,
       (occurs_in x (E0 pe Hpe) -> x ≠ p ∧ ∃ θ, θ ∈ pe.1 /\ occurs_in x θ) /\
       (occurs_in x (A0 pe Hpe) -> x ≠ p ∧ (occurs_in x pe.2 \/ ∃ θ, θ ∈ pe.1 /\ occurs_in x θ))):
   occurs_in x (@a_rule_form p K _ _ E0 A0) -> x ≠ p ∧ (occurs_in x ϕ \/ ∃ θ, θ ∈ Δ /\ occurs_in x θ).
-Proof. 
+Proof.
 destruct ϕ; simp a_rule_form; simpl; try tauto; try solve [repeat case decide; repeat vars_tac].
 Qed.
 
@@ -540,14 +540,14 @@ Lemma E_simp_env {K : Kind} Δ : E p (simp_env Δ) = E p Δ.
 (* unfold E, A. simp EA; simpl. *)
 Proof. unfold E; simp EA. simpl. now rewrite simp_env_idempotent. Qed.
 
-Lemma E_left {K : Kind} {Γ θ} {Δ' Δ : list form} {φ : form}: (Δ' = simp_env Δ) -> ∀ (Hin : φ ∈ Δ'), 
+Lemma E_left {K : Kind} {Γ θ} {Δ' Δ : list form} {φ : form}: (Δ' = simp_env Δ) -> ∀ (Hin : φ ∈ Δ'),
 (Γ • @e_rule p _ _ _ (λ pe (_ : pe ≺· (Δ', ⊥)),  E p pe.1) (λ pe (_ : pe ≺· (Δ', ⊥)),  A p pe)  φ Hin) ⊢ θ ->
 Γ • E p Δ' ⊢ θ.
 Proof.
 intros Heq Hin Hp.
 unfold E. erewrite <- EA_cong . simp EA. simpl. subst Δ'.
 rewrite simp_env_idempotent.
-match goal with |- context C [in_map ?Γ ?f] => 
+match goal with |- context C [in_map ?Γ ?f] =>
   edestruct (@in_map_in _ _ form_eq_dec _ f _ Hin) as [Hin' Hrule]
 end.
 eapply conjunction_L.
@@ -558,7 +558,7 @@ eapply conjunction_L.
   + trivial.
 Qed.
 
-Local Lemma A_right {K : Kind} {Γ Δ Δ' φ φ'} : (Δ' = simp_env Δ) -> ∀ (Hin : φ ∈ Δ'), 
+Local Lemma A_right {K : Kind} {Γ Δ Δ' φ φ'} : (Δ' = simp_env Δ) -> ∀ (Hin : φ ∈ Δ'),
 Γ ⊢ @a_rule_env p _ _ _ (λ pe (_ : pe ≺· (Δ', φ')), E p pe.1) (λ pe (_ : pe ≺· (Δ', φ')), A p pe) φ Hin ->
 Γ ⊢ A p (Δ', φ').
 Proof.  intros Heq Hin Hp. subst Δ'. rewrite A_simp_env. unfold A; simp EA; simpl.
@@ -588,7 +588,7 @@ Local Ltac Etac := foldEA; intros; match goal with
 
 (* we want to use an A rule defined in a_rule_env *)
 Local Ltac Atac := match goal with
-| HeqΔ': ?Δ' = simp_env ?Δ, Hin : ?a ∈ list_to_set_disj ?Δ'  |- _  ⊢ A _ (?Δ', _) => 
+| HeqΔ': ?Δ' = simp_env ?Δ, Hin : ?a ∈ list_to_set_disj ?Δ'  |- _  ⊢ A _ (?Δ', _) =>
   apply (A_right HeqΔ' (proj1 (elem_of_list_to_set_disj _ _) Hin)); simp a_rule_env end.
 
 (* we want to use an A rule defined in a_rule_form *)
@@ -717,7 +717,7 @@ end; simpl.
     case (decide (Var p0 ∈ Γ)); intro Hin1.
     * (* subcase 1: p0, (p0 → φ) ∈ Γ *)
       assert (Hin2 : Var p0 ∈ Γ ∖ {[Var p0 → φ]}) by (apply in_difference; trivial; discriminate).
-      clear Hin1. 
+      clear Hin1.
       split; [intro Hocc|]; exhibit Hin0 1; exhibit Hin2 2; exch 0; exch 1; apply ImpLVar; exch 1; exch 0;
       (apply Hind; auto with proof; [occ | peapply' Hp]).
     * assert(Hin0' : Var p0 ∈ (Γ0•Var p0•(p0 → φ))) by ms. rewrite Heq in Hin0'.
@@ -768,7 +768,7 @@ end; simpl.
                  assert((p0 → φ) ∈ list_to_set_disj Δ') by ms. Etac.
                  rewrite decide_True by now apply elem_of_list_to_set_disj.
                  exch 0. apply weakening. apply Hind; auto with proof. simpl. peapply' Hp.
-         ++ apply contraction. Etac. exch 0. assert((p0 → φ) ∈ list_to_set_disj Δ') by ms. 
+         ++ apply contraction. Etac. exch 0. assert((p0 → φ) ∈ list_to_set_disj Δ') by ms.
                  Etac; Atac. rewrite decide_False by trivial.
                  do 2 rewrite decide_True by now apply elem_of_list_to_set_disj.
                  exch 0. apply weakening.
@@ -890,7 +890,7 @@ end; simpl.
               rewrite open_boxes_add. simpl. ms.
          -- intro HF. apply (Hnin _ Hin0). simpl. tauto.
         * exch 0. apply weakening. exch 0. apply Hind ; [order_tac|occ|peapply' Hp2].
-  + exch 0. apply ImpBox. 
+  + exch 0. apply ImpBox.
       * box_tac. exch 1; exch 0. apply open_box_L. apply Hind.
          --  order_tac. rewrite  elements_open_boxes.  order_tac.
          -- occ. intro HF. destruct (occurs_in_open_boxes _ _ _ HF Hin1) as (θ0 & Hθ0 & Hinθ).
@@ -905,7 +905,7 @@ end; simpl.
 - split; Etac.
   + foldEA. apply make_impl_sound_L, ImpBox.
         -- do 2 apply weakening. apply make_impl_sound_R, ImpR, Hind.
-             ++ order_tac. rewrite elements_open_boxes. 
+             ++ order_tac. rewrite elements_open_boxes.
                      do 2 apply env_order_cancel_right.
                      repeat rewrite Permutation_middle.
                      apply env_order_disj_union_compat_strong_left; order_tac.
@@ -937,9 +937,9 @@ end; simpl.
             ++ intros φ0 Hin1 HF. destruct (occurs_in_open_boxes _ _ _ HF Hin1) as (θ0 & Hθ0 & Hinθ).
                     apply (Hnin θ0); ms.
             ++ peapply Hp1.
-       -- apply BoxR. box_tac. do 2 apply weakening. apply make_impl_sound_R, ImpR. foldEA. 
+       -- apply BoxR. box_tac. do 2 apply weakening. apply make_impl_sound_R, ImpR. foldEA.
            apply Hind.
-             ++ order_tac. rewrite elements_open_boxes. 
+             ++ order_tac. rewrite elements_open_boxes.
                      do 2 apply env_order_cancel_right.
                      repeat rewrite Permutation_middle.
                      apply env_order_disj_union_compat_strong_left; order_tac.
@@ -948,7 +948,7 @@ end; simpl.
             ++ peapply Hp1.
      * foldEA. apply make_impl_sound_L, ImpBox.
         -- do 2 apply weakening. apply make_impl_sound_R, ImpR, Hind.
-             ++ order_tac. rewrite elements_open_boxes. 
+             ++ order_tac. rewrite elements_open_boxes.
                      do 2 apply env_order_cancel_right.
                      repeat rewrite Permutation_middle.
                      apply env_order_disj_union_compat_strong_left; order_tac.

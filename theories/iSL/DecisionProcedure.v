@@ -13,7 +13,7 @@ Proof.
 intros x y Heq. subst y.
 induction 1; simpl; trivial.
 - case form_eq_dec; auto with *.
-- case form_eq_dec; auto with * ; 
+- case form_eq_dec; auto with * ;
    case form_eq_dec; auto with *. intros. apply Permutation_swap.
 - now rewrite IHPermutation1.
 Qed.
@@ -35,7 +35,7 @@ Defined.
 Local Definition M_inj {K : Kind} (Heq : K = Modal) (Γ : list form) :=
   eq_rect K (fun K => list form) Γ Modal Heq.
 
-Local Program Definition HBoxR_tree_spec {K : Kind} (φ: form) (Γ : list form) := 
+Local Program Definition HBoxR_tree_spec {K : Kind} (φ: form) (Γ : list form) :=
   {Heq : K = Modal &
    {φ' &
    {Hp : (⊗ (list_to_set_disj (M_inj Heq Γ)) • □ φ' ⊢ φ') & φ = (□ φ')}}}
@@ -47,7 +47,7 @@ Next Obligation. intros K φ Γ Heq _ _. exact (symmetry Heq). Defined.
 
 Local Program Definition HImpLBox_tree_spec {K : Kind} (φ: form) (Γ : list form) :=
   ∀Γ2 Γ1, Γ1 ++ Γ2 = Γ ->
-    {Heq : K = Modal & {φ1 & {φ2 
+    {Heq : K = Modal & {φ1 & {φ2
       & {H2312 : ((⊗(list_to_set_disj ((rm (Implies (□ φ1) φ2) (M_inj Heq Γ)))) • □ φ1 • φ2) ⊢φ1)
         & {H3: ((list_to_set_disj (rm (Implies (□ φ1) φ2) (M_inj Heq Γ)) : @env Modal) • φ2 ⊢ φ)
         & (Implies (□ φ1) φ2) ∈ M_inj Heq Γ2}}}}}
@@ -110,7 +110,7 @@ assert(HAndL : {ψ1 & {ψ2 & (And ψ1 ψ2) ∈ Γ}} + {∀ ψ1 ψ2, (And ψ1 ψ2
 }
 destruct HAndL as [(ψ1 & ψ2 & Hin)|HAndL].
 { destruct (Hind (ψ1 :: ψ2 :: rm (And ψ1 ψ2) Γ) φ) as [[Hp' _] | Hf]. order_tac.
-  - left. eexists; trivial. apply elem_of_list_to_set_disj in Hin.  
+  - left. eexists; trivial. apply elem_of_list_to_set_disj in Hin.
     exhibit Hin 0.
     rewrite (proper_Provable _ _ (equiv_disj_union_compat_r (list_to_set_disj_rm Γ _)) _ _ eq_refl).
     apply AndL. exch 0. peapply Hp'.
@@ -172,13 +172,13 @@ destruct HAndR as [(φ1 & φ2 & Heq) | HAndR].
 }
 
 (* ImpLVar *)
-assert(HImpLVar : {p & {ψ & Var p ∈ Γ /\ (Implies (Var p) ψ) ∈ Γ}} + 
+assert(HImpLVar : {p & {ψ & Var p ∈ Γ /\ (Implies (Var p) ψ) ∈ Γ}} +
                                  {∀ p ψ, Var p ∈ Γ -> (Implies (Var p) ψ) ∈ Γ -> False}). {
   pose (fIp :=λ p θ, match θ with | Implies (Var q) _ => if decide (p = q) then true else false | _ => false end).
   pose (fp:= (fun θ => match θ with |Var p => if (exists_dec (fIp p) Γ) then true else false | _ => false end)).
   destruct (exists_dec fp Γ) as [(θ & Hin & Hθ) | Hf].
   - left. subst fp. destruct θ. 2-6: auto with *.
-    case exists_dec as [(ψ &Hinψ & Hψ)|] in Hθ; [|auto with *]. 
+    case exists_dec as [(ψ &Hinψ & Hψ)|] in Hθ; [|auto with *].
     unfold fIp in Hψ. destruct ψ.  1-4, 6: auto with *.
     destruct ψ1. 2-6: auto with *. case decide in Hψ; [|auto with *].
     subst. apply elem_of_list_In in Hinψ, Hin.
@@ -407,7 +407,7 @@ intro Hp. dependent destruction Hp; subst; try eqt; eauto 2.
 Defined.
 
 
-Local Program Definition HBoxR_spec {K : Kind} (φ: form) (Γ : list form) := 
+Local Program Definition HBoxR_spec {K : Kind} (φ: form) (Γ : list form) :=
   {Heq : K = Modal &
    {φ' &
    exists (Hp : ⊗ (list_to_set_disj (M_inj Heq Γ)) • □ φ' ⊢ φ'), φ = (□ φ')}}
@@ -419,7 +419,7 @@ Next Obligation. intros K φ Γ Heq _ _. exact (symmetry Heq). Defined.
 
 Local Program Definition HImpLBox_spec {K : Kind} (φ: form) (Γ : list form) :=
   ∀Γ2 Γ1, Γ1 ++ Γ2 = Γ ->
-    {Heq : K = Modal & {φ1 & {φ2 
+    {Heq : K = Modal & {φ1 & {φ2
       & exists _ : (⊗(list_to_set_disj ((rm (Implies (□ φ1) φ2) (M_inj Heq Γ)))) • □ φ1 • φ2) ⊢φ1,
         exists _ : (list_to_set_disj (rm (Implies (□ φ1) φ2) (M_inj Heq Γ)) : @env Modal) • φ2 ⊢ φ,
         Implies (□ φ1) φ2 ∈ M_inj Heq Γ2}}}
@@ -467,7 +467,7 @@ assert(HAndL : {ψ1 & {ψ2 & (And ψ1 ψ2) ∈ Γ}} + {∀ ψ1 ψ2, (And ψ1 ψ2
 }
 destruct HAndL as [(ψ1 & ψ2 & Hin)|HAndL].
 { destruct (Hind (ψ1 :: ψ2 :: rm (And ψ1 ψ2) Γ) φ) as [Hp' | Hf]. order_tac.
-  - left. destruct Hp' as [Hp' _]. eexists; trivial. apply elem_of_list_to_set_disj in Hin.  
+  - left. destruct Hp' as [Hp' _]. eexists; trivial. apply elem_of_list_to_set_disj in Hin.
     exhibit Hin 0.
     rewrite (proper_Provable _ _ (equiv_disj_union_compat_r (list_to_set_disj_rm Γ _)) _ _ eq_refl).
     apply AndL. peapply Hp'.
@@ -487,13 +487,13 @@ destruct HImpR as [(φ1 & φ2 & Heq) | HImpR].
   - left. destruct Hp1 as [Hp1 _]. eexists; trivial. apply ImpR. peapply Hp1.
   - right. intro Hf. apply H1. apply ImpR_rev in Hf. peapply Hf.
 }
-assert(HImpLVar : {p & {ψ & Var p ∈ Γ /\ (Implies (Var p) ψ) ∈ Γ}} + 
+assert(HImpLVar : {p & {ψ & Var p ∈ Γ /\ (Implies (Var p) ψ) ∈ Γ}} +
                                  {∀ p ψ, Var p ∈ Γ -> (Implies (Var p) ψ) ∈ Γ -> False}). {
   pose (fIp :=λ p θ, match θ with | Implies (Var q) _ => if decide (p = q) then true else false | _ => false end).
   pose (fp:= (fun θ => match θ with |Var p => if (exists_dec (fIp p) Γ) then true else false | _ => false end)).
   destruct (exists_dec fp Γ) as [(θ & Hin & Hθ) | Hf].
   - left. subst fp. destruct θ. 2-6: auto with *.
-    case exists_dec as [(ψ &Hinψ & Hψ)|] in Hθ; [|auto with *]. 
+    case exists_dec as [(ψ &Hinψ & Hψ)|] in Hθ; [|auto with *].
     unfold fIp in Hψ. destruct ψ.  1-4, 6: auto with *.
     destruct ψ1. 2-6: auto with *. case decide in Hψ; [|auto with *].
     subst. apply elem_of_list_In in Hinψ, Hin.
@@ -673,7 +673,7 @@ destruct (HImpLImp Γ [] (app_nil_l _)) as [(φ1 & φ2 & φ3 & Hp1)|HfImpl].
   apply elem_of_list_to_set_disj in Hin. exhibit Hin 0.
   rw (list_to_set_disj_rm Γ(Implies (Implies φ1 φ2) φ3)) 1.
   apply ImpLImp; assumption.
-} 
+}
 (* ImpBox *)
 assert(HImpLBox : HImpLBox_spec φ Γ).
 {

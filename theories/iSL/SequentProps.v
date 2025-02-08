@@ -1,7 +1,7 @@
 Require Import ISL.Sequents.
 
 (* Required for dependent induction. *)
-Require Import Coq.Program.Equality. 
+Require Import Coq.Program.Equality.
 
 (** * Admissible rules in G4ip sequent calculus
 
@@ -147,7 +147,7 @@ dependent induction Hp generalizing Γ' Hp; intros φ0 Hin.
       * intro. do 2 forward. exch 0. apply ImpLVar. exch 0. do 2 backward.
          apply IHHp; trivial. ms.
 - case (decide (φ0 =  (φ1 ∧ φ2 → φ3))).
-  + intro; subst; simpl. apply ImpLAnd. peapply Hp. 
+  + intro; subst; simpl. apply ImpLAnd. peapply Hp.
   + intro. forward. apply ImpLAnd. backward. apply IHHp; trivial. ms.
 - case (decide (φ0 =  (φ1 ∨ φ2 → φ3))).
   + intro; subst; simpl. apply ImpLOr. peapply Hp.
@@ -235,7 +235,7 @@ induction Hp; intros φ0 ψ0 Hin.
   + apply IHHp2. ms.
 - forward. constructor 13; repeat box_tac.
   + exch 0. box_tac.
-      apply In_open_boxes in Hin0. backward. backward. apply open_box_L. exch 0. apply open_box_L. exch 0. 
+      apply In_open_boxes in Hin0. backward. backward. apply open_box_L. exch 0. apply open_box_L. exch 0.
       apply IHHp1. ms.
   + backward. apply IHHp2. ms.
 - constructor 14. repeat box_tac.
@@ -390,7 +390,7 @@ dependent induction Hp.
   apply IHHp; trivial. ms.
 - forward; apply ImpLAnd. backward. apply IHHp; trivial. ms.
 - forward; apply ImpLOr. exch 0. do 2 backward. apply IHHp; trivial. ms.
-- forward; apply ImpLImp; backward. 
+- forward; apply ImpLImp; backward.
   + apply IHHp1; trivial. ms.
   + apply IHHp2; trivial. ms.
 - case (decide((□φ0 → φ3) = (□φ1 → φ2))).
@@ -479,7 +479,7 @@ Proof.
   try specialize (IHHp _ _ eq_refl);
   try specialize (IHHp1 _ _ eq_refl);
   try specialize (IHHp2 _ _ eq_refl);
-  intuition; 
+  intuition;
   auto with proof.
 Qed.
 
@@ -489,7 +489,7 @@ Qed.
 Lemma OrR1Bot_rev {K : Kind} Γ φ :  Γ ⊢ φ ∨ ⊥ -> Γ ⊢ φ.
 Proof. intro Hd.
  dependent induction Hd generalizing φ; auto using exfalso with proof. Qed.
- 
+
 Lemma OrR2Bot_rev {K : Kind} Γ φ :  Γ ⊢ ⊥ ∨ φ -> Γ ⊢ φ.
 Proof. intro Hd. dependent induction Hd; auto using exfalso with proof. Qed.
 
@@ -526,7 +526,7 @@ Qed.
 
 Global Hint Resolve weak_ImpL : proof.
 
-(** ** Contraction 
+(** ** Contraction
 
  The aim of this section is to prove that the contraction rule is admissible in
  G4ip. *)
@@ -663,10 +663,10 @@ Local Lemma p_contr {K : Kind} Γ φ θ:
 Proof. intros * Hd; peapply Hd. Qed.
 
 Lemma is_box_weight_open_box {K : Kind} φ : is_box φ = true -> weight (⊙ φ) = weight φ -1.
-Proof. dependent destruction φ; simpl; lia. Qed. 
+Proof. dependent destruction φ; simpl; lia. Qed.
 
 Lemma weight_open_box {K : Kind} φ : weight (⊙ φ) ≤ weight φ.
-Proof. dependent destruction φ; simpl; lia. Qed. 
+Proof. dependent destruction φ; simpl; lia. Qed.
 
 
 (** Admissibility of contraction in G4ip. *)
@@ -796,7 +796,7 @@ destruct Hp; simpl in Hleh, Hle.
       * backward. apply (IHh ψ Hle) with Hp2. lia. ms. ms.
 -  assert(Hinψ : ψ ∈ (Γ ∖ {[ψ]})) by ms. apply In_open_boxes in Hinψ.
    rewrite open_boxes_remove in Hinψ by trivial.
-  apply BoxR. box_tac. backward. apply IHh with Hp. 
+  apply BoxR. box_tac. backward. apply IHh with Hp.
     etransitivity. apply weight_open_box. trivial.
     lia.
     ms.
@@ -920,7 +920,7 @@ Lemma bot_not_tautology {K : Kind} : (∅ ⊢ ⊥) -> False.
 Proof.
 intro Hf. dependent destruction Hf; simpl in *;
 match goal with x : _ ⊎ {[+?φ+]} = _ |- _ =>
-exfalso; eapply (gmultiset_elem_of_empty φ); setoid_rewrite <- x; ms end. 
+exfalso; eapply (gmultiset_elem_of_empty φ); setoid_rewrite <- x; ms end.
 Qed.
 
 Lemma var_not_tautology {K : Kind} v: (∅ ⊢ Var v) -> False.

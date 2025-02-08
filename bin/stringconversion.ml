@@ -26,4 +26,3 @@ let coqstring_of_camlstring s =
   let rec cstring accu pos =
     if pos < 0 then accu else cstring (s.[pos] :: accu) (pos - 1)
   in cstring [] (String.length s - 1)
-  

@@ -1,4 +1,4 @@
-(** * Simplifications for formulas and contexts 
+(** * Simplifications for formulas and contexts
 
 This file defines the main simplifications for formulas and contexts,
 maintaining intuitionistic equivalence.
@@ -46,7 +46,7 @@ Proof.
     if (exists_dec (fIp p) Γ) then true else false | _ => false end)).
   destruct (exists_dec fp Γ) as [(θ & Hin & Hθ) | Hf].
   - left. subst fp. destruct θ. 2-6: auto with *.
-    case exists_dec as [(ψ &Hinψ & Hψ)|] in Hθ; [|auto with *]. 
+    case exists_dec as [(ψ &Hinψ & Hψ)|] in Hθ; [|auto with *].
     unfold fIp in Hψ. destruct ψ.  1-4, 6: auto with *.
     destruct ψ1. 2-6: auto with *. case decide in Hψ; [|auto with *].
     subst. apply elem_of_list_In in Hinψ, Hin.
@@ -101,7 +101,7 @@ Defined.
   This section defines a set of functions and notations for handling ternary
   conditional logic. The functions [sumor_bind0], [sumor_bind1], [sumor_bind2], and
   [sumor_bind3] provide a way to handle different levels of nested dependent sums and
-  propositions. Each function takes a sum type and applies a function to the left component 
+  propositions. Each function takes a sum type and applies a function to the left component
   if it exists, or returns a default value otherwise. The notations
   `cond '?' A '⋮₀' B`, `cond '?' A '⋮₁' B`, `cond '?' A '⋮₂' B`, and `cond '?' A '⋮₃' B`
   are provided to simplify the usage of these functions.
@@ -132,7 +132,7 @@ match qH with
 end.
 
 Definition sumor_bind3 {A A' A'' A'''} {B : Prop} {C}:
-  {q : A & {r : A' & { s : A'' | A''' q r s}}} + B -> 
+  {q : A & {r : A' & { s : A'' | A''' q r s}}} + B ->
   (forall x y z (_ : A''' x y z), C) -> C -> C :=
 λ qH f c,
 match qH with
@@ -166,15 +166,15 @@ Equations contextual_simp_form {K : Kind} : list form -> form -> form :=
 (** ** Weight lemmas
   This section contains several lemmas related to the properties of logical formulas
   and their weights in the context of the Lindenbaum-Tarski preorder. The lemmas
-  are used to reason about the relationship between the weights of formulas and 
+  are used to reason about the relationship between the weights of formulas and
   their simplified forms.
 *)
 
 Lemma contextual_simp_form_weight {K : Kind} Δ (φ : @form K):
   contextual_simp_form Δ φ = ⊤ /\
-       (φ = Bot 
+       (φ = Bot
     \/ (exists Heq : K = Modal, eq_rect K (fun K => @form K) φ Modal Heq = □ ⊥)
-    \/ exists (v : variable), 
+    \/ exists (v : variable),
         (φ = v \/
          exists Heq : K = Modal, eq_rect K (fun K => @form K) φ Modal Heq = □ v)
     ) \/
@@ -230,9 +230,9 @@ Qed.
 (** ** Simplifying environments
 
 This section contains the function [simp_env], which simplifies an environment (context) Δ.
-If none of the left rules are applicable anymore to Δ, then the function calls 
+If none of the left rules are applicable anymore to Δ, then the function calls
 [applicable_contextual_simp_form] to find a simplification for one of the formulas in Δ, given
-the fact that it appears in context Δ. 
+the fact that it appears in context Δ.
 We also define [simp_form], which tries to simplify a formula in the empty context.
 *)
 
@@ -250,7 +250,7 @@ case (decide (weight φ' < weight φ)).
 }
 destruct (exists_dec (λ φ, if Hs φ then true else false) Δ) as [[φ [Hin HH]]| Hf].
 - destruct (Hs φ) as [[φ' [Heq Hw]]| Hf].
-  + left. exists φ. exists φ'. repeat split; trivial. now apply elem_of_list_In. 
+  + left. exists φ. exists φ'. repeat split; trivial. now apply elem_of_list_In.
   + contradict HH.
 - right. intros φ Hin. apply elem_of_list_In in Hin. apply Hf in Hin.
   destruct (Hs φ) as [|Hf']. auto with *. apply Hf'.
@@ -519,7 +519,7 @@ case (Δ ⊢? ⊥).
 }
 intro Hbot.
 repeat simp_env_tac; (try (eapply equiv_env_trans; [apply Hind; intuition; order_tac|])).
-- apply elem_of_list_to_set_disj in Hc. 
+- apply elem_of_list_to_set_disj in Hc.
   split; intros φ Hp.
   + exhibit Hc 0. apply AndL. peapply' Hp.
   + do 2 l_tac'. apply AndL_rev. peapply' Hp.
@@ -530,11 +530,11 @@ repeat simp_env_tac; (try (eapply equiv_env_trans; [apply Hind; intuition; order
   + exhibit Hc2 0. exhibit Hc3 1. peapply ImpLVar. peapply' Hp.
   + l_tac'. peapply' (ImpLVar_rev (list_to_set_disj (rm φ1 (rm (φ1 → φ2) Δ))) φ1 φ2).
       peapply' Hp.
-- apply elem_of_list_to_set_disj in Hc0. 
+- apply elem_of_list_to_set_disj in Hc0.
   split; intros φ Hp.
   + exhibit Hc0 0. apply ImpLAnd. peapply' Hp.
   + l_tac'. apply ImpLAnd_rev. peapply' Hp.
--  apply elem_of_list_to_set_disj in Hc0. 
+-  apply elem_of_list_to_set_disj in Hc0.
   split; intros φ Hp.
   + exhibit Hc0 0. apply ImpLOr. peapply' Hp.
   + do 2 l_tac'. apply ImpLOr_rev. peapply' Hp.
@@ -545,11 +545,11 @@ repeat simp_env_tac; (try (eapply equiv_env_trans; [apply Hind; intuition; order
       apply additive_cut with φ0. trivial. peapply' Hp.
 - destruct Hc as [Hc [Heq Hw]]. apply elem_of_list_to_set_disj in Hc.
   subst. apply contextual_simp_form_spec. now apply elem_of_list_to_set_disj.
-- apply elem_of_list_to_set_disj in Hc. 
+- apply elem_of_list_to_set_disj in Hc.
   split; intros φ Hp.
   + exhibit Hc 0. apply ImpLAnd. peapply' Hp.
   + l_tac'. apply ImpLAnd_rev. peapply' Hp.
--  apply elem_of_list_to_set_disj in Hc. 
+-  apply elem_of_list_to_set_disj in Hc.
   split; intros φ Hp.
   + exhibit Hc 0. apply ImpLOr. peapply' Hp.
   + do 2 l_tac'. apply ImpLOr_rev. peapply' Hp.

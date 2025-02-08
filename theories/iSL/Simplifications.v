@@ -88,13 +88,13 @@ Module Type SimpT.
     (* Orders are preserved *)
   Parameter simp_env_order : forall {K : Kind}, forall Δ, env_order_refl (simp_env Δ) Δ.
   Parameter simp_form_weight: forall {K : Kind}, forall φ, weight(simp_form φ) <= weight φ.
-  Global Hint Resolve simp_env_order : order. 
+  Global Hint Resolve simp_env_order : order.
   Global Hint Resolve simp_env_order : order.
   Global Hint Resolve simp_form_weight : order.
 End SimpT.
 
 Module Type SimpProps (Import S : SimpT).
-  Parameter simp_env_pointed_env_order_L : forall {K : Kind}, 
+  Parameter simp_env_pointed_env_order_L : forall {K : Kind},
     forall pe Δ φ, (pe ≺· (simp_env Δ, φ)) -> pe ≺· (Δ, φ).
   Parameter simp_env_env_order_L: forall {K : Kind}, forall Δ Δ0, (Δ0 ≺ simp_env Δ) -> Δ0 ≺ Δ.
   Parameter simp_env_nil: forall {K : Kind}, simp_env [] = [].

@@ -8,7 +8,7 @@ Definition env_weight {K : Kind} Γ :=
 
 Lemma env_weight_disj_union {K : Kind} Γ Δ :
   env_weight (Γ ++ Δ) = env_weight Γ +  env_weight Δ.
-Proof. 
+Proof.
 unfold env_weight. now rewrite map_app, list_sum_app.
 Qed.
 
@@ -99,7 +99,7 @@ Lemma env_order_equiv_right_compat {K : Kind} {Δ Δ' Δ'' }:
   Δ' ≡ₚ Δ'' ->
   (Δ ≺ Δ'') ->
   Δ ≺ Δ'.
-Proof. 
+Proof.
 unfold equiv, env_order, ltof, env_weight. intro Heq. rewrite Heq. trivial.
 Qed.
 
@@ -239,7 +239,7 @@ pose (pow5_gt_0 (Init.Nat.pred (weight φ))).
 lia.
 Qed.
 
-Lemma env_order_3 {K : Kind} Δ Δ' φ1 φ2 φ3 φ: 
+Lemma env_order_3 {K : Kind} Δ Δ' φ1 φ2 φ3 φ:
   weight φ1 < weight φ -> weight φ2 < weight φ -> weight φ3 < weight φ -> (Δ' ≼ Δ) ->
   Δ' • φ1 • φ2  • φ3 ≺ Δ • φ.
 Proof.
@@ -256,7 +256,7 @@ pose (pow5_gt_0 (Init.Nat.pred (weight φ))).
 lia.
 Qed.
 
-Lemma env_order_4 {K : Kind} Δ Δ' φ1 φ2 φ3 φ4 φ: 
+Lemma env_order_4 {K : Kind} Δ Δ' φ1 φ2 φ3 φ4 φ:
   weight φ1 < weight φ -> weight φ2 < weight φ -> weight φ3 < weight φ -> weight φ4 < weight φ ->
    (Δ' ≼ Δ) -> Δ' • φ1 • φ2  • φ3 • φ4 ≺ Δ • φ.
 Proof.
@@ -311,7 +311,7 @@ end.
 Lemma remove_env_order {K : Kind} Δ φ:  rm φ Δ ≼ Δ.
 Proof.
 unfold env_order_refl.
-induction Δ as [|ψ Δ]. trivial. 
+induction Δ as [|ψ Δ]. trivial.
 simpl. destruct form_eq_dec; repeat rewrite env_weight_add; lia.
 Qed.
 
@@ -356,7 +356,7 @@ Proof.
   apply Proper_elements, difference_singleton, Hin.
 Qed.
 
-Ltac prepare_order := 
+Ltac prepare_order :=
 repeat (apply env_order_add_compat);
 unfold pointed_env_order; subst; simpl; repeat rewrite open_boxes_add; try match goal with
 | Δ := _ |- _ => subst Δ; try prepare_order
@@ -369,7 +369,7 @@ unfold pointed_env_order; subst; simpl; repeat rewrite open_boxes_add; try match
     apply (env_order_equiv_right_compat (equiv_disj_union_compat_r(difference_singleton Γ ψ' H)))
 | H : ?ψ ∈ ?Γ |- ?Γ' ≺ (_ :: _ :: ?Γ) => let ψ' := (get_diff_form Γ') in
 apply (env_order_equiv_right_compat (equiv_disj_union_compat_r(equiv_disj_union_compat_r(difference_singleton Γ ψ' H)))) ||
-(eapply env_order_le_lt_trans; [| apply env_order_add_compat; 
+(eapply env_order_le_lt_trans; [| apply env_order_add_compat;
 eapply env_order_lt_le_trans; [| (apply env_order_refl_add; apply (remove_In_env_order_refl _ ψ'); try apply elem_of_list_In; trivial) ] ] )
 |H : ?a = _ |- context[?a] => rewrite H; try prepare_order
 end.
@@ -405,7 +405,7 @@ Global Hint Resolve weight_Box_1 : order.
 
 Ltac order_tac :=
 try unfold pointed_env_ms_order; prepare_order;
-repeat rewrite elements_env_add; 
+repeat rewrite elements_env_add;
 simpl; auto 10 with order;
 try (apply env_order_disj_union_compat_right; order_tac).
 

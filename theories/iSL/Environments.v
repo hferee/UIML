@@ -383,7 +383,7 @@ Proof.
 unfold open_boxes.
 assert (HH := gmultiset_elements_singleton φ).
 unfold elements, base.singletonMS, singletonMS, base.singleton, Environments.singleton in *.
-rewrite HH. simpl. unfold base.singletonMS, disj_union, empty. 
+rewrite HH. simpl. unfold base.singletonMS, disj_union, empty.
 apply gmultiset_disj_union_right_id.
 Qed.
 
@@ -451,7 +451,7 @@ Lemma is_not_box_open_box φ : is_box φ = false -> (⊙φ) = φ.
 Proof. unfold is_box. dependent destruction φ; simpl; intuition. discriminate. Qed.
 
 Lemma open_boxes_spec' Γ φ :
-    {_ : φ ∈ Γ & is_box φ = false} 
+    {_ : φ ∈ Γ & is_box φ = false}
   + {HK : K = Modal & (□ f_inj HK φ) ∈ f_inj HK Γ} -> φ ∈ open_boxes Γ.
 Proof.
 intros [[Hin Heq] | [HK Hin]];

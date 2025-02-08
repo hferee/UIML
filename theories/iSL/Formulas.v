@@ -27,7 +27,7 @@ Inductive form : Kind -> Type :=
 Arguments form {_}.
 Arguments Var {_} _, _ _.
 
-Fixpoint occurs_in `{K : Kind} (x : variable) (φ : form) := 
+Fixpoint occurs_in `{K : Kind} (x : variable) (φ : form) :=
 match φ with
 | Var y => x = y
 | Bot => False
@@ -56,13 +56,13 @@ Global Instance form_top {K : Kind} : base.Top form := ⊤.
 Ltac solve_trivial_decision :=
   match goal with
   | |- Decision (?P) => apply _
-  | |- sumbool ?P (¬?P) => change (Decision P); apply _ 
+  | |- sumbool ?P (¬?P) => change (Decision P); apply _
   end.
 Ltac solve_decision :=
   unfold EqDecision; intros; first
     [ solve_trivial_decision
     | unfold Decision; decide equality; solve_trivial_decision ].
-    
+
 Global Instance variable_eq_dec : EqDecision variable.
 solve_decision. Defined.
 (** Formulas have decidable equality. *)
