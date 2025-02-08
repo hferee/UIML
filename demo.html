@@ -1,0 +1,156 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+  <link href="coqdocjs.css" rel="stylesheet" type="text/css" />
+  <link href="coqdoc.css" rel="stylesheet" type="text/css" />
+  <script type="text/javascript" src="config.js"></script>
+  <!-- <script type="text/javascript" src="coqdocjs.js"></script> -->
+  <title>Uniform interpolant calculator</title>
+  <script type="text/javascript">
+    function make_call(f, in_id, out_id) {
+      document.getElementById(out_id).textContent =
+        decodeURIComponent(escape(f(unescape(encodeURIComponent(document.getElementById(in_id).value)))))
+
+    }
+  </script>
+
+<script type="text/javascript">
+  document.addEventListener('DOMContentLoaded', function() {
+    var inputFormula = document.getElementById('input_formula');
+    var functionSelect = document.getElementById('function_select');
+    
+    functionSelect.addEventListener('change', function() {
+      if ((this.value === 'k' || this.value === 'gl') && inputFormula.value == 'r <-> ((p -> q) | ((p -> q) -> q))') {
+        inputFormula.value = '[]p';
+      }
+    });
+  });
+</script>
+</head>
+
+<body onload="document.getElementById('content').focus()">
+  <div id="header">
+    <span class="left">
+      <span class="modulename">
+        <script type="text/javascript"> document.write(document.title) </script>
+      </span>
+    </span>
+
+    <span class="button" id="toggle-proofs"></span>
+
+    <span class="right">
+      <a href="https://github.com/hferee/UIML">Project Page</a>
+      <a href="./indexpage.html"> Index </a>
+      <a href="./toc.html"> Table of Contents </a>
+      <a href="./demo.html"> Demo </a>
+    </span>
+  </div>
+  <div id="content">
+    <div id="main">
+      <script type="text/javascript" src="uiml_demo.bc.js"></script>
+      <p>Enter a formula below and choose a logic and interpolant to compute.</p>
+      <input style="font-size:1em; font-family:'Courier New', Courier, monospace; padding: .2em;" type="text" id="input_formula" size="40" value="r <-> ((p -> q) | ((p -> q) -> q))" />
+      <select style="font-size:1em;  padding: .2em;" id="function_select">
+        <option value="iE">IL: E(p)</option>
+        <option value="iA">IL: A(p)</option>
+        <option value="k">K: A(p)</option>
+        <option value="gl">GL: A(p)</option>
+        <option value="islE">iSL: E(p)</option>
+        <option value="islA">iSL: A(p)</option>
+        <option value="parse">Test parsing</option>
+      </select>
+      <button style="font-size:1em; padding: .2em;"
+        onclick="make_call(UIML[document.getElementById('function_select').value],'input_formula', 'output_result')">Execute</button>
+      <button style="font-size:1em; padding: .2em;" onclick="document.getElementById('output_result').textContent = ''; document.getElementById('input_formula').value = ''">Clear</button>
+      <br><br>
+      <div><b>Result:</b> <p id="output_result"> </p></div>
+      <br/>
+
+      <b>Usage instructions.</b>
+      We support four logics:
+      <ul>
+        <li>intuitionistic logic <b>(IL)</b>,</li>
+        <li>Gödel-Löb logic <b>(GL)</b>,</li>
+        <li>basic modal logic <b>(K)</b>, and
+        <li>intuitionistic Strong Löb logic <b>(iSL)</b>.</li>
+      </ul>
+      You may use the following symbols:
+      <table style="border-collapse: collapse; border: 0;
+    border-spacing: 10px 0;">
+        <tr>
+          <td>→</td>
+          <td class="ms">-></td>
+          <td>implication</td>
+        </tr>
+        <tr>
+          <td>↔</td>
+          <td class="ms"><-></td>
+          <td>equivalence</td>
+        </tr>       <tr>
+          <td>¬</td>
+          <td class="ms">~</td>
+          <td>negation</td>
+        </tr>
+        <tr>
+          <td>∧</td>
+          <td class="ms">&amp;</td>
+          <td>conjunction (and)</td>
+        </tr>
+        <tr>
+          <td>∨</td>
+          <td class="ms">|</td>
+          <td>disjunction (or)</td>
+        </tr>
+        <tr>
+          <td>□</td>
+          <td class="ms">[]</td>
+          <td>necessity (box)</td>
+        </tr>
+        <tr>
+          <td>⋄</td>
+          <td class="ms">&lt;&gt;</td>
+          <td>possibility (diamond)</td>
+        </tr>
+        <tr>
+          <td>⊤</td>
+          <td class="ms">T</td>
+          <td>verum</td>
+        </tr>
+        <tr>
+          <td>⊥</td>
+          <td class="ms">F, #</td>
+          <td>falsum</td>
+        </tr>
+
+        <tr>
+          <td></td>
+          <td class="ms">p</td>
+          <td>propositional variable to be quantified</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td class="ms">q, r, … </td>
+          <td>other propositional variables (in [a-z][a-z A-Z 0-9]*)</td>
+        </tr>
+      </table>
+      <p>The quantifiers are always with respect to the variable p.</p>
+      <p style="font-size: .6em;">
+        <b>Disclaimer:</b>
+        This page is only for the purpose of easy demonstration of the formally verified implementation in Coq (more information on this implementation can be found by clicking the links above). The
+        parsing library and the <a href="https://github.com/ocsigen/js_of_ocaml">OCaml to JS</a> compiler that were used
+        for building this page are not verified formally.
+        The functions have not yet been optimized; high run-time may occur even on small examples.
+      </p>
+
+
+    <div id="footer">
+      Generated by <a href="http://coq.inria.fr/">coqdoc</a> and improved with <a
+        href="https://github.com/tebbi/coqdocjs">CoqdocJS</a>
+    </div>
+  </div>
+  </div>
+</body>
+
+</html>
