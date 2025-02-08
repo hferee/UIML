@@ -16,54 +16,55 @@ Open Scope stdpp_scope.
  a contraction rule. The left implication rule is refined into four separate
  proof rules.  *)
 
-
-
 (** ** Definition of provability in G4iSL *)
 Reserved Notation "Γ ⊢ φ" (at level 90).
-Inductive Provable : env -> form -> Type :=
-| Atom :    ∀ Γ p, Γ • (Var p) ⊢ (Var p)
-| ExFalso : ∀ Γ φ, Γ • ⊥ ⊢ φ
-| AndR : ∀ Γ φ ψ,
+Inductive Provable : forall {K : Kind}, @env K -> @form K -> Type :=
+| Atom :    ∀ {K : Kind} Γ p, Γ • (Var p) ⊢ (Var p)
+| ExFalso : ∀ {K : Kind} Γ φ, Γ • ⊥ ⊢ φ
+| AndR : ∀ {K : Kind} Γ φ ψ,
     Γ ⊢ φ ->    Γ ⊢ ψ ->
       Γ ⊢ (φ ∧ ψ)
-| AndL :    ∀ Γ φ ψ θ,
+| AndL :    ∀ {K : Kind} Γ φ ψ θ,
     Γ • φ • ψ ⊢ θ ->
       Γ • (φ ∧ ψ) ⊢ θ
-| OrR1 :    ∀ Γ φ ψ,
+| OrR1 :    ∀ {K : Kind} Γ φ ψ,
     Γ ⊢ φ ->
       Γ ⊢ (φ ∨ ψ)
-| OrR2 :    ∀ Γ φ ψ,
+| OrR2 :    ∀ {K : Kind} Γ φ ψ,
     Γ ⊢ ψ ->
       Γ ⊢ (φ ∨ ψ)
-| OrL :     ∀ Γ φ ψ θ,
+| OrL :     ∀ {K : Kind} Γ φ ψ θ,
     Γ • φ  ⊢ θ -> Γ • ψ ⊢ θ ->
       Γ • (φ ∨ ψ) ⊢ θ
-| ImpR :    ∀ Γ φ ψ,
+| ImpR :    ∀ {K : Kind} Γ φ ψ,
     Γ • φ ⊢ ψ ->
       Γ ⊢ (φ → ψ)
-| ImpLVar : ∀ Γ p φ ψ,
+| ImpLVar : ∀ {K : Kind} Γ p φ ψ,
     Γ • Var p • φ ⊢ ψ ->
       Γ • Var p • (Var p → φ) ⊢ ψ
-| ImpLAnd : ∀ Γ φ1 φ2 φ3 ψ,
+| ImpLAnd : ∀ {K : Kind} Γ φ1 φ2 φ3 ψ,
     Γ • (φ1 → (φ2 → φ3)) ⊢ ψ ->
       Γ • ((φ1 ∧ φ2) → φ3) ⊢ ψ
-| ImpLOr :  ∀ Γ φ1 φ2 φ3 ψ,
+| ImpLOr :  ∀ {K : Kind} Γ φ1 φ2 φ3 ψ,
     Γ • (φ1 → φ3) • (φ2 → φ3) ⊢ ψ ->
       Γ • ((φ1 ∨ φ2) → φ3) ⊢ ψ
-| ImpLImp : ∀ Γ φ1 φ2 φ3 ψ,
+| ImpLImp : ∀ {K : Kind} Γ φ1 φ2 φ3 ψ,
     Γ • (φ2 → φ3) ⊢ (φ1 → φ2) ->Γ • φ3 ⊢ ψ ->
       Γ • ((φ1 → φ2) → φ3) ⊢ ψ
-| ImpBox : ∀ Γ φ1 φ2 ψ,
+| ImpBox : ∀ (Γ : @env Modal) (φ1 φ2 ψ : form),
     (⊗ Γ) • □ φ1 • φ2 ⊢ φ1 ->
     Γ • φ2 ⊢ ψ ->
       Γ • ((□ φ1) → φ2) ⊢ ψ
 | BoxR : ∀ Γ φ, open_boxes Γ • □ φ ⊢ φ -> Γ ⊢ □ φ
-where "Γ ⊢ φ" := (Provable Γ φ).
+where "Γ ⊢ φ" := (@Provable _ Γ φ).
+
+Notation "Γ ⊢iSL φ" := (@Provable Modal Γ φ) (at level 90).
+Notation "Γ ⊢IPC φ" := (@Provable Normal Γ φ) (at level 90).
 
 Global Hint Constructors Provable : proof.
 
 (** We show that equivalent multisets prove the same things. *)
-Global Instance proper_Provable : Proper ((≡@{env}) ==> (=) ==> (=)) Provable.
+Global Instance proper_Provable {K : Kind} : Proper ((≡@{env}) ==> (=) ==> (=)) Provable.
 Proof. intros Γ Γ' Heq φ φ' Heq'. ms. Qed.
 
 Global Ltac equiv_tac :=
@@ -88,12 +89,12 @@ Ltac peapply th :=
 (** The tactic "exch" swaps the nth pair of formulas of a sequent, counting from the right. *)
 
 Ltac exch n := match n with
-| O => rewrite (proper_Provable _ _ (env_add_comm _ _ _) _ _ eq_refl)
+| O => match goal with |- ?a • ?b • ?c ⊢ _ =>
+  rewrite (proper_Provable _ _ (env_add_comm a b c) _ _ eq_refl) end
 | S O => rewrite (proper_Provable _ _ (equiv_disj_union_compat_r (env_add_comm _ _ _)) _ _ eq_refl)
 | S (S O) => rewrite (proper_Provable _ _ (equiv_disj_union_compat_r(equiv_disj_union_compat_r (env_add_comm _ _ _))) _ _ eq_refl)
 | S (S (S O)) => rewrite (proper_Provable _ _ (equiv_disj_union_compat_r(equiv_disj_union_compat_r(equiv_disj_union_compat_r (env_add_comm _ _ _)))) _ _ eq_refl)
 end.
-
 (** The tactic "exhibit" exhibits an element that is in the environment. *)
 Ltac exhibit Hin n := match n with
 | 0 => rewrite (proper_Provable _ _ (difference_singleton _ _ Hin) _ _ eq_refl)
@@ -154,23 +155,23 @@ by first proving that ψ ∈ Γ.
 Ltac backward := match goal with
 | |- ?Γ ∖ {[?ψ]}•?φ ⊢ _ =>
   let Hin := fresh "Hin" in
-  assert(Hin : ψ ∈ Γ) by (ms || auto with proof);
+  assert(Hin : ψ ∈ Γ) by (ms || eauto with proof);
   rewrite (proper_Provable _ _ (symmetry(env_replace _ Hin)) _ _ eq_refl)
 | |- ?Γ ∖ {[?ψ]}•_•?φ ⊢ _ =>
   let Hin := fresh "Hin" in
-  assert(Hin : ψ ∈ Γ) by (ms || auto with proof); try exch 0;
+  assert(Hin : ψ ∈ Γ) by (ms || eauto with proof); try exch 0;
   rewrite (proper_Provable _ _ (symmetry(equiv_disj_union_compat_r (env_replace _ Hin))) _ _ eq_refl)
 | |- ?Γ ∖ {[?ψ]}•_•_•?φ ⊢ _ =>
   let Hin := fresh "Hin" in
-  assert(Hin : ψ ∈ Γ) by (ms || auto with proof); exch 0; exch 1;
+  assert(Hin : ψ ∈ Γ) by (ms || eauto with proof); exch 0; exch 1;
   rewrite (proper_Provable _ _ (symmetry(equiv_disj_union_compat_r(equiv_disj_union_compat_r (env_replace φ Hin)))) _ _ eq_refl)
 | |- ?Γ ∖ {[?ψ]}•_•_•_•?φ ⊢ _ =>
   let Hin := fresh "Hin" in
-  assert(Hin : ψ ∈ Γ) by (ms || auto with proof); exch 0; exch 1; exch 2;
+  assert(Hin : ψ ∈ Γ) by (ms || eauto with proof); exch 0; exch 1; exch 2;
   rewrite (proper_Provable _ _ (symmetry(equiv_disj_union_compat_r(equiv_disj_union_compat_r(equiv_disj_union_compat_r (env_replace φ Hin))))) _ _ eq_refl)
 | |- ?Γ ∖ {[?ψ]}•_•_•_•_•?φ ⊢ _ =>
   let Hin := fresh "Hin" in
-  assert(Hin : ψ ∈ Γ) by (ms || auto with proof); exch 0; exch 1; exch 2; exch 3;
+  assert(Hin : ψ ∈ Γ) by (ms || eauto with proof); exch 0; exch 1; exch 2; exch 3;
   rewrite (proper_Provable _ _ (symmetry(equiv_disj_union_compat_r(equiv_disj_union_compat_r(equiv_disj_union_compat_r(equiv_disj_union_compat_r (env_replace φ Hin)))))) _ _ eq_refl)
 end.
 

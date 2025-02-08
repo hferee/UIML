@@ -12,4 +12,4 @@ let nb_args = Array.length Sys.argv
 
 let form = if nb_args = 2 then (Sys.argv.(1)) else "T"
 
-let () = print_endline (string_of_int (int_of_nat (weight (eval form))))
+let () = print_endline (string_of_int (int_of_nat (weight Modal (eval form))))

@@ -3,6 +3,8 @@ Require Import ISL.Sequents ISL.SequentProps ISL.Order ISL.Optimizations ISL.Cut
 (* Definitions and properties about equivalent formulas and environments *)
 Section Equivalence.
 
+Context {K : Kind}.
+
 Definition equiv_form (φ ψ : form) : Type := (φ ≼ ψ) * (ψ ≼ φ).
 
 Lemma symmetric_equiv_form {φ ψ} : equiv_form φ ψ -> equiv_form ψ φ.
@@ -81,35 +83,36 @@ Global Infix "≡e" := equiv_env (at level 120).
 
 Module Type SimpT.
   (* The simplification functions *)
-  Parameter simp_env : list form -> list form.
-  Parameter simp_form : form -> form.
+  Parameter simp_env : forall {K : Kind}, list (@form K) -> list (@form K).
+  Parameter simp_form : forall {K : Kind}, (@form K) -> (@form K).
     (* Orders are preserved *)
-  Parameter simp_env_order: forall Δ, env_order_refl (simp_env Δ) Δ.
-  Parameter simp_form_weight: forall φ, weight(simp_form φ) <= weight φ.
+  Parameter simp_env_order : forall {K : Kind}, forall Δ, env_order_refl (simp_env Δ) Δ.
+  Parameter simp_form_weight: forall {K : Kind}, forall φ, weight(simp_form φ) <= weight φ.
   Global Hint Resolve simp_env_order : order. 
   Global Hint Resolve simp_env_order : order.
   Global Hint Resolve simp_form_weight : order.
 End SimpT.
 
 Module Type SimpProps (Import S : SimpT).
-  Parameter simp_env_pointed_env_order_L:
+  Parameter simp_env_pointed_env_order_L : forall {K : Kind}, 
     forall pe Δ φ, (pe ≺· (simp_env Δ, φ)) -> pe ≺· (Δ, φ).
-  Parameter simp_env_env_order_L: forall Δ Δ0, (Δ0 ≺ simp_env Δ) -> Δ0 ≺ Δ.
-  Parameter simp_env_nil: simp_env [] = [].
+  Parameter simp_env_env_order_L: forall {K : Kind}, forall Δ Δ0, (Δ0 ≺ simp_env Δ) -> Δ0 ≺ Δ.
+  Parameter simp_env_nil: forall {K : Kind}, simp_env [] = [].
   Global Hint Resolve simp_env_pointed_env_order_L : order.
   Global Hint Resolve simp_env_env_order_L : order.
 End SimpProps.
 
 Module MakeSimpProps (Import S : SimpT) : SimpProps S.
-  Definition simp_env_pointed_env_order_L pe Δ φ: (pe ≺· (simp_env Δ, φ)) -> pe ≺· (Δ, φ).
+  Definition simp_env_pointed_env_order_L {K : Kind} pe Δ φ:
+    (pe ≺· (simp_env Δ, φ)) -> pe ≺· (Δ, φ).
   Proof. intro Hl. eapply env_order_lt_le_trans; eauto. simpl. auto with order. Qed.
 
-  Definition simp_env_env_order_L Δ Δ0: (Δ0 ≺ simp_env Δ) -> Δ0 ≺ Δ.
+  Definition simp_env_env_order_L {K : Kind} Δ Δ0: (Δ0 ≺ simp_env Δ) -> Δ0 ≺ Δ.
   Proof.
   intro Hl. eapply env_order_lt_le_trans; eauto. auto with order.
   Qed.
 
-  Definition simp_env_nil: simp_env [] = [].
+  Definition simp_env_nil {K : Kind} : simp_env [] = [].
   Proof.
   assert (Ho := (simp_env_order [])). unfold env_order_refl in Ho.
   destruct (simp_env []) as [|a l]. trivial.
@@ -124,17 +127,17 @@ End MakeSimpProps.
 (* Soundness properties *)
 Module Type SoundSimpT (Export S : SimpT).
   (* Simplifications are sound *)
-  Parameter equiv_env_simp_env: forall Δ, equiv_env (simp_env Δ) Δ.
-  Parameter equiv_form_simp_form: forall φ, equiv_form (simp_form φ) φ.
+  Parameter equiv_env_simp_env: forall {K : Kind} Δ, equiv_env (simp_env Δ) Δ.
+  Parameter equiv_form_simp_form: forall {K : Kind} φ, equiv_form (simp_form φ) φ.
 
   (* The variable are preserved *)
-  Parameter equiv_env_vars: forall Δ x,
+  Parameter equiv_env_vars: forall {K : Kind} Δ x,
   (∃ θ : form, ((θ ∈ simp_env Δ) /\ occurs_in x θ)) ->
   ∃ θ : form, ((θ ∈ Δ) /\ occurs_in x θ).
 
   Parameter occurs_in_simp_form:
-    forall x φ, occurs_in x (simp_form φ) → occurs_in x φ.
+    forall {K : Kind} x φ, occurs_in x (simp_form φ) → occurs_in x φ.
 
   (* To be removed in the future *)
-  Parameter simp_env_idempotent: forall Δ, simp_env (simp_env Δ) = simp_env Δ.
+  Parameter simp_env_idempotent: forall {K : Kind} Δ, simp_env (simp_env Δ) = simp_env Δ.
 End SoundSimpT.

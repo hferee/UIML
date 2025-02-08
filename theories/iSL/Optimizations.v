@@ -12,7 +12,7 @@ Require Import Program Equality.
   new variables.
 *)
 
-Definition Lindenbaum_Tarski_preorder φ ψ :=
+Definition Lindenbaum_Tarski_preorder {K : Kind} φ ψ :=
   ∅ • φ ⊢ ψ.
 
 Declare Scope provability.
@@ -21,7 +21,7 @@ Open Scope provability.
 Notation "φ ≼ ψ" := (Lindenbaum_Tarski_preorder φ ψ) (at level 150) : provability.
 
 (* Particular case of `additive_cut` easier to use *)
-Corollary weak_cut φ ψ θ:
+Corollary weak_cut {K : Kind} φ ψ θ:
   (φ ≼ ψ) -> (ψ ≼ θ) ->
   φ ≼ θ.
 Proof.
@@ -32,23 +32,21 @@ eapply additive_cut.
 Qed.
 
 
-Lemma top_provable Γ :
- Γ ⊢ ⊤.
-Proof.
-  apply ImpR. apply ExFalso.
-Qed.
+Lemma top_provable {K : Kind} Γ : Γ ⊢ ⊤.
+Proof. apply ImpR. apply ExFalso. Qed.
 
-Global Hint Resolve top_provable : proof.
+(* TODO *)
+Hint Resolve top_provable : proof.
 
 (* Decides whether one formula entails the other or not ; in the latter case return Eq.
    It uses the decision procedure for iSL defined at `DecisionProcedure.v`
 *)
-Definition obviously_smaller (φ : form) (ψ : form) :=
+Definition obviously_smaller {K : Kind} φ ψ :=
   if [φ] ⊢? ψ then Lt
   else if [ψ] ⊢? φ then Gt
   else Eq.
 
-Definition choose_conj φ ψ :=
+Definition choose_conj {K : Kind} φ ψ :=
 match obviously_smaller φ ψ with
   | Lt => φ
   | Gt => ψ
@@ -56,77 +54,86 @@ match obviously_smaller φ ψ with
  end.
  
  
-Lemma occurs_in_choose_conj v φ ψ : occurs_in v (choose_conj φ ψ) -> occurs_in v φ \/ occurs_in v ψ.
+Lemma occurs_in_choose_conj {K : Kind} v φ ψ :
+  occurs_in v (choose_conj φ ψ) -> occurs_in v φ \/ occurs_in v ψ.
 Proof. unfold choose_conj; destruct obviously_smaller; simpl; intros; tauto. Qed.
 
 
-Definition make_conj φ ψ := 
-match ψ with
-  | ψ1 ∧ ψ2 =>
-      match obviously_smaller φ ψ1 with
-        | Lt => φ ∧ ψ2
-      | Gt => ψ1 ∧ ψ2
-      | Eq => φ ∧ (ψ1 ∧ ψ2)
+Local Definition f_inj {K K': Kind} (Heq : K = K') (φ : @form K) : @form K' :=
+  eq_rect K (fun K => form) φ K' Heq.
+
+
+Definition make_conj {K : Kind} (φ ψ : @form K) : @form K :=
+match ψ in @form K' return (K' = K -> @form K) with
+  | ψ1 ∧ ψ2 => fun HK =>
+      match obviously_smaller φ (f_inj HK ψ1) with
+        | Lt => φ ∧ f_inj HK ψ2
+      | Gt => ψ
+      | Eq => φ ∧ ψ
       end
-  | ψ1 → ψ2 => 
-      if decide (obviously_smaller φ ψ1 = Lt) then choose_conj φ ψ2
+  | ψ1 → ψ2 => fun HK =>
+      if decide (obviously_smaller φ (f_inj HK  ψ1) = Lt)
+      then choose_conj φ (f_inj HK ψ2)
       else choose_conj φ ψ
-  | ψ => match φ with 
-      | φ1 → φ2 =>
-          if decide (obviously_smaller ψ φ1 = Lt)
-          then choose_conj φ2 ψ
+  | _ => fun _ =>
+      match φ in @form K'' return (K'' = K -> @form K) with 
+      | φ1 → φ2 => fun HK' =>
+          if decide (obviously_smaller ψ (f_inj HK' φ1) = Lt)
+          then choose_conj (f_inj HK' φ2) ψ
           else choose_conj φ ψ
-      | _ => choose_conj φ ψ
-       end
-end.
+      | _ => fun HK' => choose_conj φ ψ
+       end eq_refl
+end eq_refl.
 
 Infix "⊼" := make_conj (at level 60).
 
-Lemma occurs_in_make_conj v φ ψ : occurs_in v (φ ⊼ ψ) -> occurs_in v φ \/ occurs_in v ψ.
+Lemma occurs_in_make_conj {K : Kind} v (φ ψ : form) :
+  occurs_in v (φ ⊼ ψ) -> occurs_in v φ \/ occurs_in v ψ.
 Proof.
 generalize ψ.
-induction φ; intro ψ0; destruct ψ0;
+induction φ; intro ψ0; dependent destruction ψ0;
 intro H; unfold make_conj in H; unfold choose_conj in H;
 repeat match goal with 
-    | H: occurs_in _ (choose_conj _ _) |- _ => apply occurs_in_choose_conj in H; destruct H as [H|H]; simpl in H; try tauto
-    | H: occurs_in _  (if ?cond then _ else _) |- _ => case decide in H; simpl in H; try tauto
-    | H: occurs_in _ (match ?x with _ => _ end) |- _ => destruct x; simpl in H; try tauto
+    | H: occurs_in _  (if ?cond then _ else _) |- _ => case decide in H
+    | H: occurs_in _ (match ?x with _ => _ end) |- _ => destruct x
     | |- _ => simpl; simpl in H; tauto
 end.
-Qed. (* TODO: long *)
+Qed.
 
 
-Definition choose_disj φ ψ :=
+Definition choose_disj {K : Kind} φ ψ :=
 match obviously_smaller φ ψ with
   | Lt => ψ
   | Gt => φ
   | Eq => φ ∨ ψ
  end.
 
-Definition make_disj  φ ψ := 
-match ψ with
-  | ψ1 ∨ ψ2 => 
-      match obviously_smaller φ ψ1 with
-      | Lt => ψ1 ∨ ψ2
-      | Gt => φ ∨ ψ2
-      | Eq => φ ∨ (ψ1 ∨ ψ2)
+Definition make_disj {K : Kind} φ ψ:=
+match ψ in @form K' return (K' = K -> @form K) with
+  | ψ1 ∨ ψ2 => fun HK =>
+      match obviously_smaller φ (f_inj HK ψ1) with
+      | Lt => ψ
+      | Gt => φ ∨ f_inj HK ψ2
+      | Eq => φ ∨ ψ
       end
-  | ψ1 ∧ ψ2 => 
-      if decide (obviously_smaller φ ψ1 = Gt ) then φ
-      else if decide (obviously_smaller φ ψ2 = Gt ) then φ
-      else choose_disj φ (ψ1 ∧ ψ2)
-  |_ => choose_disj φ ψ
-end.
+  | ψ1 ∧ ψ2 => fun HK =>
+      if decide (obviously_smaller φ (f_inj HK ψ1) = Gt ) then φ
+      else if decide (obviously_smaller φ (f_inj HK ψ2) = Gt) then φ
+      else choose_disj φ ψ
+  |_ => fun _ => choose_disj φ ψ
+end eq_refl.
 
 Infix "⊻" := make_disj (at level 65).
 
-Lemma occurs_in_choose_disj v φ ψ : occurs_in v (choose_disj φ ψ) -> occurs_in v φ \/ occurs_in v ψ.
+Lemma occurs_in_choose_disj {K : Kind} v φ ψ :
+  occurs_in v (choose_disj φ ψ) -> occurs_in v φ \/ occurs_in v ψ.
 Proof. unfold choose_disj; destruct obviously_smaller; simpl; intros; tauto. Qed.
 
-Lemma occurs_in_make_disj v φ ψ : occurs_in v (φ ⊻ ψ) -> occurs_in v φ ∨ occurs_in v ψ.
+Lemma occurs_in_make_disj {K : Kind} v φ ψ :
+  occurs_in v (φ ⊻ ψ) -> occurs_in v φ ∨ occurs_in v ψ.
 Proof.
 generalize ψ.
-induction φ; intro ψ0; destruct ψ0;
+induction φ; intro ψ0; dependent destruction ψ0;
 intro H; unfold make_disj in H; unfold choose_disj in H;
 repeat match goal with 
     | H: occurs_in _  (if ?cond then _ else _) |- _ => case decide in H
@@ -138,7 +145,7 @@ Qed.
 
 (* "lazy" implication, which produces a potentially simpler, equivalent formula *)
 
-Definition choose_impl φ ψ:=
+Definition choose_impl {K : Kind} φ ψ:=
      if decide (obviously_smaller φ ψ = Lt) then ⊤
      else if decide (obviously_smaller φ ⊥ = Lt) then ⊤
      else if decide (obviously_smaller ⊤ ψ = Lt) then ⊤
@@ -148,15 +155,15 @@ Definition choose_impl φ ψ:=
      else if decide (is_negation ψ φ) then ψ
     else φ → ψ.
 
-Fixpoint make_impl φ ψ :=
-match ψ with
-  |(ψ1 → ψ2) => make_impl (make_conj φ ψ1) ψ2
-  |_ => choose_impl φ ψ
-end.
+Fixpoint make_impl {K : Kind} φ ψ :=
+match ψ in @form K' return (K' = K -> @form K) with
+  |(ψ1 → ψ2) => fun HK => make_impl (make_conj φ (f_inj HK ψ1)) (f_inj HK ψ2)
+  |_ => fun _ => choose_impl φ ψ
+end eq_refl.
 
 Infix "⇢" := make_impl (at level 66).
 
-Lemma occurs_in_choose_impl v x y : occurs_in v (choose_impl x y) -> occurs_in v x ∨ occurs_in v y.
+Lemma occurs_in_choose_impl {K : Kind} v x y : occurs_in v (choose_impl x y) -> occurs_in v x ∨ occurs_in v y.
 Proof.
 intro H; unfold choose_impl in H; fold make_impl in H;
 repeat match goal with 
@@ -166,32 +173,35 @@ repeat match goal with
 end.
 Qed.
 
-Lemma occurs_in_make_impl v x y : occurs_in v (x ⇢ y) -> occurs_in v x ∨ occurs_in v y.
+Lemma occurs_in_make_impl {K : Kind}  v x y :
+  occurs_in v (x ⇢ y) -> occurs_in v x ∨ occurs_in v y.
 Proof.
-generalize x.
+revert x.
 induction y; intro ψ0;
 intro H; unfold make_impl in H; try apply occurs_in_choose_impl in H; try tauto.
-apply IHy2 in H. destruct H as [H|H]; [ apply occurs_in_make_conj in H|]; simpl; tauto.
+apply IHy2 in H.
+- destruct H as [H|H]; [ apply occurs_in_make_conj in H|]; simpl; tauto.
 Qed.
 
-Lemma occurs_in_make_impl2 v x y z: occurs_in v (x ⇢ (y ⇢ z)) -> occurs_in v x ∨ occurs_in v y ∨ occurs_in v z.
+Lemma occurs_in_make_impl2 {K : Kind}  v x y z:
+  occurs_in v (x ⇢ (y ⇢ z)) -> occurs_in v x ∨ occurs_in v y ∨ occurs_in v z.
 Proof.
 intro H. apply occurs_in_make_impl in H. destruct H as [H|H]; try tauto.
 apply occurs_in_make_impl in H. tauto.
 Qed.
 
 (** To be noted: we remove duplicates first *)
-Definition conjunction l := foldl make_conj (⊥→ ⊥) (nodup form_eq_dec l).
+Definition conjunction {K : Kind} l := foldl make_conj (⊥→ ⊥) (nodup form_eq_dec l).
 Notation "⋀" := conjunction.
 
-Definition disjunction l := foldl make_disj ⊥ (nodup form_eq_dec l).
+Definition disjunction {K : Kind}  l := foldl make_disj ⊥ (nodup form_eq_dec l).
 Notation "⋁" := disjunction.
 
-Lemma variables_conjunction x l : occurs_in x (⋀ l) -> exists φ, φ ∈ l /\ occurs_in x φ.
+Lemma variables_conjunction {K : Kind}  x l : occurs_in x (⋀ l) -> exists φ, φ ∈ l /\ occurs_in x φ.
 Proof.
 unfold conjunction.
 assert (Hcut : forall ψ, occurs_in x (foldl make_conj ψ (nodup form_eq_dec l))
-  -> occurs_in x ψ \/ (∃ φ : form, (φ ∈ l ∧ occurs_in x φ)%type)).
+  -> occurs_in x ψ \/ (∃ φ, (φ ∈ l ∧ occurs_in x φ)%type)).
 {
 induction l; simpl.
 - tauto.
@@ -206,11 +216,12 @@ induction l; simpl.
 intro Hocc. apply Hcut in Hocc. simpl in Hocc. tauto.
 Qed.
 
-Lemma variables_disjunction x l : occurs_in x (⋁ l) -> exists φ, φ ∈ l /\ occurs_in x φ.
+Lemma variables_disjunction {K : Kind}  x l :
+  occurs_in x (⋁ l) -> exists φ, φ ∈ l /\ occurs_in x φ.
 Proof.
 unfold disjunction.
 assert (Hcut : forall ψ, occurs_in x (foldl make_disj ψ (nodup form_eq_dec l))
-  -> occurs_in x ψ \/ (∃ φ : form, (φ ∈ l ∧ occurs_in x φ)%type)).
+  -> occurs_in x ψ \/ (∃ φ, (φ ∈ l ∧ occurs_in x φ)%type)).
 {
 induction l; simpl.
 - tauto.
@@ -235,24 +246,24 @@ Qed.
 
 (** Useful lemmas about `obviously_smaller` *)
 
-Lemma double_negation_obviously_smaller φ ψ:
+Lemma double_negation_obviously_smaller {K : Kind} φ ψ:
  is_double_negation φ ψ -> ψ ≼ φ.
 Proof.
 intro H; rewrite H. apply ImpR; auto with proof.
 Qed.
 
-Lemma is_implication_obviously_smaller φ ψ:
+Lemma is_implication_obviously_smaller {K : Kind} φ ψ:
  is_implication φ ψ -> ψ ≼ φ.
 Proof.
 unfold is_implication. intro H.
 destruct φ; try (contradict H; intros [θ Hθ]; discriminate).
 case (decide (φ2 = ψ)).
 - intro; subst. apply ImpR, weakening, generalised_axiom.
-- intro Hneq. contradict H; intros [θ Hθ]. inversion Hθ. tauto.
+- intro Hneq. contradict H; intros [θ Hθ]. dependent destruction Hθ. tauto.
 Qed.
 
 
-Lemma obviously_smaller_compatible_LT φ ψ :
+Lemma obviously_smaller_compatible_LT {K : Kind} φ ψ :
   (obviously_smaller φ ψ = Lt -> φ ≼ ψ) *
   ((φ ≼ ψ) -> obviously_smaller φ ψ = Lt ).
 Proof.
@@ -264,7 +275,7 @@ case ([φ] ⊢? ψ); intros Hp.
   + tauto.
 Qed.
 
-Lemma obviously_smaller_compatible_GT φ ψ :
+Lemma obviously_smaller_compatible_GT {K : Kind} φ ψ :
   (obviously_smaller φ ψ = Gt -> ψ ≼ φ) *
   (((φ ≼ ψ) -> False) -> (ψ ≼ φ) -> obviously_smaller φ ψ = Gt ).
 Proof.
@@ -279,7 +290,7 @@ Qed.
 
 (** Equivalence of the conjunction optimizations *)
 
-Lemma and_congruence φ ψ φ' ψ':
+Lemma and_congruence {K : Kind} φ ψ φ' ψ':
   (φ ≼ φ') -> (ψ ≼ ψ') -> (φ ∧ ψ) ≼ φ' ∧ ψ'.
 Proof.
 intros Hφ Hψ.
@@ -289,27 +300,27 @@ apply AndR.
 - exch 0. now apply weakening.
 Qed.
 
-Lemma choose_conj_topL φ : (choose_conj φ ⊤ = φ).
+Lemma choose_conj_topL {K : Kind} φ : (choose_conj φ ⊤ = φ).
 Proof.
 unfold choose_conj.
 rewrite (obviously_smaller_compatible_LT _ _).2. trivial.
 apply ImpR, ExFalso.
 Qed.
 
-Lemma choose_conj_sound_L Δ φ ψ:
+Lemma choose_conj_sound_L {K : Kind} Δ φ ψ:
   (Δ ⊢ φ) -> (Δ ⊢ ψ) -> Δ ⊢ choose_conj φ ψ.
 Proof.
 intros Hφ Hψ.
 unfold choose_conj. case obviously_smaller; auto with proof.
 Qed.
 
-Corollary choose_conj_equiv_L φ ψ φ' ψ':
+Corollary choose_conj_equiv_L {K : Kind} φ ψ φ' ψ':
   (φ ≼ φ') -> (ψ ≼ ψ') -> (φ ∧ ψ) ≼ choose_conj φ' ψ'.
 Proof.
 intros H1 H2. apply choose_conj_sound_L; apply AndL; auto with proof.
 Qed.
 
-Lemma choose_conj_equiv_R φ ψ φ' ψ':
+Lemma choose_conj_equiv_R {K : Kind} φ ψ φ' ψ':
   (φ' ≼ φ) -> (ψ' ≼ ψ) -> choose_conj φ' ψ' ≼  φ ∧ ψ.
 Proof.
 intros Hφ Hψ.
@@ -330,22 +341,24 @@ Qed.
 
 Hint Unfold Lindenbaum_Tarski_preorder : proof.
 
-Lemma make_conj_equiv_L φ ψ φ' ψ' : 
+Local Ltac inj_tac := unfold f_inj in *; rewrite <- eq_rect_eq in *.
+
+Lemma make_conj_equiv_L {K : Kind} φ ψ φ' ψ' : 
   (φ ≼ φ') -> (ψ ≼ ψ') -> (φ ∧ ψ) ≼ φ' ⊼ ψ'.
 Proof.
 intros Hφ Hψ.
 unfold make_conj.
-destruct ψ'; try (apply choose_conj_equiv_L; assumption).
+destruct ψ'; try (apply choose_conj_equiv_L; assumption); try inj_tac.
 - destruct φ'; try (apply choose_conj_equiv_L; assumption).
   case decide; intro; try (apply choose_conj_equiv_L; assumption).
-  apply obviously_smaller_compatible_LT in e.
+  apply obviously_smaller_compatible_LT in e. inj_tac.
   apply weak_cut with ((φ ∧ φ'1) ∧ ψ).
   + apply AndL; repeat apply AndR.  auto with proof.
       * exch 0. apply weakening;  apply weak_cut with v; assumption.
       * apply generalised_axiom.
   + apply choose_conj_equiv_L; auto with proof.
 - apply exfalso, AndL. exch 0. apply weakening, Hψ.
-- case_eq (obviously_smaller φ' ψ'1); intro Heq.
+- inj_tac. case_eq (obviously_smaller φ' ψ'1); intro Heq.
   + apply and_congruence; assumption.
   + apply and_congruence.
     * assumption.
@@ -368,7 +381,7 @@ destruct ψ'; try (apply choose_conj_equiv_L; assumption).
         -- apply weak_cut with φ'; auto with proof.
         -- apply ImpR. exch 0. apply ImpR_rev, AndL. exch 0. apply weakening, Hψ.
   + apply choose_conj_equiv_L; assumption.
-- destruct φ'; try (apply choose_conj_equiv_L; assumption).
+- dependent destruction φ'; try (apply choose_conj_equiv_L; assumption).
   case decide; intro; try (apply choose_conj_equiv_L; assumption).
   apply weak_cut with (ψ ∧ (φ ∧ φ'1)).
   + apply AndL, AndR. auto with proof. apply AndR. auto with proof.
@@ -379,12 +392,12 @@ destruct ψ'; try (apply choose_conj_equiv_L; assumption).
      * apply choose_conj_equiv_L; auto with proof.
 Qed.
 
-Lemma make_conj_equiv_R φ ψ φ' ψ' : 
+Lemma make_conj_equiv_R {K : Kind} φ ψ φ' ψ' : 
   (φ' ≼ φ) -> (ψ' ≼ ψ) -> φ' ⊼ ψ' ≼  φ ∧ ψ.
 Proof.
 intros Hφ Hψ.
 unfold make_conj.
-destruct  ψ'.
+destruct  ψ'; try inj_tac.
 - destruct φ'; try case decide; intros; apply choose_conj_equiv_R; try assumption.
   eapply imp_cut; eassumption.
 - destruct φ'; try case decide; intros; apply choose_conj_equiv_R; try assumption.
@@ -407,18 +420,18 @@ destruct  ψ'.
 - case decide; intro Heq.
   + apply choose_conj_equiv_R. assumption. eapply weak_cut; [|exact Hψ]. auto with proof.
   + apply choose_conj_equiv_R; assumption.
-- destruct φ'; try case decide; intros; apply choose_conj_equiv_R; try assumption.
+- dependent destruction φ'; try case decide; intros; apply choose_conj_equiv_R; try assumption.
   eapply imp_cut; eassumption.
 Qed.
 
-Lemma specialised_weakening Γ φ ψ : (φ ≼ ψ) ->  Γ•φ ⊢ ψ.
+Lemma specialised_weakening {K : Kind} Γ φ ψ : (φ ≼ ψ) ->  Γ•φ ⊢ ψ.
 Proof.
 intro H. 
 apply generalised_weakeningL.
 peapply H.
 Qed.
 
-Lemma make_conj_sound_L Γ φ ψ θ : Γ•φ ∧ψ ⊢ θ -> Γ• φ ⊼ ψ ⊢ θ.
+Lemma make_conj_sound_L {K : Kind} Γ φ ψ θ : Γ•φ ∧ψ ⊢ θ -> Γ• φ ⊼ ψ ⊢ θ.
 Proof.
 intro H.
 eapply additive_cut.
@@ -429,7 +442,7 @@ Qed.
 
 Global Hint Resolve make_conj_sound_L : proof.
 
-Lemma make_conj_complete_L Γ φ ψ θ : Γ• φ ⊼ ψ ⊢ θ -> Γ•φ ∧ψ ⊢ θ.
+Lemma make_conj_complete_L {K : Kind} Γ φ ψ θ : Γ• φ ⊼ ψ ⊢ θ -> Γ•φ ∧ψ ⊢ θ.
 Proof.
 intro H.
 eapply additive_cut.
@@ -438,7 +451,7 @@ eapply additive_cut.
 - exch 0. now apply weakening.
 Qed.
 
-Lemma make_conj_sound_R Γ φ ψ : Γ  ⊢ φ ∧ψ -> Γ ⊢ φ ⊼ ψ.
+Lemma make_conj_sound_R {K : Kind} Γ φ ψ : Γ  ⊢ φ ∧ψ -> Γ ⊢ φ ⊼ ψ.
 Proof.
 intro H.
 eapply additive_cut.
@@ -448,7 +461,7 @@ Qed.
 
 Global Hint Resolve make_conj_sound_R : proof.
 
-Lemma make_conj_complete_R Γ φ ψ : Γ  ⊢ φ ⊼ ψ -> Γ  ⊢ φ ∧ψ.
+Lemma make_conj_complete_R {K : Kind} Γ φ ψ : Γ  ⊢ φ ⊼ ψ -> Γ  ⊢ φ ∧ψ.
 Proof.
 intro H.
 eapply additive_cut.
@@ -459,7 +472,7 @@ Qed.
 
 (** Equivalence of the disjonction optimizations *)
 
-Lemma or_congruence φ ψ φ' ψ':
+Lemma or_congruence {K : Kind} φ ψ φ' ψ':
   (φ ≼ φ') -> (ψ ≼ ψ') -> (φ ∨ ψ) ≼ φ' ∨ ψ'.
 Proof.
 intros Hφ Hψ.
@@ -468,7 +481,7 @@ apply OrL.
 - now apply OrR2.
 Qed.
 
-Lemma choose_disj_sound_L1 Δ φ ψ:
+Lemma choose_disj_sound_L1 {K : Kind} Δ φ ψ:
   (Δ ⊢ φ) -> Δ ⊢ choose_disj φ ψ.
 Proof.
 intros Hφ.
@@ -477,7 +490,7 @@ intro Hs. apply obviously_smaller_compatible_LT in Hs.
 apply additive_cut with φ. trivial. now apply specialised_weakening.
 Qed.
 
-Lemma choose_disj_sound_L2 Δ φ ψ:
+Lemma choose_disj_sound_L2 {K : Kind} Δ φ ψ:
   (Δ ⊢ ψ) -> Δ ⊢ choose_disj φ ψ.
 Proof.
 intros Hφ.
@@ -486,7 +499,7 @@ intro Hs. apply obviously_smaller_compatible_GT in Hs.
 apply additive_cut with ψ. trivial. now apply specialised_weakening.
 Qed.
 
-Lemma choose_disj_equiv_L φ ψ φ' ψ':
+Lemma choose_disj_equiv_L {K : Kind} φ ψ φ' ψ':
   (φ ≼ φ') -> (ψ ≼ ψ') -> (φ ∨ ψ) ≼ choose_disj φ' ψ'.
 Proof.
 intros Hφ Hψ.
@@ -510,7 +523,7 @@ case_eq (obviously_smaller φ' ψ'); intro Heq.
     * apply generalised_axiom.
 Qed.
 
-Lemma choose_disj_equiv_R φ ψ φ' ψ' : 
+Lemma choose_disj_equiv_R {K : Kind} φ ψ φ' ψ' : 
   (φ' ≼ φ) -> (ψ' ≼ ψ) -> choose_disj φ' ψ' ≼  φ ∨ ψ.
 Proof.
 intros Hφ Hψ.
@@ -520,12 +533,12 @@ case_eq (obviously_smaller φ' ψ'); intro Heq;
 auto with proof.
 Qed.
 
-Lemma make_disj_equiv_L φ ψ φ' ψ' : 
+Lemma make_disj_equiv_L {K : Kind} φ ψ φ' ψ' : 
   (φ ≼ φ') -> (ψ ≼ ψ') -> (φ ∨ ψ) ≼ φ' ⊻ ψ'.
 Proof.
 intros Hφ Hψ.
 unfold make_disj.
-destruct ψ'; try (apply choose_disj_equiv_L; assumption).
+destruct ψ'; try (apply choose_disj_equiv_L; assumption); try inj_tac.
 - repeat case decide; intros.
   + apply OrL.
     * assumption.
@@ -553,12 +566,12 @@ destruct ψ'; try (apply choose_disj_equiv_L; assumption).
 Qed.
 
 
-Lemma make_disj_equiv_R φ ψ φ' ψ' : 
+Lemma make_disj_equiv_R {K : Kind} φ ψ φ' ψ' : 
   (φ' ≼ φ) -> (ψ' ≼ ψ) -> φ' ⊻  ψ' ≼  φ ∨ ψ.
 Proof.
 intros Hφ Hψ.
 unfold make_disj.
-destruct ψ'.
+destruct ψ'; try inj_tac.
 - now apply choose_disj_equiv_R.
 - now apply choose_disj_equiv_R.
 - repeat case decide; intros.
@@ -576,7 +589,8 @@ destruct ψ'.
 - now apply choose_disj_equiv_R.
 Qed.
 
-Lemma make_disj_sound_L Γ φ ψ θ : Γ•φ ∨ψ ⊢ θ -> Γ•make_disj φ ψ ⊢ θ.
+Lemma make_disj_sound_L {K : Kind} Γ φ ψ θ :
+  Γ•φ ∨ψ ⊢ θ -> Γ•make_disj φ ψ ⊢ θ.
 Proof.
 intro H.
 eapply additive_cut.
@@ -587,7 +601,8 @@ Qed.
 
 Global Hint Resolve make_disj_sound_L : proof.
 
-Lemma make_disj_complete_L Γ φ ψ θ : Γ•make_disj φ ψ ⊢ θ -> Γ•φ ∨ψ ⊢ θ.
+Lemma make_disj_complete_L {K : Kind} Γ φ ψ θ :
+  Γ • make_disj φ ψ ⊢ θ -> Γ • φ ∨ψ ⊢ θ.
 Proof.
 intro H.
 eapply additive_cut.
@@ -596,7 +611,7 @@ eapply additive_cut.
 - exch 0. now apply weakening.
 Qed.
 
-Lemma make_disj_sound_R Γ φ ψ : Γ  ⊢ φ ∨ψ -> Γ ⊢ make_disj φ ψ.
+Lemma make_disj_sound_R {K : Kind} Γ φ ψ : Γ  ⊢ φ ∨ψ -> Γ ⊢ make_disj φ ψ.
 Proof.
 intro H.
 eapply additive_cut.
@@ -606,7 +621,7 @@ Qed.
 
 Global Hint Resolve make_disj_sound_R : proof.
 
-Lemma make_disj_complete_R Γ φ ψ : Γ  ⊢ make_disj φ ψ -> Γ  ⊢ φ ∨ψ.
+Lemma make_disj_complete_R {K : Kind} Γ φ ψ : Γ  ⊢ make_disj φ ψ -> Γ  ⊢ φ ∨ψ.
 Proof.
 intro H.
 eapply additive_cut.
@@ -619,7 +634,8 @@ Qed.
 
 
 (* TODO: suitable name *)
-Lemma tautology_cut {Γ} {φ ψ θ : form} : Γ • (φ → ψ) ⊢ θ -> (φ ≼ ψ) -> Γ ⊢ θ.
+Lemma tautology_cut {K : Kind} {Γ} {φ ψ θ} :
+  Γ • (φ → ψ) ⊢ θ -> (φ ≼ ψ) -> Γ ⊢ θ.
 Proof.
 intros Hp H.
 apply additive_cut with (φ → ψ).
@@ -627,13 +643,13 @@ apply additive_cut with (φ → ψ).
   + apply Hp.
 Qed.
 
-Lemma Lindenbaum_Tarski_preorder_Bot φ : ⊥ ≼ φ.
+Lemma Lindenbaum_Tarski_preorder_Bot {K : Kind} φ : ⊥ ≼ φ.
 Proof. apply ExFalso. Qed.
 
 Local Hint Resolve Lindenbaum_Tarski_preorder_Bot : proof.
 
 
-Lemma choose_impl_sound_L Γ φ ψ θ: Γ•(φ → ψ) ⊢ θ -> Γ•(choose_impl φ ψ) ⊢ θ.
+Lemma choose_impl_sound_L {K : Kind} Γ φ ψ θ: Γ•(φ → ψ) ⊢ θ -> Γ•(choose_impl φ ψ) ⊢ θ.
 Proof.
 intro HP.
 unfold choose_impl; repeat case decide; intros;
@@ -650,7 +666,7 @@ try solve[apply weakening, (tautology_cut HP); trivial; try apply weak_cut with 
 - unfold is_negation in *. subst. auto with proof.
 Qed.
 
-Lemma make_impl_sound_L Γ φ ψ θ: Γ•(φ → ψ) ⊢ θ -> Γ•(φ ⇢ ψ) ⊢ θ.
+Lemma make_impl_sound_L {K : Kind} Γ φ ψ θ: Γ•(φ → ψ) ⊢ θ -> Γ•(φ ⇢ ψ) ⊢ θ.
 Proof.
 revert φ. induction ψ; intros φ HP; simpl; repeat case decide; intros.
 1-4, 6: now apply choose_impl_sound_L.
@@ -665,7 +681,7 @@ Qed.
 
 Global Hint Resolve make_impl_sound_L : proof.
 
-Lemma choose_impl_sound_R Γ φ ψ: Γ ⊢ (φ → ψ) -> Γ ⊢ choose_impl φ ψ.
+Lemma choose_impl_sound_R {K : Kind} Γ φ ψ: Γ ⊢ (φ → ψ) -> Γ ⊢ choose_impl φ ψ.
 Proof.
 unfold choose_impl.
  repeat case decide; intros;
@@ -684,7 +700,7 @@ try (solve[peapply (cut ∅ Γ φ); auto with proof; eapply TopL_rev; eauto]).
 Qed.
 
 
-Lemma make_impl_sound_R Γ φ ψ: Γ ⊢ (φ → ψ) -> Γ ⊢ φ ⇢ ψ.
+Lemma make_impl_sound_R {K : Kind} Γ φ ψ: Γ ⊢ (φ → ψ) -> Γ ⊢ φ ⇢ ψ.
 Proof.
 revert φ. induction ψ; intros φ HP; simpl. 
 1-4, 6: now apply choose_impl_sound_R.
@@ -693,7 +709,8 @@ Qed.
 
 Global Hint Resolve make_impl_sound_R : proof.
 
-Lemma make_impl_sound_L2 Γ φ1 φ2 ψ θ: Γ•(φ1 → (φ2 → ψ)) ⊢ θ -> Γ•(φ1 ⇢ (φ2 ⇢ ψ)) ⊢ θ.
+Lemma make_impl_sound_L2 {K : Kind} Γ φ1 φ2 ψ θ:
+  Γ•(φ1 → (φ2 → ψ)) ⊢ θ -> Γ•(φ1 ⇢ (φ2 ⇢ ψ)) ⊢ θ.
 Proof.
 intro HP. apply make_impl_sound_L in HP.
 apply additive_cut with (φ1 ⇢ (φ2 → ψ)).
@@ -706,7 +723,8 @@ Qed.
 
 Global Hint Resolve make_impl_sound_L2: proof.
 
-Lemma make_impl_sound_L2' Γ φ1 φ2 ψ θ: Γ•((φ1 → φ2) → ψ) ⊢ θ -> Γ•((φ1 ⇢ φ2) ⇢ ψ) ⊢ θ.
+Lemma make_impl_sound_L2' {K : Kind} Γ φ1 φ2 ψ θ:
+  Γ•((φ1 → φ2) → ψ) ⊢ θ -> Γ•((φ1 ⇢ φ2) ⇢ ψ) ⊢ θ.
 Proof.
 intro HP. apply make_impl_sound_L.
 apply additive_cut with ((φ1 → φ2) → ψ); [|exch 0; apply weakening, HP].
@@ -715,14 +733,16 @@ apply ImpR. exch 0. apply ImpL.
 - apply generalised_axiom.
 Qed.
 
-Lemma make_impl_complete_L Γ φ ψ θ: Γ•(φ ⇢ ψ) ⊢ θ -> Γ•(φ → ψ) ⊢ θ.
+Lemma make_impl_complete_L {K : Kind} Γ φ ψ θ:
+  Γ•(φ ⇢ ψ) ⊢ θ -> Γ•(φ → ψ) ⊢ θ.
 Proof.
 intro HP.
 apply additive_cut with (φ ⇢ ψ); [|exch 0; apply weakening, HP].
 apply make_impl_sound_R, generalised_axiom.
 Qed.
 
-Lemma make_impl_complete_L2 Γ φ1 φ2 ψ θ: Γ•(φ1 ⇢ (φ2 ⇢ ψ)) ⊢ θ -> Γ•(φ1 → (φ2 → ψ)) ⊢ θ.
+Lemma make_impl_complete_L2 {K : Kind} Γ φ1 φ2 ψ θ:
+  Γ•(φ1 ⇢ (φ2 ⇢ ψ)) ⊢ θ -> Γ•(φ1 → (φ2 → ψ)) ⊢ θ.
 Proof.
 intro HP. apply make_impl_complete_L in HP.
 apply additive_cut with (φ1 → φ2 ⇢ ψ);  [|exch 0; apply weakening, HP].
@@ -731,7 +751,8 @@ apply ImpR. exch 0. apply ImpL.
 - exch 0. apply weakening, make_impl_sound_R, generalised_axiom.
 Qed.
 
-Lemma make_impl_complete_R Γ φ ψ: Γ ⊢ φ ⇢ ψ -> Γ ⊢ (φ → ψ).
+Lemma make_impl_complete_R {K : Kind} Γ φ ψ:
+  Γ ⊢ φ ⇢ ψ -> Γ ⊢ (φ → ψ).
 Proof.
 intro HP.
 apply additive_cut with (φ ⇢ ψ); [apply HP| apply make_impl_sound_L, generalised_axiom ].
@@ -748,7 +769,7 @@ conjunctions of various individual formulas.
 
 (** *** Generalized OrL and its invertibility *)
 
-Lemma disjunction_L Γ Δ θ :
+Lemma disjunction_L {K : Kind} Γ Δ θ :
   ((forall φ, φ ∈ Δ -> (Γ•φ ⊢ θ)) -> (Γ•⋁ Δ ⊢ θ)) *
   ((Γ•⋁ Δ ⊢ θ) -> (forall φ, φ ∈ Δ -> (Γ•φ ⊢ θ))).
 Proof.
@@ -777,7 +798,7 @@ Qed.
 
 (** *** Generalized OrR *)
 
-Lemma disjunction_R Γ Δ φ : (φ ∈ Δ) -> (Γ  ⊢ φ) -> (Γ  ⊢ ⋁ Δ).
+Lemma disjunction_R {K : Kind} Γ Δ φ : (φ ∈ Δ) -> (Γ  ⊢ φ) -> (Γ  ⊢ ⋁ Δ).
 Proof.
 intros Hin Hprov. unfold disjunction. revert Hin.
 assert(Hcut : forall θ, ((Γ ⊢ θ) + (φ ∈ Δ)) -> Γ ⊢ foldl make_disj θ (nodup form_eq_dec Δ)).
@@ -798,7 +819,7 @@ Qed.
 
 (** *** Generalized AndR *)
 
-Lemma conjunction_R1 Γ Δ : (forall φ, φ ∈ Δ -> Γ  ⊢ φ) -> (Γ  ⊢ ⋀ Δ).
+Lemma conjunction_R1 {K : Kind} Γ Δ : (forall φ, φ ∈ Δ -> Γ  ⊢ φ) -> (Γ  ⊢ ⋀ Δ).
 Proof.
 intro Hprov. unfold conjunction.
 assert(Hcut : forall θ, Γ ⊢ θ -> Γ ⊢ foldl make_conj θ (nodup form_eq_dec Δ)).
@@ -815,7 +836,7 @@ Qed.
 
 (** *** Generalized invertibility of AndR *)
 
-Lemma conjunction_R2 Γ Δ : (Γ  ⊢ ⋀ Δ) -> (forall φ, φ ∈ Δ -> Γ  ⊢ φ).
+Lemma conjunction_R2 {K : Kind} Γ Δ : (Γ  ⊢ ⋀ Δ) -> (forall φ, φ ∈ Δ -> Γ  ⊢ φ).
 Proof.
  unfold conjunction.
 assert(Hcut : forall θ, Γ ⊢ foldl make_conj θ (nodup form_eq_dec Δ) -> (Γ ⊢ θ) * (forall φ, φ ∈ Δ -> Γ  ⊢ φ)).
@@ -835,7 +856,7 @@ Qed.
 
 (** *** Generalized AndL *)
 
-Lemma conjunction_L Γ Δ φ θ: (φ ∈ Δ) -> (Γ•φ ⊢ θ) -> (Γ•⋀ Δ ⊢ θ).
+Lemma conjunction_L {K : Kind} Γ Δ φ θ: (φ ∈ Δ) -> (Γ•φ ⊢ θ) -> (Γ•⋀ Δ ⊢ θ).
 Proof.
 intros Hin Hprov. unfold conjunction. revert Hin.
 assert(Hcut : forall ψ, ((φ ∈ Δ) + (Γ•ψ ⊢ θ)) -> (Γ•foldl make_conj ψ (nodup form_eq_dec Δ) ⊢ θ)).
@@ -854,7 +875,7 @@ assert(Hcut : forall ψ, ((φ ∈ Δ) + (Γ•ψ ⊢ θ)) -> (Γ•foldl make_co
 intro Hin. apply Hcut. now left.
 Qed.
 
-Lemma conjunction_L' Γ Δ ϕ: (Γ ⊎ {[⋀ Δ]} ⊢ ϕ) -> Γ ⊎ list_to_set_disj Δ ⊢ ϕ.
+Lemma conjunction_L' {K : Kind} Γ Δ ϕ: (Γ ⊎ {[⋀ Δ]} ⊢ ϕ) -> Γ ⊎ list_to_set_disj Δ ⊢ ϕ.
 Proof.
 revert ϕ. unfold conjunction.
 assert( Hstrong: ∀ θ ϕ : form, Γ ⊎ {[foldl make_conj θ (nodup form_eq_dec Δ)]} ⊢ ϕ
@@ -870,13 +891,14 @@ assert( Hstrong: ∀ θ ϕ : form, Γ ⊎ {[foldl make_conj θ (nodup form_eq_de
   intros; apply additive_cut with (φ := ⊤); eauto with proof.
 Qed.
 
-Lemma conjunction_R Δ: list_to_set_disj Δ ⊢ ⋀ Δ.
+Lemma conjunction_R {K : Kind} Δ: list_to_set_disj Δ ⊢ ⋀ Δ.
 Proof.
 apply conjunction_R1. intros φ Hφ. apply elem_of_list_to_set_disj in Hφ.
 exhibit Hφ 0. apply generalised_axiom. 
 Qed.
 
-Lemma conjunction_L'' Γ Δ ϕ: Γ ⊎ list_to_set_disj Δ ⊢ ϕ -> (Γ ⊎ {[⋀ Δ]} ⊢ ϕ).
+Lemma conjunction_L'' {K : Kind} Γ Δ ϕ:
+  Γ ⊎ list_to_set_disj Δ ⊢ ϕ -> (Γ ⊎ {[⋀ Δ]} ⊢ ϕ).
 Proof.
 revert ϕ. unfold conjunction.
 assert( Hstrong: ∀ θ ϕ : form,(Γ ⊎ list_to_set_disj Δ) ⊎ {[θ]} ⊢ ϕ -> Γ ⊎ {[foldl make_conj θ (nodup form_eq_dec Δ)]} ⊢ ϕ).
@@ -887,8 +909,10 @@ assert( Hstrong: ∀ θ ϕ : form,(Γ ⊎ list_to_set_disj Δ) ⊎ {[θ]} ⊢ ϕ
     + apply IHΔ.
          assert(Hin' : δ ∈ (Γ ⊎ list_to_set_disj Δ)).
          { apply gmultiset_elem_of_disj_union; right; apply elem_of_list_to_set_disj, elem_of_list_In, Hin. }
-         exhibit Hin' 1. exch 0. apply contraction. exch 1. exch 0.
-         rw (symmetry (difference_singleton _ _ Hin')) 2. peapply Hp.
+           exhibit Hin' 1.
+           rewrite (proper_Provable _ _ (env_add_comm _ _ _) _ _ eq_refl).
+           apply contraction. exch 1. exch 0.
+           rw (symmetry (difference_singleton _ _ Hin')) 2. peapply Hp.
     + simpl. apply IHΔ. apply make_conj_sound_L, AndL. peapply Hp.
 }
 intros. apply Hstrong, weakening. assumption.
@@ -904,13 +928,13 @@ Qed.
 (* end details *)
 
 
-Lemma choose_impl_weight φ ψ: weight (choose_impl φ ψ) ≤ weight (φ → ψ).
+Lemma choose_impl_weight {K : Kind} φ ψ: weight (choose_impl φ ψ) ≤ weight (φ → ψ).
 Proof.
 pose (weight_pos φ). pose (weight_pos ψ).
 unfold choose_impl; repeat case decide; intros; simpl; lia.
 Qed.
 
-Lemma choose_impl_top_weight ψ: weight (choose_impl ⊤ ψ) ≤ weight ψ.
+Lemma choose_impl_top_weight {K : Kind} ψ: weight (choose_impl ⊤ ψ) ≤ weight ψ.
 Proof.
 pose (weight_pos ψ).
 unfold choose_impl; repeat case decide; intros; try lia.
@@ -929,7 +953,7 @@ unfold choose_impl; repeat case decide; intros; try lia.
 - contradict n2. apply obviously_smaller_compatible_LT. auto with proof.
 Qed.
 
-Lemma obviously_smaller_top_not_Eq φ: obviously_smaller ⊤ φ ≠ Eq.
+Lemma obviously_smaller_top_not_Eq {K : Kind} φ: obviously_smaller ⊤ φ ≠ Eq.
 Proof.
 unfold obviously_smaller.
 case Provable_dec. discriminate. intro. case Provable_dec. discriminate.

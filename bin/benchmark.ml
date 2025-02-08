@@ -26,7 +26,7 @@ let print_value_results { name; before; after } =
        (float_of_int after.value))
     before.time after.time
 
-let weight_int n = weight n |> int_of_nat
+let weight_int n = weight Modal n |> int_of_nat
 
 let bench_one fs =
   let f = eval fs in

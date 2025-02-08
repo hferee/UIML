@@ -12,7 +12,7 @@ Require ISL.Simp_env.
 Module Import S := Simp_env.S.
 Module Import SPQr := PropQuant S.
 
-Fixpoint MPropF_of_form (f : Formulas.form) : MPropF  :=
+Program Fixpoint MPropF_of_form (f : Formulas.form) : MPropF  :=
 match f with
 | Formulas.Var n => Var n
 | Formulas.Bot => Bot
@@ -34,15 +34,16 @@ end.
 Definition gl_UI p s := form_of_MPropF (proj1_sig (GL.Interpolation.UIGL_braga.GUI_tot p ([],[MPropF_of_form s]))).
 Definition k_UI p s := form_of_MPropF(proj1_sig (K.Interpolation.UIK_braga.GUI_tot p ([],[MPropF_of_form s]))).
 
-Definition isl_E v f := Ef v f.
-Definition isl_A v f := Af v f.
+Definition isl_E v f := @Ef v Formulas.Modal f.
+Definition isl_A v f := @Af v Formulas.Modal f.
 
 (* simp_form seems to improve over simp in most cases.
   Notable exception: (a ∨b) → c *)
-Definition isl_simp f := simp_form f.
+Definition isl_simp f := @simp_form Formulas.Modal f.
 
-Definition isl_simplified_E p ψ := Ef p ψ.
-Definition isl_simplified_A p ψ := Af p ψ.
+(* For backward compatibility only *)
+Definition isl_simplified_E := isl_E.
+Definition isl_simplified_A := isl_A.
 
 Set Extraction Output Directory "extraction".
 

@@ -13,13 +13,15 @@ Require Export stdpp.gmultiset.
 (** Our propositional formulas, including their countability. *)
 Require Export ISL.Formulas.
 
+Require Import Coq.Program.Equality.
+
 (** An environment is defined as a finite multiset of formulas
 (in the sense of the stdpp library).
 This requires decidable equality and countability of the underlying set. *)
-Definition env := @gmultiset form form_eq_dec form_count.
+Definition env {K : Kind} := @gmultiset (@form K) form_eq_dec form_count.
 
-Global Instance singleton : Singleton form env := gmultiset_singleton.
-Global Instance singletonMS : SingletonMS form env := base.singleton.
+Global Instance singleton {K : Kind} : Singleton form (@env K) := gmultiset_singleton.
+Global Instance singletonMS {K : Kind} : SingletonMS form env := base.singleton.
 
 Global Hint Unfold mult empty singleton union intersection env : mset.
 (* useful notations :
@@ -31,12 +33,18 @@ Global Hint Unfold mult empty singleton union intersection env : mset.
       ⊂@ : include
 *)
 
-Definition empty := ∅ : env.
+Definition empty {K : Kind} := ∅ : env.
 
 Ltac ms :=
   unfold base.singletonMS, singletonMS, base.empty, gmultiset_empty in *;
-  autounfold with mset in *;
-  autounfold with mset; multiset_solver.
+  autounfold with mset in *; autounfold with mset;
+  repeat rewrite gmultiset_elem_of_disj_union; try tauto;
+  multiset_solver.
+
+Notation "Γ • φ" := (disj_union Γ (base.singletonMS φ)) (at level 105, φ at level 85, left associativity).
+
+Section GeneralEnvironments.
+Context {K : Kind}.
 
 Global Instance proper_elem_of : Proper ((=) ==> (≡@{env}) ==> (fun x y => x <-> y)) elem_of.
 Proof. intros Γ Γ' Heq φ φ' Heq'. ms. Qed.
@@ -44,39 +52,35 @@ Proof. intros Γ Γ' Heq φ φ' Heq'. ms. Qed.
 Global Instance proper_disj_union : Proper ((≡@{env}) ==> (≡@{env}) ==> (≡@{env})) disj_union.
 Proof. intros Γ Γ' Heq Δ Δ' Heq'. ms. Qed.
 
-
-Global Notation "Γ • φ" := (disj_union Γ (base.singletonMS φ)) (at level 105, φ at level 85, left associativity).
-
 Lemma elements_env_add (Γ : env) φ : elements(Γ • φ) ≡ₚ φ :: elements Γ.
 Proof.
-rewrite (gmultiset_elements_disj_union Γ).
+setoid_rewrite (gmultiset_elements_disj_union Γ).
 setoid_rewrite (gmultiset_elements_singleton φ).
 symmetry. apply Permutation_cons_append.
 Qed.
-
 
 (** ** Multiset utilities *)
 
 Lemma multeq_meq (M N: env) : (forall x, multiplicity x M = multiplicity x N) -> M ≡  N.
   Proof. multiset_solver. Qed.
 
-Lemma diff_mult (M N : env) (x : form):
+Lemma diff_mult (M N : env) x:
   multiplicity x (M ∖ N) = (multiplicity x M - multiplicity x N)%nat.
 Proof. apply multiplicity_difference. Qed.
 
-Lemma union_mult M N (x : form) :
+Lemma union_mult (M N : env) x :
   multiplicity x (M ⊎ N) = (multiplicity x M + multiplicity x N)%nat.
 Proof. apply multiplicity_disj_union. Qed.
 
-Lemma singleton_mult_in (x y: form): x = y -> multiplicity x {[y]} = 1.
+Lemma singleton_mult_in x y: x = y -> multiplicity x {[+ y +]} = 1.
 Proof.
   intro Heq. rewrite Heq. apply multiplicity_singleton. Qed.
 
-Lemma singleton_mult_notin (x y: form): x <> y -> multiplicity x {[y]} = 0.
+Lemma singleton_mult_notin x y: x <> y -> multiplicity x {[y]} = 0.
 Proof. apply multiplicity_singleton_ne. Qed.
 
 (* Two useful basic facts about multisets containing (or not) certain elements. *)
-Lemma env_replace {Γ : env} φ {ψ : form}:
+Lemma env_replace {Γ : env} φ {ψ}:
   (ψ ∈ Γ) -> (Γ • φ) ∖ {[ψ]} ≡ (Γ ∖ {[ψ]} • φ).
 Proof.
 intro Hin. apply multeq_meq. intros θ.
@@ -98,11 +102,14 @@ case (decide (φ = ψ)).
   auto.
 Qed.
 
-Lemma env_add_remove : ∀ (Γ: env) (φ : form), (Γ • φ) ∖ {[φ]} =Γ.
+Lemma env_add_remove : ∀ (Γ: env) φ, (Γ • φ) ∖ {[φ]} =Γ.
 Proof. intros; ms. Qed.
 
 (** ** Conjunction, disjunction, and implication *)
-(** In the construction of propositional quantifiers, we often want to take the conjunction, disjunction, or implication of a (multi)set of formulas. The following results give some small optimizations of this process, by reducing "obvious" conjunctions such as ⊤ ∧ ϕ, ⊥ ∧ ϕ, etc. *)
+(** In the construction of propositional quantifiers, we often want to take the
+    conjunction, disjunction, or implication of a (multi)set of formulas.
+    The following results give some small optimizations of this process, by
+    reducing "obvious" conjunctions such as ⊤ ∧ ϕ, ⊥ ∧ ϕ, etc. *)
 
 Definition irreducible (Γ : env) :=
   (∀ p φ, (Var p → φ) ∈ Γ -> ¬ Var p ∈ Γ) /\
@@ -111,16 +118,17 @@ Definition irreducible (Γ : env) :=
 
 
 Definition is_double_negation φ ψ := φ = ¬ ¬ ψ.
-Global Instance decidable_is_double_negation φ ψ : Decision (is_double_negation φ ψ) := decide (φ =  ¬ ¬ ψ).
+Global Instance decidable_is_double_negation φ ψ :
+  Decision (is_double_negation φ ψ) := decide (φ =  ¬ ¬ ψ).
 
-Definition is_implication φ ψ := exists θ, φ = (θ → ψ).
+Definition is_implication {K : Kind} (φ ψ : form) := exists θ, φ = (θ → ψ).
 Global Instance decidable_is_implication φ ψ : Decision (is_implication φ ψ).
 Proof.
 unfold is_implication.
 destruct φ; try solve[right; intros [θ Hθ]; discriminate].
 case (decide (φ2 = ψ)).
 - intro; subst. left. eexists; reflexivity.
-- intro. right; intros [θ Hθ]; inversion Hθ. subst. tauto.
+- intro n. right; intros [θ Hθ]. now dependent destruction Hθ.
 Defined.
 
 Definition is_negation φ ψ := φ = ¬ ψ.
@@ -142,7 +150,7 @@ Qed.
 Next Obligation. auto with *. Qed.
 
 
-Definition in_map {A : Type} (Γ : list form)
+Definition in_map {A : Type} Γ
   (f : forall φ, (φ ∈ Γ) -> A) : list A :=
   in_map_aux Γ f Γ (reflexivity _).
 
@@ -202,7 +210,7 @@ Proof.
   - simpl. now rewrite Heq, IHΓ.
 Qed.
 
-Lemma difference_singleton (Δ: env) (φ : form): φ ∈ Δ -> Δ ≡ ((Δ ∖ {[φ]}) • φ).
+Lemma difference_singleton (Δ: env) φ: φ ∈ Δ -> Δ ≡ ((Δ ∖ {[φ]}) • φ).
 Proof.
 intro Hin. rewrite (gmultiset_disj_union_difference {[φ]}) at 1. ms.
 now apply gmultiset_singleton_subseteq_l.
@@ -230,17 +238,21 @@ unfold singletonMS, base.singletonMS in HH.
 unfold base.singleton, Environments.singleton. ms.
 Qed.
 
-Global Hint Resolve in_difference : multiset.
+(* TODO : global later? *)
+Hint Resolve in_difference : multiset.
 
 (* could be used in disj_inv *)
-Lemma env_add_inv (Γ Γ' : env) (φ ψ : form): φ ≠ ψ -> ((Γ • φ) ≡ (Γ' • ψ)) -> (Γ' ≡  ((Γ ∖ {[ψ]}) • φ)).
+Lemma env_add_inv (Γ Γ' : env) φ ψ:
+  φ ≠ ψ ->
+  ((Γ • φ) ≡ (Γ' • ψ)) ->
+    (Γ' ≡  ((Γ ∖ {[ψ]}) • φ)).
 Proof.
 intros Hneq Heq. rewrite <- env_replace.
 - ms.
 - assert(ψ ∈ (Γ • φ)); [rewrite Heq|]; ms.
 Qed.
 
-Lemma env_add_inv' (Γ Γ' : env) (φ : form): (Γ • φ) ≡ Γ' -> (Γ ≡  (Γ' ∖ {[φ]})).
+Lemma env_add_inv' (Γ Γ' : env) φ: (Γ • φ) ≡ Γ' -> (Γ ≡  (Γ' ∖ {[φ]})).
 Proof. intro Heq. ms. Qed.
 
 Lemma env_equiv_eq (Γ Γ' :env) : Γ =  Γ' -> Γ ≡  Γ'.
@@ -266,7 +278,7 @@ Proof.
   apply Hinsert, IH; multiset_solver.
 Qed.
 
-Lemma difference_include (θ θ' : form) (Δ : env) :
+Lemma difference_include θ θ' (Δ : env) :
   (θ' ∈ Δ) ->
   θ ∈ Δ ∖ {[θ']} -> θ ∈ Δ.
 Proof.
@@ -287,17 +299,15 @@ induction l; simpl. tauto.
 destruct form_eq_dec. tauto. firstorder.
 Qed.
 
-Lemma remove_include (θ θ' : form) (Δ : list form) :
-  (θ' ∈ Δ) ->
-  θ ∈ rm θ' Δ -> θ ∈ Δ.
+Lemma remove_include θ θ' Δ : (θ' ∈ Δ) -> θ ∈ rm θ' Δ -> θ ∈ Δ.
 Proof. intros Hin' Hin. eapply elem_of_list_In, in_rm, elem_of_list_In, Hin. Qed.
 
 
 (* technical lemma : one can constructively find whether an environment contains
    an element satisfying a decidable property *)
-Lemma decide_in (P : form -> Prop) (Γ : env) :
+Lemma decide_in (P : _ -> Prop) (Γ : env) :
   (forall φ, Decision (P φ)) ->
-  {φ : form| (φ ∈ Γ) /\ P φ} + {forall φ, φ ∈ Γ -> ¬ P φ}.
+  {φ | (φ ∈ Γ) /\ P φ} + {forall φ, φ ∈ Γ -> ¬ P φ}.
 Proof.
 intro HP.
 induction Γ using gmultiset_rec.
@@ -317,7 +327,6 @@ Proof. intro Hin. pose (difference_singleton _ _ Hin). ms. Qed.
 
 Global Instance equiv_assoc : @Assoc env equiv disj_union.
 Proof. intros x y z. ms. Qed.
-Global Hint Immediate equiv_assoc : proof.
 
 Global Instance proper_difference : Proper ((≡@{env}) ==> eq ==> (≡@{env})) difference.
 Proof. intros Γ Γ' Heq Δ Heq'. ms. Qed.
@@ -327,7 +336,9 @@ Definition var_not_in_env p (Γ : env):=  (∀ φ0, φ0 ∈ Γ -> ¬ occurs_in p
 (** ** Tactics *)
 (* helper tactic split cases given an assumption about belonging to a multiset *)
 
-Ltac in_tac :=
+End GeneralEnvironments.
+
+Global Ltac in_tac :=
 repeat
 match goal with
 | H : ?θ  ∈ {[?θ1; ?θ2]} |- _ => apply gmultiset_elem_of_union in H; destruct H as [H|H]; try subst
@@ -337,26 +348,32 @@ match goal with
 | H : context [?θ ∈ {[ ?θ2 ]}] |- _ => rewrite gmultiset_elem_of_singleton in H; subst
 end.
 
-Definition open_box φ : form := match φ with
+
+Global Hint Immediate equiv_assoc : proof.
+
+Definition open_box {K : Kind} (φ : @form K) : @form K := match φ with
 | □ φ => φ
 | φ => φ
 end.
 
 (* inefficient conversion from multisets to lists and back *)
-Definition open_boxes (Γ : env) : env := list_to_set_disj (map open_box (elements Γ)).
+Definition open_boxes {K : Kind} (Γ : @env K) : @env K :=
+  list_to_set_disj (map open_box (elements Γ)).
 
-Global Notation "⊙ φ" := (open_box φ) (at level 75).
-Global Notation "⊗ Γ" := (open_boxes Γ) (at level 75).
+Notation "⊙ φ" := (open_box φ) (at level 75).
+Notation "⊗ Γ" := (open_boxes Γ) (at level 75).
 
+Section Modal.
+
+Context {K : Kind}.
 
 Global Instance proper_open_boxes : Proper ((≡@{env}) ==> (≡@{env})) open_boxes.
 Proof. intros Γ Heq Δ Heq'. ms. Qed.
 
-
 Lemma open_boxes_empty : open_boxes ∅ = ∅.
 Proof. auto. Qed.
 
-Lemma open_boxes_disj_union (Γ : env) Δ : (open_boxes (Γ ⊎ Δ)) = (open_boxes Γ ⊎ open_boxes Δ).
+Lemma open_boxes_disj_union Γ Δ : (open_boxes (Γ ⊎ Δ)) = (open_boxes Γ ⊎ open_boxes Δ).
 Proof.
 unfold open_boxes. rewrite (gmultiset_elements_disj_union Γ Δ).
 rewrite map_app. apply list_to_set_disj_app.
@@ -372,96 +389,87 @@ apply gmultiset_disj_union_right_id.
 Qed.
 
 
-Lemma open_boxes_add (Γ : env) φ : (open_boxes (Γ • φ)) = (open_boxes Γ • open_box φ).
+Lemma open_boxes_add (Γ : env) φ : (⊗ (Γ • φ)) = (⊗ Γ • ⊙ φ).
 Proof.
 rewrite open_boxes_disj_union.
 unfold open_boxes. f_equal. apply open_boxes_singleton.
 Qed.
 
+Local Definition f_inj {K K': Kind} {T : Kind -> Type} (Heq : K = K') (φ : T K) : T K' :=
+  eq_rect K T φ K' Heq.
 
-Lemma elem_of_open_boxes φ Δ : φ ∈ (⊗Δ) -> φ ∈ Δ \/ (□φ) ∈ Δ.
+Local Definition env_inj {K K': Kind} (Heq : K = K') (d : list (@form K)) : list (@form K')
+:= (eq_rect K (fun K => list (@form K)) d K' Heq).
+
+Lemma elem_of_open_boxes (φ : @form K) Δ : φ ∈ (⊗Δ) ->
+  (φ ∈ Δ) \/
+  exists (HK : K = Modal), (□ (f_inj HK φ)) ∈ (f_inj HK Δ).
 Proof.
 intro Hin.
 induction Δ as [|θ Δ Hind] using gmultiset_rec.
-- auto with proof.
+- auto.
 - rewrite open_boxes_disj_union in Hin.
   apply gmultiset_elem_of_disj_union in Hin.
   destruct Hin as [Hθ | HΔ].
-  +  rewrite open_boxes_singleton in Hθ. apply gmultiset_elem_of_singleton in Hθ.
-      subst φ. destruct θ; ms.
-  + destruct (Hind HΔ); ms.
+  + clear Hind.
+    rewrite open_boxes_singleton in Hθ. apply gmultiset_elem_of_singleton in Hθ.
+    subst φ. destruct θ; try ms. simpl.
+    right. exists eq_refl. ms.
+  + destruct (Hind HΔ) as [Hin | [HK Heq]].
+    * ms.
+    * right. exists HK. ms.
 Qed.
 
-Lemma occurs_in_open_boxes x φ Δ : occurs_in x φ -> φ ∈ (⊗Δ) -> exists θ, θ ∈ Δ /\ occurs_in x θ.
+Lemma occurs_in_open_boxes x (φ : form) Δ :
+  occurs_in x φ -> φ ∈ (⊗Δ) -> exists θ, θ ∈ Δ /\ occurs_in x θ.
 Proof.
-intros Hx Hφ. apply elem_of_open_boxes in Hφ. destruct Hφ as [Hφ|Hφ]; eauto.
+intros Hx Hφ. apply elem_of_open_boxes in Hφ. destruct Hφ as [Hφ|[HK Hφ]]; eauto.
+subst. unfold f_inj in *.
+eexists; eauto.
 Qed.
 
-Lemma occurs_in_map_open_box x φ Δ : occurs_in x φ -> φ ∈ (map open_box Δ) -> exists θ, θ ∈ Δ /\ occurs_in x θ.
+Lemma occurs_in_map_open_box x (φ : form) Δ :
+  occurs_in x φ -> φ ∈ (map open_box Δ) -> exists θ, θ ∈ Δ /\ occurs_in x θ.
 Proof.
 intros Hx Hφ. apply elem_of_list_In, in_map_iff in Hφ.
 destruct Hφ as [ψ [Hφ Hin]]; subst.
-exists ψ. split. now apply elem_of_list_In. destruct ψ; trivial.
+exists ψ. split. now apply elem_of_list_In. dependent destruction ψ; trivial.
 Qed.
 
-
-Global Hint Rewrite open_boxes_disj_union : proof.
-
-Lemma open_boxes_remove  Γ φ : φ ∈ Γ -> (≡@{env}) (⊗ (Γ ∖ {[φ]})) ((⊗ Γ) ∖ {[⊙ φ]}).
+Lemma open_boxes_remove Γ φ : φ ∈ Γ -> (≡@{env}) (⊗ (Γ ∖ {[φ]})) ((⊗ Γ) ∖ {[⊙ φ]}).
 Proof.
 intro Hin.
  pose (difference_singleton Γ φ Hin). rewrite e  at 2.
 rewrite open_boxes_add. ms.
 Qed.
 
-Definition is_box φ := match φ with
+Definition is_box (φ : form) := match φ with
 | □ _ => true
 | _ => false
 end.
 
-
-Lemma open_boxes_spec Γ φ : φ ∈ open_boxes Γ -> {φ ∈ Γ ∧ is_box φ = false} + {(□ φ) ∈ Γ}.
-Proof.
-unfold open_boxes. intro Hin. apply elem_of_list_to_set_disj in Hin.
-apply elem_of_list_In in Hin. apply in_map_iff in Hin.
-case (decide ((□ φ) ∈ Γ)).
-- right; trivial.
-- intro Hout. left.
-  destruct Hin as (y & Hin & Hy). subst.
-  destruct y; simpl in *; split; trivial;
-  try (apply gmultiset_elem_of_elements,elem_of_list_In; trivial);
-  contradict Hout; apply gmultiset_elem_of_elements,elem_of_list_In; trivial.
-Qed.
-
 Lemma is_not_box_open_box φ : is_box φ = false -> (⊙φ) = φ.
-Proof. destruct φ; simpl; intuition. discriminate. Qed.
+Proof. unfold is_box. dependent destruction φ; simpl; intuition. discriminate. Qed.
 
-Lemma open_boxes_spec' Γ φ : {φ ∈ Γ ∧ is_box φ = false} + {(□ φ) ∈ Γ} -> φ ∈ open_boxes Γ.
+Lemma open_boxes_spec' Γ φ :
+    {_ : φ ∈ Γ & is_box φ = false} 
+  + {HK : K = Modal & (□ f_inj HK φ) ∈ f_inj HK Γ} -> φ ∈ open_boxes Γ.
 Proof.
-intros [[Hin Heq] | Hin];
+intros [[Hin Heq] | [HK Hin]];
 unfold open_boxes; apply elem_of_list_to_set_disj, elem_of_list_In, in_map_iff.
 - exists φ. apply is_not_box_open_box in Heq. rewrite Heq. split; trivial.
   now apply elem_of_list_In,  gmultiset_elem_of_elements.
-- exists (□ φ). simpl. split; trivial. now apply elem_of_list_In,  gmultiset_elem_of_elements.
+- subst. exists (□ φ). simpl. split; trivial. now apply elem_of_list_In,  gmultiset_elem_of_elements.
 Qed.
 
-Lemma In_open_boxes (Γ : env) (φ : form) : (φ ∈ Γ) -> open_box φ ∈ open_boxes Γ.
+Lemma In_open_boxes (Γ : env) φ : (φ ∈ Γ) -> open_box φ ∈ open_boxes Γ.
 Proof.
 intro Hin. apply difference_singleton in Hin.
 rewrite Hin,  open_boxes_add. auto with *.
 Qed.
 
-Global Hint Resolve In_open_boxes : proof.
-Global Hint Unfold open_box : proof.
-Global Hint Rewrite open_boxes_empty : proof.
-Global Hint Rewrite open_boxes_add : proof.
-Global Hint Rewrite open_boxes_remove : proof.
-Global Hint Rewrite open_boxes_singleton : proof.
-
-Global Hint Resolve open_boxes_spec' : proof.
-Global Hint Resolve open_boxes_spec : proof.
-
-Global Instance Proper_elements : Proper ((≡) ==> (≡ₚ)) ((λ Γ : env, elements Γ)).
+Global Instance Proper_elements:
+  Proper ((≡) ==> (≡ₚ)) ((λ Γ : env, gmultiset_elements Γ)).
 Proof.
 intros Γ Δ Heq; apply AntiSymm_instance_0; apply gmultiset_elements_submseteq; ms.
 Qed.
@@ -475,10 +483,12 @@ induction l as [| a l].
   rewrite IHl. setoid_rewrite gmultiset_elements_singleton. trivial.
 Qed.
 
-Lemma list_to_set_disj_env_add Δ v: ((list_to_set_disj Δ : env) • v : env) ≡ list_to_set_disj (v :: Δ).
+Lemma list_to_set_disj_env_add Δ v:
+  ((list_to_set_disj Δ : env) • v : env) ≡ list_to_set_disj (v :: Δ).
 Proof. ms. Qed.
 
-Lemma list_to_set_disj_rm Δ v: (list_to_set_disj Δ : env) ∖ {[v]} ≡ list_to_set_disj (rm v Δ).
+Lemma list_to_set_disj_rm Δ v:
+  (list_to_set_disj Δ : env) ∖ {[v]} ≡ list_to_set_disj (rm v Δ).
 Proof.
 induction Δ as [|φ Δ]; simpl; [ms|].
 case form_eq_dec; intro; subst; [ms|].
@@ -487,12 +497,25 @@ simpl. rewrite <- IHΔ. case (decide (v ∈ (list_to_set_disj Δ: env))).
 - intro. rewrite diff_not_in by auto with *. rewrite diff_not_in; auto with *.
 Qed.
 
-Lemma gmultiset_elements_list_to_set_disj l: gmultiset_elements(list_to_set_disj l) ≡ₚ l.
+
+Lemma gmultiset_elements_list_to_set_disj (l : list form):
+  gmultiset_elements(list_to_set_disj l) ≡ₚ l.
 Proof.
 induction l as [| x l]; [ms|].
 rewrite Proper_elements; [|symmetry; apply list_to_set_disj_env_add].
-rewrite elements_env_add, IHl. trivial.
+setoid_rewrite elements_env_add; rewrite IHl. trivial.
 Qed.
 
-Lemma list_to_set_disj_open_boxes Δ:  ((⊗ (list_to_set_disj Δ)) = list_to_set_disj (map open_box Δ)).
+Lemma list_to_set_disj_open_boxes Δ: ((⊗ (list_to_set_disj Δ)) = list_to_set_disj (map open_box Δ)).
 Proof. apply list_to_set_disj_perm, Permutation_map', gmultiset_elements_list_to_set_disj. Qed.
+
+End Modal.
+
+
+Global Hint Resolve In_open_boxes : proof.
+Global Hint Unfold open_box : proof.
+Global Hint Rewrite (@open_boxes_empty Modal) : proof.
+Global Hint Rewrite (@open_boxes_add Modal) : proof.
+Global Hint Rewrite (@open_boxes_remove Modal) : proof.
+Global Hint Rewrite (@open_boxes_singleton Modal): proof.
+Global Hint Resolve open_boxes_spec' : proof.

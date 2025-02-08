@@ -19,11 +19,11 @@ let rec l_e_formulas = lazy
     begin
       let r_formulas = pay l_e_formulas in
       union
-	[ single Bot ;
-    map e_vars (fun x -> Var x) ;
-	  map (pair r_formulas r_formulas) (fun (t1, t2) -> And (t1, t2)) ;
-    map (pair r_formulas r_formulas) (fun (t1, t2) -> Or (t1, t2)) ;
-    map (pair r_formulas r_formulas) (fun (t1, t2) -> Implies (t1, t2)) ;
+	[ single (Bot Modal) ;
+    map e_vars (fun x -> Var (Modal, x)) ;
+	  map (pair r_formulas r_formulas) (fun (t1, t2) -> And (Modal, t1, t2)) ;
+    map (pair r_formulas r_formulas) (fun (t1, t2) -> Or (Modal, t1, t2)) ;
+    map (pair r_formulas r_formulas) (fun (t1, t2) -> Implies (Modal, t1, t2)) ;
     map r_formulas (fun x -> Box x);
 	]
     end
@@ -52,18 +52,18 @@ let v : variable = coqstring_of_camlstring "p"
 
 let show_test (f: form) : string =
     ("φ        : " ^ string_of_formula f ^ "\n" ^
-                 "Weight: " ^ string_of_int (int_of_nat (weight f)) ^ "\n") ^
+                 "Weight: " ^ string_of_int (int_of_nat (weight Modal f)) ^ "\n") ^
     let t_start = Sys.time() in
     let e_result = isl_simplified_E v f in
     let run_time = Sys.time() -. t_start in
     ("Time: " ^ string_of_float run_time ^ "s\n") ^
     ("Eₚ(φ): " ^
                   string_of_formula e_result ^ "\n" ^
-                 "Weight: " ^ string_of_int (int_of_nat (weight e_result)) ^ "\n") ^
+                 "Weight: " ^ string_of_int (int_of_nat (weight Modal e_result)) ^ "\n") ^
     let a_result = isl_simplified_A v f in
     ("Aₚ(φ): " ^
                  string_of_formula a_result ^ "\n" ^
-                "Weight: " ^ string_of_int (int_of_nat (weight a_result)) ^ "\n-------------------\n")
+                "Weight: " ^ string_of_int (int_of_nat (weight Modal a_result)) ^ "\n-------------------\n")
 
 let () =
   if nb_args = 2 then print_string (show_test (eval form))

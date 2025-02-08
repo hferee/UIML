@@ -320,7 +320,7 @@ induction l2.
   * inversion H0.
     + exfalso. apply n. symmetry. assumption.
     + assert (a :: l2 = [a] ++ l2). auto. rewrite H2. rewrite remove_list_dist_app.
-      rewrite app_length. pose (remove_list_singl_id_or_nil l1 a). destruct o.
+      rewrite length_app. pose (remove_list_singl_id_or_nil l1 a). destruct o.
       rewrite H3. simpl. apply Nat.lt_lt_succ_r. apply IHl2 with (A:=A) ; assumption.
       rewrite H3. simpl. rewrite <- Nat.succ_lt_mono. apply IHl2 with (A:=A) ; assumption.
 Qed.
@@ -405,7 +405,7 @@ Lemma keep_list_delete_head_not_origin : forall l1 l2 l3 A, ((In A l1) -> False)
                 length (remove_list l1 (l2 ++ A :: l3)) = S (length (remove_list l1 (l2 ++ l3))).
 Proof.
 induction l1.
-- intros. simpl. rewrite app_length. simpl. rewrite app_length. auto.
+- intros. simpl. rewrite length_app. simpl. rewrite length_app. auto.
 - intros. simpl. repeat rewrite remove_list_dist_app. assert (In A l1 -> False).
   intro. apply H. apply in_cons. assumption. assert (A :: l3 = [A] ++ l3).
   auto. rewrite H1. rewrite remove_list_dist_app. pose (remove_list_singl_id_or_nil l1 A).

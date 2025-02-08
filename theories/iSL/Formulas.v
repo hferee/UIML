@@ -5,20 +5,29 @@ This file defines propositional formulas, the proof that there are countably man
 
 (** Theory of countability from Iris *)
 From stdpp Require Import countable strings.
-
+Require Import Coq.Program.Equality.
 
 (** ** Definitions and notations. *)
 Definition variable := string.
 
-Inductive form : Type :=
-| Var : variable -> form
-| Bot : form
-| And : form -> form -> form
-| Or : form -> form -> form
-| Implies : form -> form -> form
-| Box : form -> form.
+(* We declare simultaneously two kinds of formulas: normal and modal *)
+Inductive Kind := Modal | Normal.
 
-Fixpoint occurs_in (x : variable) (φ : form) := 
+
+Existing Class Kind.
+
+Inductive form : Kind -> Type :=
+| Var {K} : variable -> form K
+| Bot {K} : form K
+| And {K} : form K -> form K -> form K
+| Or {K} : form K -> form K -> form K
+| Implies {K} : form K -> form K -> form K
+| Box : form Modal -> form Modal.
+
+Arguments form {_}.
+Arguments Var {_} _, _ _.
+
+Fixpoint occurs_in `{K : Kind} (x : variable) (φ : form) := 
 match φ with
 | Var y => x = y
 | Bot => False
@@ -26,7 +35,6 @@ match φ with
 | Or φ ψ => (occurs_in x φ) \/ (occurs_in x ψ)
 | Implies φ ψ => (occurs_in x φ) \/ (occurs_in x ψ)
 | Box φ => occurs_in x φ
-
 end.
 
 (** Pretty notations for formulas *)
@@ -38,21 +46,53 @@ Notation " A ∨ B" := (Or A B) (at level 85, B at level 85).
 Notation " A → B" := (Implies A B) (at level 99, B at level 200).
 Notation "□ φ" := (Box φ) (at level 75, φ at level 75).
 Infix " φ ⇔ ψ " := (And (Implies φ ψ) (Implies ψ φ)) (at level 100).
-Global Instance fomula_bottom : base.Bottom form := Bot.
 
-Global Coercion Var : variable >-> form.
+Global Instance fomula_bottom {K : Kind} : base.Bottom form := Bot.
 
-Global Instance form_top : base.Top form := ⊤.
+Global Coercion Var: variable >-> form.
 
+Global Instance form_top {K : Kind} : base.Top form := ⊤.
+
+Ltac solve_trivial_decision :=
+  match goal with
+  | |- Decision (?P) => apply _
+  | |- sumbool ?P (¬?P) => change (Decision P); apply _ 
+  end.
+Ltac solve_decision :=
+  unfold EqDecision; intros; first
+    [ solve_trivial_decision
+    | unfold Decision; decide equality; solve_trivial_decision ].
+    
+Global Instance variable_eq_dec : EqDecision variable.
+solve_decision. Defined.
 (** Formulas have decidable equality. *)
-Global Instance form_eq_dec : EqDecision form.
-Proof. solve_decision . Defined.
+Global Instance form_eq_dec {K : Kind} : EqDecision form.
+Proof.
+(* solve decision does not support the modality parameter). *)
+Local Ltac ctac Hn := right; let Heq := fresh "Heq" in intro Heq;
+                contradict Hn; dependent destruction Heq; now subst.
+Local Ltac dec := now subst; left.
+intros φ. induction φ; intro ψ; dependent destruction ψ;
+try solve[right; discriminate].
+- case (decide (v = v0)) as [Heq|Hn]; [dec|ctac Hn].
+- dec.
+- destruct (IHφ1 ψ1) as [Heq|Hn]; [|ctac Hn].
+  destruct (IHφ2 ψ2) as [Heq'|Hn]; [dec|ctac Hn].
+- destruct (IHφ1 ψ1) as [Heq|Hn]; [|ctac Hn].
+  destruct (IHφ2 ψ2) as [Heq'|Hn]; [dec|ctac Hn].
+- destruct (IHφ1 ψ1) as [Heq|Hn]; [|ctac Hn].
+  destruct (IHφ2 ψ2) as [Heq'|Hn]; [dec|ctac Hn].
+- destruct (IHφ ψ) as [Heq|Hn]; [dec |ctac Hn].
+Defined. (* solve decision *)
 
 Section CountablyManyFormulas.
+
+Context {K : Kind}.
+
 (** ** Countability of the set of formulas *)
 (** We prove that there are countably many formulas by exhibiting an injection
   into general trees over nat for countability. *)
-Local Fixpoint form_to_gen_tree (φ : form) : gen_tree (option string) :=
+Local Fixpoint form_to_gen_tree {K : Kind} (φ : form) : gen_tree (option string) :=
 match φ with
 | ⊥ => GenLeaf  None
 | Var v => GenLeaf (Some v)
@@ -62,7 +102,7 @@ match φ with
 | □ φ => GenNode 3 [form_to_gen_tree φ]
 end.
 
-Local Fixpoint gen_tree_to_form (t : gen_tree (option string)) : option form :=
+Local Fixpoint gen_tree_to_form {K : Kind} (t : gen_tree (option string)) : option form :=
 match t with
 | GenLeaf None => Some ⊥
 | GenLeaf (Some v) => Some (Var v)
@@ -75,7 +115,11 @@ match t with
 | GenNode 2 [t1 ; t2] =>
     gen_tree_to_form t1 ≫= fun φ => gen_tree_to_form t2 ≫= fun ψ =>
       Some (φ →  ψ)
- | GenNode 3 [t] => gen_tree_to_form t ≫= fun φ => Some (□φ)
+| GenNode 3 [t] =>
+    match K with
+    | Modal => gen_tree_to_form t ≫= fun φ => Some (□φ)
+    | Normal => None
+    end
 | _=> None
 end.
 
@@ -87,18 +131,18 @@ Defined.
 
 End CountablyManyFormulas.
 
-Inductive subform : form -> form -> Prop :=
-| SubEq : ∀ φ, subform φ φ
-| SubAnd : ∀ φ ψ1 ψ2, (subform φ ψ1 + subform φ ψ2) -> subform φ (ψ1 ∧ ψ2)
-| SubOr : ∀ φ ψ1 ψ2, (subform φ ψ1 + subform φ ψ2) -> subform φ (ψ1 ∨ ψ2)
-| SubImpl : ∀ φ ψ1 ψ2, (subform φ ψ1 + subform φ ψ2) -> subform φ (ψ1→  ψ2)
-| SubBox : ∀ φ ψ, subform φ ψ -> subform φ (□ ψ).
+Inductive subform : forall (K : Kind), form -> form -> Prop :=
+| SubEq : ∀ K φ, subform K φ φ
+| SubAnd : ∀ K φ ψ1 ψ2, (subform K φ ψ1 + subform K φ ψ2) -> subform K φ (ψ1 ∧ ψ2)
+| SubOr : ∀ K φ ψ1 ψ2, (subform K φ ψ1 + subform K φ ψ2) -> subform K φ (ψ1 ∨ ψ2)
+| SubImpl : ∀ K φ ψ1 ψ2, (subform K φ ψ1 + subform K φ ψ2) -> subform K φ (ψ1→  ψ2)
+| SubBox : ∀ φ ψ, @subform Modal φ ψ -> @subform Modal φ (□ ψ).
 Local Hint Constructors subform : dyckhoff.
 
 (** ** Weight
 
 We define the weight function on formulas, following (Dyckhoff Negri 2000) *)
-Fixpoint weight (φ : form) : nat := match φ with
+Fixpoint weight {K : Kind} (φ : form) : nat := match φ with
 | ⊥ => 1
 | Var _ => 1
 | φ ∧ ψ => 2 + weight φ + weight ψ
@@ -107,11 +151,11 @@ Fixpoint weight (φ : form) : nat := match φ with
 | □φ => 1 + weight φ
 end.
 
-Lemma weight_pos φ : weight φ > 0.
+Lemma weight_pos {K : Kind} φ : weight φ > 0.
 Proof. induction φ; simpl; lia. Qed.
 
 (** We obtain an induction principle based on weight. *)
-Definition weight_ind (P : form -> Type) :
+Definition weight_ind {K : Kind} (P : form -> Type) :
  (forall ψ, (∀ φ, (weight φ < weight ψ) -> P φ) -> P ψ) ->
  (∀ φ, P φ).
 Proof.
@@ -123,12 +167,12 @@ Proof.
     apply Hc; intros φ' Hw'; apply IHw; simpl in Hw'; lia.
 Defined.
 
-Definition form_order φ ψ := weight φ > weight ψ.
+Definition form_order {K : Kind} φ ψ := weight φ > weight ψ.
 
-Global Instance transitive_form_order : Transitive form_order.
+Global Instance transitive_form_order {K : Kind} : Transitive form_order.
 Proof. unfold form_order. auto with *. Qed.
 
-Global Instance irreflexive_form_order : Irreflexive form_order.
+Global Instance irreflexive_form_order {K : Kind} : Irreflexive form_order.
 Proof. unfold form_order. intros x y. lia. Qed.
 
 Notation "φ ≺f ψ" := (form_order ψ φ) (at level 149).

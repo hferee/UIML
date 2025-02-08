@@ -10,10 +10,11 @@ let catch_e f = try f() with
 | Failure s -> "Error: " ^ s
 | e -> "Error: " ^ Printexc.to_string e
 
+
 let fail_on_modality (f : form) : form =
   let rec aux = function
   | Box _ -> failwith "The provided formula contains modalities"
-  | Or(x, y) | Implies(x, y) | And(x, y) -> aux x ; aux y
+  | Or(_, x, y) | Implies(_, x, y) | And(_,x, y) -> aux x ; aux y
   | _ -> ()
   in (aux f; f)
 

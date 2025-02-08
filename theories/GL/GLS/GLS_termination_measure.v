@@ -483,7 +483,7 @@ intros prem concl RA noIdB. inversion RA. subst. split.
 - apply NoDup_incl_length.
   * apply NoDup_subform_boxesS.
   * intro. intros. unfold subform_boxesS in H. unfold subform_boxesS. simpl. simpl in H.
-    repeat rewrite app_length.  repeat rewrite app_length in H. repeat rewrite remove_list_of_nil.
+    repeat rewrite length_app.  repeat rewrite length_app in H. repeat rewrite remove_list_of_nil.
     repeat rewrite remove_list_of_nil in H. rewrite app_nil_r in H. apply in_app_or in H.
     destruct H. rewrite subform_boxesLF_dist_app in H. apply in_app_or in H. destruct H.
     apply in_or_app. left. apply univ_gen_ext_incl_subform_boxes in X. apply X. pose (XBoxed_list_same_subform_boxes BΓ).
@@ -494,7 +494,7 @@ intros prem concl RA noIdB. inversion RA. subst. split.
     apply remove_list_is_in. apply In_remove_list_In_list in H. rewrite subform_boxesLF_dist_app.
     apply remove_list_is_in. simpl. right. apply in_or_app. auto.
 - intro. intros. unfold subform_boxesS in H. unfold subform_boxesS. simpl. simpl in H.
-  repeat rewrite app_length.  repeat rewrite app_length in H. repeat rewrite remove_list_of_nil.
+  repeat rewrite length_app.  repeat rewrite length_app in H. repeat rewrite remove_list_of_nil.
   repeat rewrite remove_list_of_nil in H. rewrite app_nil_r in H. apply in_app_or in H.
   destruct H. rewrite subform_boxesLF_dist_app in H. apply in_app_or in H. destruct H.
   apply in_or_app. left. apply univ_gen_ext_incl_subform_boxes in X. apply X. pose (XBoxed_list_same_subform_boxes BΓ).
