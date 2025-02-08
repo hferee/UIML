@@ -36,7 +36,6 @@ Variable p : variable.
 (* solves the obligations of the following programs *)
 Obligation Tactic := intros; repeat rewrite <- Eqdep.EqdepTheory.eq_rect_eq in * ; order_tac.
 
-(* TODO: move ? *)
 Notation "□⁻¹ Γ" := (map open_box Γ) (at level 75).
 
 Open Scope list_scope.
@@ -113,8 +112,8 @@ Equations a_rule_env {K : Kind} {Δ : list form} {ϕ : form}
   A ((Δ'•(δ₁ → δ₃))•(δ₂ → δ₃), ϕ) _;
 (* A8 modified*)
 | (δ₁→ δ₂)→ δ₃ := let Δ' := rm ((δ₁→ δ₂)→ δ₃) Δ in
-  (E (Δ'•(δ₂ → δ₃) • δ₁, ϕ) _ ⇢ A (Δ'•(δ₂ → δ₃) • δ₁, δ₂) _) (* TODO: factorize *)
-  ⊼ A (Δ'•δ₃, ϕ) _;
+  (E (Δ'•(δ₂ → δ₃) • δ₁, ϕ) _ ⇢ A (Δ'•(δ₂ → δ₃) • δ₁, δ₂) _)
+  ⊼ A (Δ'• δ₃, ϕ) _;
 | Bot := ⊥;
 | Bot → _ := ⊥;
 | □δ := ⊥;
@@ -143,7 +142,6 @@ Equations a_rule_form {K : Kind} {Δ : list form} (ϕ : form)
 | □δ := □((E ((□⁻¹ Δ) • □δ, ⊥) _) ⇢ A((□⁻¹ Δ) • □δ, δ) _)
 .
 
-(* TODO: move to Order *)
 Instance WF_pointed_env_order {K : Kind} : WellFounded pointed_env_order := wf_pointed_order.
 
 Context {K : Kind}.
@@ -168,7 +166,6 @@ EA false pe :=
 Definition E Δ:= EA true (Δ, ⊥).
 Definition A := EA false.
 
-(* TODO: simplify the output too now rather than in extraction *)
 Definition Ef (ψ : form) := simp_form (E ([simp_form ψ])).
 Definition Af (ψ : form) := simp_form (A ([], simp_form ψ)).
 
@@ -818,9 +815,7 @@ end; simpl.
        -- repeat setoid_rewrite gmultiset_disj_union_assoc.
            setoid_rewrite gmultiset_disj_union_comm.
            repeat setoid_rewrite gmultiset_disj_union_assoc.
-           (* TODO: rewrite exch with explicit arguments *)
-           
-             exch 0. apply ImpR_rev.
+           exch 0. apply ImpR_rev.
            peapply' Hp1.
     * Etac. simpl. apply make_impl_sound_L2', ImpLImp.
       -- apply weakening. apply ImpR. foldEA.
@@ -854,7 +849,7 @@ end; simpl.
               (erewrite proper_Provable;  [| |reflexivity]);  [eapply Hp1|].
               rewrite Heq''. rewrite open_boxes_disj_union.
               repeat rewrite  <- ?list_to_set_disj_open_boxes,  <- list_to_set_disj_env_add.
-              rewrite open_boxes_add. simpl. ms. (* TODO way too long *)
+              rewrite open_boxes_add. simpl. ms.
           -- intro HF. apply (Hnin _ Hin0). simpl. tauto.
         * exch 0. apply weakening. exch 0. apply Hind; [order_tac | occ|peapply' Hp2| trivial].
   + assert(Heq'' : (⊗ Γ0) ≡ ((⊗Γ  ∖ {[□ φ1 → φ2]}) ⊎ ⊗ (list_to_set_disj Δ'))). {

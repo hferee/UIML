@@ -505,7 +505,6 @@ apply elem_of_list_to_set_disj in Hin.
   + split; intros φ0 Hp; peapply' Hp; equiv_tac.
 Qed.
 
-(* TODO: move *)
 Hint Resolve elem_of_list_to_set_disj : proof.
 
 Lemma equiv_env_simp_env {K : Kind} Δ: equiv_env (simp_env Δ) Δ.
@@ -653,13 +652,5 @@ repeat simp_env_tac; try (try (apply Provable_dec_of_Prop in Hc); contradict Hc;
 - eapply Nat.le_ngt. eapply Hf1. eauto. subst; trivial.
 - eapply Hf4. eauto. now apply Provable_dec_of_Prop.
 Qed.
-(* TODO clean ?
-  Definition equiv_env_simp_env := equiv_env_simp_env.
-  Definition equiv_form_simp_form:= equiv_form_simp_form.
-  Definition equiv_env_vars := equiv_env_vars.
-  Definition occurs_in_simp_form := occurs_in_simp_form.
-  Definition simp_env_idempotent := simp_env_idempotent.
-  Definition simp_env_nil := simp_env_nil.
-  *)
-End SoundS.
 
+End SoundS.

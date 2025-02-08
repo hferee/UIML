@@ -783,7 +783,11 @@ assert(Hcut :
   induction Δ; simpl; split; intros ψ Hψ.
   - intro. apply Hψ.
   - split; trivial. intros φ Hin. contradict Hin. auto with *.
-  - intro Hall. case in_dec; intro; apply (fst IHΔ); auto with *.
+  - intro Hall. case in_dec; intro; apply (fst IHΔ).
+    + exact Hψ.
+    + auto with *.
+    + simpl. apply make_disj_sound_L, OrL; auto with *.
+    + auto with *.
   - case in_dec in Hψ; apply IHΔ in Hψ;
     destruct Hψ as [Hψ Hind].
     + split; trivial;  intros φ Hin; destruct (decide (φ = a)); auto 2 with *.

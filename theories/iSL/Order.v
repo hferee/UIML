@@ -155,7 +155,6 @@ Proof.
 unfold env_order, ltof. do 2 rewrite env_weight_add. lia.
 Qed.
 
-(* TODO: this is just a special case *)
 Lemma env_order_disj_union_compat_left {K : Kind} Δ Δ' Δ'':
   (Δ ≺ Δ'') -> Δ ++ Δ' ≺ Δ'' ++ Δ'.
 Proof.
@@ -345,7 +344,7 @@ Qed.
 
 Global Hint Resolve remove_In_env_order : order.
 
-Lemma elem_of_list_In_1 {A : Type}: ∀ (l : list A) (x : A), x ∈ l -> In x l.
+Lemma elem_of_list_In_1 {A : Type}: ∀ (l : list A) (x : A), x ∈ l <-> In x l.
 Proof. apply elem_of_list_In. Qed.
 
 Global Hint Resolve  elem_of_list_In_1 : order.

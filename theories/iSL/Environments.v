@@ -238,7 +238,6 @@ unfold singletonMS, base.singletonMS in HH.
 unfold base.singleton, Environments.singleton. ms.
 Qed.
 
-(* TODO : global later? *)
 Hint Resolve in_difference : multiset.
 
 (* could be used in disj_inv *)
