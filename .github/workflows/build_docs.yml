@@ -56,18 +56,16 @@ jobs:
       - name: Upload docs
         uses: actions/upload-pages-artifact@v4
         with:
-          id: docs-artifact
           path: docs
 
       - name: Upload benchmark
         uses: actions/upload-pages-artifact@v4
         with:
-          id: benchmark
           path: benchmark.md
+
       - name: Upload build time log
         uses: actions/upload-pages-artifact@v4
         with:
-          id: build-time
           path: time-of-build-pretty.log
 
       - name: Revert permissions
@@ -85,3 +83,4 @@ jobs:
       - name: Deploy to GitHub Pages
         id: docs-artifact
         uses: actions/deploy-pages@v4
+        path: docs
