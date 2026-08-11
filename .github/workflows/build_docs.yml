@@ -29,6 +29,7 @@ jobs:
       - name: "Run coq-community/docker-coq-action@v1 with debian:10"
         uses: coq-community/docker-coq-action@v1
         with:
+          custom_image: coqorg/coq:8.20.1
           # Explanation for the permission issue:
           # https://github.com/coq-community/docker-coq-action#permissions
           before_script: |
