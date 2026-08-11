@@ -72,9 +72,12 @@ jobs:
         run: sudo chown -R 1001:116 . # <--
 
   deploy:
+    environment:
+      name: docs-artifact
+      path: docs
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     needs: build
-    if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@master
 
@@ -83,11 +86,6 @@ jobs:
           name: docs-artifact
           path: docs
 
-      - name: Deploy
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: docs
-          allow_empty_commit: true
-          force_orphan: true
-          enable_jekyll: true
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
