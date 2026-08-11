@@ -55,13 +55,15 @@ jobs:
           path: docs
 
       - name: Upload benchmark
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
+          name: Benchmark
           path: benchmark.md
 
       - name: Upload build time log
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
+          name: Time Log
           path: time-of-build-pretty.log
 
       - name: Revert permissions
