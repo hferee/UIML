@@ -19,10 +19,11 @@ further compiled to Javascript.
 
 ## Building
 
-Compiling the project requires Coq version 8.19.2 and may not compile on other versions. One may enforce this locally by running
-`opam pin coq 8.19.2` in the project folder.
+1. Run `install.sh`.
+2. Run `make`.
 
-There is a rudimentary install script `install.sh` in this folder.
+NB: Compiling the project requires Coq version 8.20.1 and may not compile on other versions. 
+The `install.sh` script enforces this locally by running `opam pin coq 8.20.1` in the project folder.
 
 ### Dependencies
 
