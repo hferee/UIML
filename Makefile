@@ -21,7 +21,7 @@ doc: makefile.coq demo
 	rm -fr html docs
 	mkdir docs
 	COQDOCEXTRAFLAGS='--external $(PUBLIC_URL)'
-	@$(MAKE) -f makefile.coq html
+	#@$(MAKE) -f makefile.coq html
 	cp html/* _build/default/bin/uiml_demo.bc.js docs
 	cp $(EXTRA_DIR)/resources/* docs
 

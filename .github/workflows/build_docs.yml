@@ -49,10 +49,6 @@ jobs:
               make clean
             endGroup
 
-
-          allow_empty_commit: true
-          force_orphan: true
-          enable_jekyll: true
       - name: Upload docs
         uses: actions/upload-pages-artifact@v4
         with:
