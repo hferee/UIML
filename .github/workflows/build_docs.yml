@@ -83,4 +83,5 @@ jobs:
       - name: Deploy to GitHub Pages
         id: docs-artifact
         uses: actions/deploy-pages@v4
-        path: docs
+        with
+          path: docs
